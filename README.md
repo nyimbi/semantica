@@ -1,8 +1,8 @@
-# 🧠 SemantiCore
-
 <div align="center">
 
-![SemantiCore Logo](SemantiCore%20Logo.png)
+<img src="SemantiCore%20Logo.png" alt="SemantiCore Logo" width="200" height="auto">
+
+# 🧠 SemantiCore
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
