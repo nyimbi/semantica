@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="SemantiCore%20Logo.png" alt="SemantiCore Logo" width="200" height="auto">
+<img src="SemantiCore%20Logo.png" alt="SemantiCore Logo" width="300" height="auto">
 
 # 🧠 SemantiCore
 
