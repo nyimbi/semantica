@@ -1,33 +1,33 @@
-# 🧠 SemantiCore
+# 🧠 Semantica
 
 <div align="center">
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![PyPI version](https://badge.fury.io/py/semanticore.svg?style=for-the-badge)](https://badge.fury.io/py/semanticore)
-[![Downloads](https://pepy.tech/badge/semanticore?style=for-the-badge)](https://pepy.tech/project/semanticore)
-[![Docker](https://img.shields.io/badge/docker-ready-blue?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/semanticore/semanticore)
+[![PyPI version](https://badge.fury.io/py/semantica.svg?style=for-the-badge)](https://badge.fury.io/py/semantica)
+[![Downloads](https://pepy.tech/badge/semantica?style=for-the-badge)](https://pepy.tech/project/semantica)
+[![Docker](https://img.shields.io/badge/docker-ready-blue?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/semantica/semantica)
 [![Kubernetes](https://img.shields.io/badge/kubernetes-ready-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)](https://kubernetes.io/)
-[![GitHub stars](https://img.shields.io/github/stars/semanticore/semanticore?style=for-the-badge)](https://github.com/semanticore/semanticore)
-[![Contributors](https://img.shields.io/github/contributors/semanticore/semanticore?style=for-the-badge)](https://github.com/semanticore/semanticore/graphs/contributors)
+[![GitHub stars](https://img.shields.io/github/stars/semantica/semantica?style=for-the-badge)](https://github.com/semantica/semantica)
+[![Contributors](https://img.shields.io/github/contributors/semantica/semantica?style=for-the-badge)](https://github.com/semantica/semantica/graphs/contributors)
 
 **🚀 The Ultimate Open Source Toolkit for building Semantic Layers for AI**
 
 *Transform any data format into intelligent, contextual knowledge graphs, embeddings, and semantic structures that power next-generation AI applications, RAG systems, and intelligent agents.*
 
-[📖 Documentation](https://semanticore.readthedocs.io/) • [🚀 Quick Start](#-quick-start) • [💡 Examples](#-examples) • [🤝 Community](#-community) • [🔧 API Reference](https://semanticore.readthedocs.io/api/)
+[📖 Documentation](https://semantica.readthedocs.io/) • [🚀 Quick Start](#-quick-start) • [💡 Examples](#-examples) • [🤝 Community](#-community) • [🔧 API Reference](https://semantica.readthedocs.io/api/)
 
 </div>
 
 ---
 
-## 🌟 What is SemantiCore?
+## 🌟 What is Semantica?
 
-SemantiCore is the most comprehensive open-source semantic intelligence platform that transforms raw, unstructured data from **any source** into intelligent, contextual knowledge. Built for developers, researchers, and enterprises, it bridges the gap between chaotic data and AI-ready semantic understanding.
+Semantica is the most comprehensive open-source semantic intelligence platform that transforms raw, unstructured data from **any source** into intelligent, contextual knowledge. Built for developers, researchers, and enterprises, it bridges the gap between chaotic data and AI-ready semantic understanding.
 
 > **"The missing link between your data and AI — turning unstructured chaos into structured, intelligent semantic knowledge."**
 
-### 🎯 Why Choose SemantiCore?
+### 🎯 Why Choose Semantica?
 
 <table>
 <tr>
@@ -68,7 +68,7 @@ SemantiCore is the most comprehensive open-source semantic intelligence platform
 
 ## 🔧 Core Modules Overview
 
-SemantiCore is built with a modular architecture that provides comprehensive semantic intelligence capabilities:
+Semantica is built with a modular architecture that provides comprehensive semantic intelligence capabilities:
 
 ### 📊 **Data Processing Modules**
 - **[Document Processor](#-document-processing-module)** - PDF, DOCX, XLSX, PPTX, LaTeX, EPUB and more
@@ -126,27 +126,27 @@ SemantiCore is built with a modular architecture that provides comprehensive sem
 
 ```bash
 # Complete installation with all modules
-pip install "semanticore[all]"
+pip install "semantica[all]"
 
 # Lightweight core installation
-pip install semanticore
+pip install semantica
 
 # Specific module support
-pip install "semanticore[pdf,web,feeds,office,scientific]"
+pip install "semantica[pdf,web,feeds,office,scientific]"
 
 # Development installation
-git clone https://github.com/semanticore/semanticore.git
-cd semanticore
+git clone https://github.com/semantica/semantica.git
+cd semantica
 pip install -e ".[dev]"
 ```
 
 ### ⚡ Transform Any Data in 60 Seconds
 
 ```python
-from semanticore import SemantiCore
+from semantica import Semantica
 
 # Initialize with your preferred providers
-core = SemantiCore(
+core = Semantica(
     llm_provider="openai",  # or "anthropic", "huggingface", "ollama"
     embedding_model="text-embedding-3-large",
     vector_store="pinecone",  # or "weaviate", "chroma", "qdrant"
@@ -202,7 +202,7 @@ for result in results:
 Handle complex document formats with full semantic understanding:
 
 ```python
-from semanticore.processors import DocumentProcessor
+from semantica.processors import DocumentProcessor
 
 # Initialize with comprehensive extraction capabilities
 doc_processor = DocumentProcessor(
@@ -257,7 +257,7 @@ for content in [pdf_content, docx_content, pptx_content, xlsx_content]:
 Real-time web content and feed processing with semantic understanding:
 
 ```python
-from semanticore.processors import WebProcessor, FeedProcessor
+from semantica.processors import WebProcessor, FeedProcessor
 
 # Advanced web content processor
 web_processor = WebProcessor(
@@ -324,7 +324,7 @@ async for item in feed_processor.stream_items():
 Transform structured and semi-structured data into semantic knowledge:
 
 ```python
-from semanticore.processors import StructuredDataProcessor
+from semantica.processors import StructuredDataProcessor
 
 # Initialize with intelligent schema detection
 structured_processor = StructuredDataProcessor(
@@ -384,7 +384,7 @@ unified_graph = core.merge_data_graphs([item['triples'] for item in processed_da
 Advanced context building and preservation across all data sources:
 
 ```python
-from semanticore.context import ContextEngineer
+from semantica.context import ContextEngineer
 
 # Initialize context engineering system
 context_engineer = ContextEngineer(
@@ -446,7 +446,7 @@ for result in contextual_results:
 Create context-aware embeddings optimized for semantic understanding:
 
 ```python
-from semanticore.embeddings import SemanticEmbedder
+from semantica.embeddings import SemanticEmbedder
 
 # Initialize advanced semantic embedder
 embedder = SemanticEmbedder(
@@ -523,7 +523,7 @@ for result in search_results:
 Automatically construct intelligent knowledge graphs from any data:
 
 ```python
-from semanticore.graph import KnowledgeGraphBuilder
+from semantica.graph import KnowledgeGraphBuilder
 
 # Initialize knowledge graph builder
 graph_builder = KnowledgeGraphBuilder(
@@ -584,7 +584,7 @@ for query in graph_queries:
 Automatically generate SPARQL queries for semantic search:
 
 ```python
-from semanticore.query import SPARQLQueryGenerator
+from semantica.query import SPARQLQueryGenerator
 
 # Initialize SPARQL query generator
 sparql_generator = SPARQLQueryGenerator(
@@ -627,7 +627,7 @@ for nl_query in natural_queries:
 Process real-time data streams with semantic understanding:
 
 ```python
-from semanticore.streaming import StreamProcessor
+from semantica.streaming import StreamProcessor
 
 # Initialize stream processor with multiple platform support
 stream_processor = StreamProcessor(
@@ -642,7 +642,7 @@ stream_processor = StreamProcessor(
 kafka_config = {
     'bootstrap_servers': ['localhost:9092'],
     'topics': ['documents', 'web_content', 'feeds', 'social_media'],
-    'consumer_group': 'semanticore_processors'
+    'consumer_group': 'semantica_processors'
 }
 
 stream_processor.configure_kafka(kafka_config)
@@ -653,7 +653,7 @@ rabbitmq_config = {
     'port': 5672,
     'virtual_host': '/',
     'queues': ['semantic_processing', 'document_analysis'],
-    'exchange': 'semanticore_exchange'
+    'exchange': 'semantica_exchange'
 }
 
 stream_processor.configure_rabbitmq(rabbitmq_config)
@@ -711,7 +711,7 @@ await process_stream_data()
 Monitor live feeds with intelligent content analysis:
 
 ```python
-from semanticore.streaming import LiveFeedMonitor
+from semantica.streaming import LiveFeedMonitor
 
 # Initialize live feed monitor
 feed_monitor = LiveFeedMonitor(
@@ -790,8 +790,8 @@ async for feed_item in feed_monitor.stream_items():
 ### 🔬 Research Paper Analysis Pipeline
 
 ```python
-from semanticore import SemantiCore
-from semanticore.pipelines import ResearchPipeline
+from semantica import Semantica
+from semantica.pipelines import ResearchPipeline
 
 # Initialize research-focused pipeline
 research_pipeline = ResearchPipeline(
@@ -847,7 +847,7 @@ for query in research_queries:
 ### 📊 Business Intelligence Dashboard
 
 ```python
-from semanticore.dashboards import BusinessIntelligenceDashboard
+from semantica.dashboards import BusinessIntelligenceDashboard
 
 # Initialize BI dashboard
 bi_dashboard = BusinessIntelligenceDashboard(
@@ -897,7 +897,7 @@ async for update in bi_dashboard.stream_updates():
 ### 🏥 Healthcare Knowledge System
 
 ```python
-from semanticore.healthcare import HealthcareProcessor
+from semantica.healthcare import HealthcareProcessor
 
 # Initialize healthcare-specific processor
 healthcare_processor = HealthcareProcessor(
@@ -951,7 +951,7 @@ for query in medical_queries:
 ### 🔒 Cybersecurity Threat Intelligence
 
 ```python
-from semanticore.security import CyberSecurityProcessor
+from semantica.security import CyberSecurityProcessor
 
 # Initialize cybersecurity processor
 cyber_processor = CyberSecurityProcessor(
@@ -1011,12 +1011,12 @@ for query in threat_queries:
 ### 🚀 Scalable Deployment
 
 ```python
-from semanticore.deployment import EnterpriseDeployment
+from semantica.deployment import EnterpriseDeployment
 
 # Configure enterprise deployment
 enterprise_config = {
     'kubernetes': {
-        'namespace': 'semanticore-prod',
+        'namespace': 'semantica-prod',
         'replicas': 10,
         'resources': {
             'cpu': '4000m',
@@ -1057,7 +1057,7 @@ print(f"🌐 Active Connections: {metrics.active_connections}")
 ### 🔧 Custom Pipeline Builder
 
 ```python
-from semanticore.pipelines import PipelineBuilder
+from semantica.pipelines import PipelineBuilder
 
 # Build custom enterprise pipeline
 enterprise_pipeline = PipelineBuilder() \
@@ -1133,7 +1133,7 @@ print(f"   ⏱️ Processing Time: {results.processing_time:.2f} seconds")
 ### 📊 Real-Time Analytics Dashboard
 
 ```python
-from semanticore.analytics import AnalyticsDashboard
+from semantica.analytics import AnalyticsDashboard
 
 # Initialize comprehensive analytics dashboard
 analytics = AnalyticsDashboard(
@@ -1200,7 +1200,7 @@ print("📊 Analytics Dashboard started at http://localhost:8080")
 ### 🔍 Quality Assurance System
 
 ```python
-from semanticore.quality import QualityAssurance
+from semantica.quality import QualityAssurance
 
 # Initialize comprehensive quality assurance
 qa_system = QualityAssurance(
@@ -1261,8 +1261,8 @@ qa_system.enable_continuous_monitoring(
 ### ⚙️ Multi-Provider Setup
 
 ```python
-from semanticore import SemantiCore
-from semanticore.config import MultiProviderConfig
+from semantica import Semantica
+from semantica.config import MultiProviderConfig
 
 # Configure multiple providers for redundancy and optimization
 config = MultiProviderConfig({
@@ -1296,7 +1296,7 @@ config = MultiProviderConfig({
     'vector_stores': {
         'primary': {
             'provider': 'pinecone',
-            'index': 'semanticore-prod',
+            'index': 'semantica-prod',
             'environment': 'us-west1-gcp'
         },
         'secondary': {
@@ -1320,7 +1320,7 @@ config = MultiProviderConfig({
 })
 
 # Initialize with multi-provider configuration
-core = SemantiCore(config=config)
+core = Semantica(config=config)
 
 # Automatic failover and load balancing
 core.enable_automatic_failover(
@@ -1333,7 +1333,7 @@ core.enable_automatic_failover(
 ### 🔐 Security & Privacy Configuration
 
 ```python
-from semanticore.security import SecurityConfig
+from semantica.security import SecurityConfig
 
 # Configure comprehensive security settings
 security_config = SecurityConfig({
@@ -1387,8 +1387,8 @@ We welcome contributions from developers, researchers, and domain experts! Here'
 
 ```bash
 # Clone the repository
-git clone https://github.com/semanticore/semanticore.git
-cd semanticore
+git clone https://github.com/semantica/semantica.git
+cd semantica
 
 # Create development environment
 python -m venv venv
@@ -1401,9 +1401,9 @@ pip install -e ".[dev,test,docs]"
 pytest tests/
 
 # Run linting
-flake8 semanticore/
-black semanticore/
-mypy semanticore/
+flake8 semantica/
+black semantica/
+mypy semantica/
 
 # Build documentation
 cd docs/
@@ -1434,35 +1434,35 @@ make html
 ### 📚 Learning Resources
 
 #### 📖 Official Documentation
-- **[Getting Started Guide](https://semanticore.readthedocs.io/getting-started/)** - Complete beginner's guide
-- **[API Reference](https://semanticore.readthedocs.io/api/)** - Comprehensive API documentation
-- **[Architecture Guide](https://semanticore.readthedocs.io/architecture/)** - System architecture and design
-- **[Performance Tuning](https://semanticore.readthedocs.io/performance/)** - Optimization best practices
+- **[Getting Started Guide](https://semantica.readthedocs.io/getting-started/)** - Complete beginner's guide
+- **[API Reference](https://semantica.readthedocs.io/api/)** - Comprehensive API documentation
+- **[Architecture Guide](https://semantica.readthedocs.io/architecture/)** - System architecture and design
+- **[Performance Tuning](https://semantica.readthedocs.io/performance/)** - Optimization best practices
 
 #### 🎓 Tutorials & Examples
-- **[Tutorial Series](https://semanticore.readthedocs.io/tutorials/)** - Step-by-step learning path
-- **[Example Projects](https://github.com/semanticore/examples)** - Real-world implementation examples
-- **[Best Practices](https://semanticore.readthedocs.io/best-practices/)** - Industry best practices guide
-- **[Case Studies](https://semanticore.readthedocs.io/case-studies/)** - Real-world success stories
+- **[Tutorial Series](https://semantica.readthedocs.io/tutorials/)** - Step-by-step learning path
+- **[Example Projects](https://github.com/semantica/examples)** - Real-world implementation examples
+- **[Best Practices](https://semantica.readthedocs.io/best-practices/)** - Industry best practices guide
+- **[Case Studies](https://semantica.readthedocs.io/case-studies/)** - Real-world success stories
 
 #### 🎥 Video Content
-- **[YouTube Channel](https://youtube.com/semanticore)** - Video tutorials and demos
-- **[Webinar Series](https://semanticore.io/webinars)** - Live learning sessions
-- **[Conference Talks](https://semanticore.io/talks)** - Conference presentations and talks
+- **[YouTube Channel](https://youtube.com/semantica)** - Video tutorials and demos
+- **[Webinar Series](https://semantica.io/webinars)** - Live learning sessions
+- **[Conference Talks](https://semantica.io/talks)** - Conference presentations and talks
 
 ### 💬 Community Support
 
 #### 🗨️ Discussion Forums
-- **[Discord Server](https://discord.gg/semanticore)** - Real-time chat and community support
-- **[GitHub Discussions](https://github.com/semanticore/semanticore/discussions)** - Technical discussions and Q&A
-- **[Reddit Community](https://reddit.com/r/semanticore)** - Community discussions and sharing
-- **[Stack Overflow](https://stackoverflow.com/questions/tagged/semanticore)** - Technical questions and answers
+- **[Discord Server](https://discord.gg/semantica)** - Real-time chat and community support
+- **[GitHub Discussions](https://github.com/semantica/semantica/discussions)** - Technical discussions and Q&A
+- **[Reddit Community](https://reddit.com/r/semantica)** - Community discussions and sharing
+- **[Stack Overflow](https://stackoverflow.com/questions/tagged/semantica)** - Technical questions and answers
 
 #### 📧 Communication Channels
-- **[Mailing List](https://groups.google.com/g/semanticore)** - Announcements and updates
-- **[Developer Newsletter](https://semanticore.io/newsletter)** - Monthly development updates
-- **[Twitter](https://twitter.com/semanticore)** - Latest news and quick updates
-- **[LinkedIn](https://linkedin.com/company/semanticore)** - Professional updates and networking
+- **[Mailing List](https://groups.google.com/g/semantica)** - Announcements and updates
+- **[Developer Newsletter](https://semantica.io/newsletter)** - Monthly development updates
+- **[Twitter](https://twitter.com/semantica)** - Latest news and quick updates
+- **[LinkedIn](https://linkedin.com/company/semantica)** - Professional updates and networking
 
 #### 🎉 Community Events
 - **Monthly Meetups** - Local and virtual community meetups
@@ -1542,7 +1542,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 ```
 MIT License
 
-Copyright (c) 2024 SemantiCore Contributors
+Copyright (c) 2024 Semantica Contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -1591,15 +1591,15 @@ SOFTWARE.
 
 ## 🚀 Ready to Transform Your Data?
 
-**Join thousands of developers, researchers, and organizations using SemantiCore to build the next generation of intelligent applications.**
+**Join thousands of developers, researchers, and organizations using Semantica to build the next generation of intelligent applications.**
 
-[![Get Started](https://img.shields.io/badge/Get%20Started-blue?style=for-the-badge&logo=rocket)](https://semanticore.readthedocs.io/quickstart/)
-[![View Examples](https://img.shields.io/badge/View%20Examples-green?style=for-the-badge&logo=github)](https://github.com/semanticore/examples)
-[![Join Community](https://img.shields.io/badge/Join%20Community-purple?style=for-the-badge&logo=discord)](https://discord.gg/semanticore)
+[![Get Started](https://img.shields.io/badge/Get%20Started-blue?style=for-the-badge&logo=rocket)](https://semantica.readthedocs.io/quickstart/)
+[![View Examples](https://img.shields.io/badge/View%20Examples-green?style=for-the-badge&logo=github)](https://github.com/semantica/examples)
+[![Join Community](https://img.shields.io/badge/Join%20Community-purple?style=for-the-badge&logo=discord)](https://discord.gg/semantica)
 
 ### 🌟 Star us on GitHub • 🐦 Follow us on Twitter • 💬 Join our Discord
 
-**[Documentation](https://semanticore.readthedocs.io/) • [GitHub](https://github.com/semanticore/semanticore) • [Discord](https://discord.gg/semanticore) • [Twitter](https://twitter.com/semanticore)**
+**[Documentation](https://semantica.readthedocs.io/) • [GitHub](https://github.com/semantica/semantica) • [Discord](https://discord.gg/semantica) • [Twitter](https://twitter.com/semantica)**
 
 ---
 

@@ -1,12 +1,12 @@
-# 🚀 SemantiCore: The Ultimate Knowledge Engineering Toolkit
+# 🚀 Semantica: The Ultimate Knowledge Engineering Toolkit
 
 > **"Transform Unstructured Data into Semantic Layers: Build Enterprise Knowledge Graphs with Engineering Precision"**
 
 ---
 
-## 🎯 **What is SemantiCore?**
+## 🎯 **What is Semantica?**
 
-SemantiCore is a comprehensive toolkit for Knowledge Engineering and Semantic Layer construction. It transforms unstructured data into structured, queryable semantic layers with built-in quality controls, conflict detection, and full provenance tracking. Built for data engineers, knowledge engineers, and semantic architects.
+Semantica is a comprehensive toolkit for Knowledge Engineering and Semantic Layer construction. It transforms unstructured data into structured, queryable semantic layers with built-in quality controls, conflict detection, and full provenance tracking. Built for data engineers, knowledge engineers, and semantic architects.
 
 ---
 
@@ -32,7 +32,7 @@ SemantiCore is a comprehensive toolkit for Knowledge Engineering and Semantic La
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                SemantiCore Knowledge Engineering Toolkit    │
+│                Semantica Knowledge Engineering Toolkit    │
 ├─────────────────────────────────────────────────────────────┤
 │  📊 Semantic Dashboard  │  🔧 Engineering CLI  │  📈 Quality Monitor │
 ├─────────────────────────────────────────────────────────────┤
@@ -99,9 +99,9 @@ graph LR
 
 ### 1. **Load Unstructured Data**
 ```python
-from semanticore import SemantiCore
+from semantica import Semantica
 
-core = SemantiCore()
+core = Semantica()
 core.ingest_unstructured_data("./documents/", "./emails/", "./databases/")
 ```
 
@@ -171,7 +171,7 @@ semantic_analysis = semantic_layer.analyze_relationships("fraud_detection_patter
 
 ---
 
-## 💡 **Why Choose SemantiCore for Knowledge Engineering?**
+## 💡 **Why Choose Semantica for Knowledge Engineering?**
 
 ### ✅ **Knowledge Engineering Advantages**
 - **Semantic Layer Focus** - Purpose-built for building enterprise semantic layers
@@ -181,7 +181,7 @@ semantic_analysis = semantic_layer.analyze_relationships("fraud_detection_patter
 - **Provenance & Lineage** - Full audit trail for knowledge engineering processes
 
 ### 🆚 **vs. Knowledge Engineering Alternatives**
-| Feature | SemantiCore | Neo4j | Amazon Neptune | Microsoft Graph | Stardog |
+| Feature | Semantica | Neo4j | Amazon Neptune | Microsoft Graph | Stardog |
 |---------|-------------|-------|----------------|-----------------|---------|
 | **Semantic Layer Construction** | ✅ Native | ❌ Manual | ❌ Limited | ❌ Basic | ⚠️ Partial |
 | **Unstructured Data Processing** | ✅ Full Suite | ❌ Text only | ❌ Limited | ❌ Limited | ⚠️ Basic |
@@ -218,15 +218,15 @@ semantic_analysis = semantic_layer.analyze_relationships("fraud_detection_patter
 ## 🤝 **Get Involved**
 
 ### 📚 **Resources**
-- **Documentation**: [docs.semanticore.ai](https://docs.semanticore.ai)
-- **GitHub**: [github.com/semanticore](https://github.com/semanticore)
-- **Discord**: [discord.gg/semanticore](https://discord.gg/semanticore)
-- **Blog**: [blog.semanticore.ai](https://blog.semanticore.ai)
+- **Documentation**: [docs.semantica.ai](https://docs.semantica.ai)
+- **GitHub**: [github.com/semantica](https://github.com/semantica)
+- **Discord**: [discord.gg/semantica](https://discord.gg/semantica)
+- **Blog**: [blog.semantica.ai](https://blog.semantica.ai)
 
 ### 🆘 **Support**
 - **Community**: GitHub Discussions
-- **Enterprise**: [enterprise@semanticore.ai](mailto:enterprise@semanticore.ai)
-- **Sales**: [sales@semanticore.ai](mailto:sales@semanticore.ai)
+- **Enterprise**: [enterprise@semantica.ai](mailto:enterprise@semantica.ai)
+- **Sales**: [sales@semantica.ai](mailto:sales@semantica.ai)
 
 ---
 
@@ -280,14 +280,14 @@ semantic_analysis = semantic_layer.analyze_relationships("fraud_detection_patter
 ## 🎬 **Knowledge Engineering Demos**
 
 ### 📹 **Video Demos**
-- [Knowledge Engineering Quick Start](https://youtube.com/semanticore-knowledge-engineering)
-- [Semantic Layer Construction](https://youtube.com/semanticore-semantic-layers)
-- [Enterprise Knowledge Engineering](https://youtube.com/semanticore-enterprise)
+- [Knowledge Engineering Quick Start](https://youtube.com/semantica-knowledge-engineering)
+- [Semantic Layer Construction](https://youtube.com/semantica-semantic-layers)
+- [Enterprise Knowledge Engineering](https://youtube.com/semantica-enterprise)
 
 ### 📚 **Live Examples**
-- [Financial Semantic Layer](https://demo.semanticore.ai/financial-semantic)
-- [Healthcare Knowledge Graph](https://demo.semanticore.ai/healthcare-kg)
-- [Legal Compliance Knowledge Base](https://demo.semanticore.ai/legal-compliance)
+- [Financial Semantic Layer](https://demo.semantica.ai/financial-semantic)
+- [Healthcare Knowledge Graph](https://demo.semantica.ai/healthcare-kg)
+- [Legal Compliance Knowledge Base](https://demo.semantica.ai/legal-compliance)
 
 ---
 
@@ -297,15 +297,15 @@ semantic_analysis = semantic_layer.analyze_relationships("fraud_detection_patter
 
 ---
 
-*Built with ❤️ by the SemantiCore Community*
+*Built with ❤️ by the Semantica Community*
 
 ---
 
 ## 📞 **Contact Knowledge Engineering Team**
 
-- **Website**: [semanticore.ai](https://semanticore.ai)
-- **Email**: [knowledge-engineering@semanticore.ai](mailto:knowledge-engineering@semanticore.ai)
-- **Twitter**: [@semanticore](https://twitter.com/semanticore)
-- **LinkedIn**: [SemantiCore Knowledge Engineering](https://linkedin.com/company/semanticore)
-- **YouTube**: [SemantiCore Knowledge Engineering](https://youtube.com/semanticore)
-- **Discord**: [Knowledge Engineering Community](https://discord.gg/semanticore-ke)
+- **Website**: [semantica.ai](https://semantica.ai)
+- **Email**: [knowledge-engineering@semantica.ai](mailto:knowledge-engineering@semantica.ai)
+- **Twitter**: [@semantica](https://twitter.com/semantica)
+- **LinkedIn**: [Semantica Knowledge Engineering](https://linkedin.com/company/semantica)
+- **YouTube**: [Semantica Knowledge Engineering](https://youtube.com/semantica)
+- **Discord**: [Knowledge Engineering Community](https://discord.gg/semantica-ke)

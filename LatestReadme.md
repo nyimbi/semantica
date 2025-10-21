@@ -1,4 +1,4 @@
-# 🧠 SemantiCore
+# 🧠 Semantica
 
 > **The AI-Native Semantic Layer & Knowledge Engineering Toolkit**
 > Modular • Agentic • RAG-Ready • Real-Time • Extensible • Open-Source
@@ -9,7 +9,7 @@
 
 In an AI-native world dominated by intelligent agents, automation pipelines, and reasoning systems, **raw documents are no longer enough**. To enable deep understanding, reasoning, memory, and automation — you need a **semantic core**.
 
-**SemantiCore** is your central, extensible, open-source framework for transforming messy, unstructured data into **machine-understandable**, **queryable**, and **actionable** knowledge.
+**Semantica** is your central, extensible, open-source framework for transforming messy, unstructured data into **machine-understandable**, **queryable**, and **actionable** knowledge.
 
 ---
 
@@ -30,7 +30,7 @@ In an AI-native world dominated by intelligent agents, automation pipelines, and
 ## 📦 Installation
 
 ```bash
-git clone https://github.com/semanticores/semcore.git
+git clone https://github.com/semanticas/semcore.git
 cd semcore
 pip install -e .[all]  # Includes extras like UI, Whisper, Neo4j, etc.
 ```
@@ -413,31 +413,31 @@ semantic_results = pipeline.query(
 ### Quick Start
 ```bash
 # Basic installation
-pip install semanticore
+pip install semantica
 
 # Full installation with all features
-pip install semanticore[all]
+pip install semantica[all]
 
 # Specific modules
-pip install semanticore[graphs,vectors,ui]
+pip install semantica[graphs,vectors,ui]
 ```
 
 ### Docker Deployment
 ```bash
 # Start complete stack
-docker-compose up -d semanticore-stack
+docker-compose up -d semantica-stack
 
 # Custom configuration
-docker run -v ./config:/app/config semanticore:latest
+docker run -v ./config:/app/config semantica:latest
 ```
 
 ### Kubernetes
 ```bash
 # Deploy with Helm
-helm install semanticore ./charts/semanticore
+helm install semantica ./charts/semantica
 
 # Scale processing nodes
-kubectl scale deployment semanticore-workers --replicas=10
+kubectl scale deployment semantica-workers --replicas=10
 ```
 
 ---
@@ -493,7 +493,7 @@ Attribution appreciated. Collaborative forks encouraged.
 
 > Let's build the semantic backbone of the AI-native world.
 
-SemantiCore is not just a toolkit — it's a **movement** toward AI systems that reason, explain, and learn from structured, semantic knowledge.
+Semantica is not just a toolkit — it's a **movement** toward AI systems that reason, explain, and learn from structured, semantic knowledge.
 
 **Connect. Contribute. Collaborate.**
 

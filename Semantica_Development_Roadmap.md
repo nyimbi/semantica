@@ -1,12 +1,12 @@
-# SemantiCore — Modules, Features, Roadmap & Visuals
+# Semantica — Modules, Features, Roadmap & Visuals
 
-> **Purpose:** A concise engineering guide listing every module, feature, responsibilities, recommended tech, and visual diagrams to help you design, implement, and ship the SemantiCore open‑source semantic toolkit.
+> **Purpose:** A concise engineering guide listing every module, feature, responsibilities, recommended tech, and visual diagrams to help you design, implement, and ship the Semantica open‑source semantic toolkit.
 
 ---
 
 ## 1. High-level overview
 
-SemantiCore transforms raw, multi-format input into semantic knowledge (triples, ontologies, graphs, embeddings) suitable for RAG, multi-agent systems, GraphRAG, and domain-specific AI pipelines. The architecture is modular, pluggable, and cloud-native.
+Semantica transforms raw, multi-format input into semantic knowledge (triples, ontologies, graphs, embeddings) suitable for RAG, multi-agent systems, GraphRAG, and domain-specific AI pipelines. The architecture is modular, pluggable, and cloud-native.
 
 ---
 
@@ -17,16 +17,16 @@ Each module is a self-contained package with a clear public API.
 1. **core**
 
    * **Responsibilities:** orchestration, pipeline runner, configuration, plugin registry, lifecycle management.
-   * **Exports:** `SemantiCore`, `PipelineBuilder`, `Config`, `PluginManager`.
+   * **Exports:** `Semantica`, `PipelineBuilder`, `Config`, `PluginManager`.
    * **Submodules:** 
      - **orchestrator:** Pipeline coordination, task scheduling, resource management
      - **config_manager:** YAML/JSON config parsing, environment variables, validation
      - **plugin_registry:** Dynamic plugin loading, version compatibility, dependency resolution
      - **lifecycle:** Startup/shutdown hooks, health checks, graceful degradation
    * **Functions:**
-     - `SemantiCore.initialize()` - Setup all modules and connections
-     - `SemantiCore.run_pipeline()` - Execute complete processing pipeline
-     - `SemantiCore.get_status()` - Return system health and metrics
+     - `Semantica.initialize()` - Setup all modules and connections
+     - `Semantica.run_pipeline()` - Execute complete processing pipeline
+     - `Semantica.get_status()` - Return system health and metrics
      - `PipelineBuilder.add_step()` - Add processing step to pipeline
      - `PipelineBuilder.set_parallelism()` - Configure parallel execution
      - `Config.validate()` - Validate configuration against schema
@@ -1419,7 +1419,7 @@ agents         ████       4
 ```mermaid
 gantt
     dateFormat  YYYY-MM-DD
-    title SemantiCore high-level roadmap
+    title Semantica high-level roadmap
     section MVP
     Core & Ingest       :done, a1, 2025-01-01, 45d
     Parsing & Chunking  :done, a2, after a1, 30d
@@ -1486,7 +1486,7 @@ gantt
 /docs/
 /examples/
 /infra/k8s/
-/helm/semanticore/
+/helm/semantica/
 /.github/workflows/
 
 🆕 /packages/template_manager/
@@ -1520,9 +1520,9 @@ gantt
 ## 12. Example API usage (reference)
 
 ```python
-from semanticore import SemantiCore
+from semantica import Semantica
 
-core = SemantiCore(
+core = Semantica(
     config_path="./config.yaml",
     llm_provider="local",
     vector_store="faiss"
@@ -1535,14 +1535,14 @@ print(kb.search("key trends"))
 ### 🆕 **NEW API EXAMPLES FOR KNOWLEDGE GRAPH QUALITY**
 
 ```python
-from semanticore import SemantiCore
-from semanticore.template_manager import TemplateRegistry
-from semanticore.seed_manager import SeedManager
-from semanticore.semantic_deduplicator import SemanticDeduplicator
-from semanticore.conflict_detector import ConflictDetector
+from semantica import Semantica
+from semantica.template_manager import TemplateRegistry
+from semantica.seed_manager import SeedManager
+from semantica.semantic_deduplicator import SemanticDeduplicator
+from semantica.conflict_detector import ConflictDetector
 
 # Initialize with quality modules
-core = SemantiCore(
+core = Semantica(
     config_path="./config.yaml",
     template_manager=TemplateRegistry("./templates/"),
     seed_manager=SeedManager("./seed_data/"),

@@ -1,6 +1,6 @@
-# 🤝 Contributing to SemantiCore
+# 🤝 Contributing to Semantica
 
-Thank you for your interest in contributing to SemantiCore! This document provides guidelines and information for contributors.
+Thank you for your interest in contributing to Semantica! This document provides guidelines and information for contributors.
 
 ## 🎯 How to Contribute
 
@@ -23,8 +23,8 @@ Thank you for your interest in contributing to SemantiCore! This document provid
 ### **Development Setup**
 ```bash
 # Fork and clone the repository
-git clone https://github.com/YOUR_USERNAME/semanticore.git
-cd semanticore
+git clone https://github.com/YOUR_USERNAME/semantica.git
+cd semantica
 
 # Create virtual environment
 python -m venv venv
@@ -57,15 +57,15 @@ git checkout -b fix/your-bug-fix
 pytest
 
 # Run with coverage
-pytest --cov=semanticore
+pytest --cov=semantica
 
 # Run linting
-flake8 semanticore/
-mypy semanticore/
+flake8 semantica/
+mypy semantica/
 
 # Format code
-black semanticore/
-isort semanticore/
+black semantica/
+isort semantica/
 ```
 
 ### **4. Commit Your Changes**
@@ -137,7 +137,7 @@ test(extraction): add tests for entity extraction
 ### **Writing Tests**
 ```python
 import pytest
-from semanticore.processors.document.pdf_processor import PDFProcessor
+from semantica.processors.document.pdf_processor import PDFProcessor
 
 class TestPDFProcessor:
     def setup_method(self):
@@ -230,7 +230,7 @@ What actually happened.
 **Environment**
 - OS: [e.g., Windows 10, macOS 12.0]
 - Python version: [e.g., 3.9.7]
-- SemantiCore version: [e.g., 0.1.0]
+- Semantica version: [e.g., 0.1.0]
 
 **Additional Information**
 Any other relevant information.
@@ -273,15 +273,15 @@ Contributors will be recognized in:
 
 ## 📞 Getting Help
 
-- **Discussions**: [GitHub Discussions](https://github.com/semanticore/semanticore/discussions)
-- **Issues**: [GitHub Issues](https://github.com/semanticore/semanticore/issues)
-- **Discord**: [Community Discord](https://discord.gg/semanticore)
-- **Email**: team@semanticore.io
+- **Discussions**: [GitHub Discussions](https://github.com/semantica/semantica/discussions)
+- **Issues**: [GitHub Issues](https://github.com/semantica/semantica/issues)
+- **Discord**: [Community Discord](https://discord.gg/semantica)
+- **Email**: team@semantica.io
 
 ## 📄 License
 
-By contributing to SemantiCore, you agree that your contributions will be licensed under the MIT License.
+By contributing to Semantica, you agree that your contributions will be licensed under the MIT License.
 
 ---
 
-Thank you for contributing to SemantiCore! 🚀 
+Thank you for contributing to Semantica! 🚀 

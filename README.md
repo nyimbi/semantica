@@ -1,31 +1,31 @@
 <div align="center">
 
-<img src="SemantiCore%20Logo.png" alt="SemantiCore Logo" width="300" height="auto">
+<img src="Semantica%20Logo.png" alt="Semantica Logo" width="300" height="auto">
 
-# 🧠 SemantiCore
+# 🧠 Semantica
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![PyPI version](https://badge.fury.io/py/semanticore.svg)](https://badge.fury.io/py/semanticore)
-[![Downloads](https://pepy.tech/badge/semanticore)](https://pepy.tech/project/semanticore)
+[![PyPI version](https://badge.fury.io/py/semantica.svg)](https://badge.fury.io/py/semantica)
+[![Downloads](https://pepy.tech/badge/semantica)](https://pepy.tech/project/semantica)
 
 **🚀 Open Source Semantic Layer and Knowledge Engineering Toolkit**
 
 *Transform any unstructured data format into intelligent, structured semantic knowledge graphs, embeddings, and ontologies for LLMs, Agents, RAG systems, and Knowledge Graphs.*
 
-[📖 Documentation](https://semanticore.readthedocs.io/) • [🚀 Quick Start](#-quick-start) • [💡 Features](#-features) • [🤝 Community](#-community--support) • [🔧 API Reference](https://semanticore.readthedocs.io/api/)
+[📖 Documentation](https://semantica.readthedocs.io/) • [🚀 Quick Start](#-quick-start) • [💡 Features](#-features) • [🤝 Community](#-community--support) • [🔧 API Reference](https://semantica.readthedocs.io/api/)
 
 </div>
 
 ---
 
-## 🌟 What is SemantiCore?
+## 🌟 What is Semantica?
 
-SemantiCore is the most comprehensive semantic data transformation platform that bridges the gap between raw unstructured data in **any format** and intelligent AI systems. From complex documents to live data feeds, SemantiCore extracts meaning, builds knowledge, and creates intelligent semantic layers that power next-generation AI applications.
+Semantica is the most comprehensive semantic data transformation platform that bridges the gap between raw unstructured data in **any format** and intelligent AI systems. From complex documents to live data feeds, Semantica extracts meaning, builds knowledge, and creates intelligent semantic layers that power next-generation AI applications.
 
 > **"The missing link between your data and AI — turning unstructured chaos into structured, intelligent semantic knowledge."**
 
-### 🎯 Why Choose SemantiCore?
+### 🎯 Why Choose Semantica?
 
 <table>
 <tr>
@@ -166,27 +166,27 @@ SemantiCore is the most comprehensive semantic data transformation platform that
 
 ```bash
 # Complete installation with all format support
-pip install "semanticore[all]"
+pip install "semantica[all]"
 
 # Lightweight installation
-pip install semanticore
+pip install semantica
 
 # Specific format support
-pip install "semanticore[pdf,web,feeds,office]"
+pip install "semantica[pdf,web,feeds,office]"
 
 # Development installation
-git clone https://github.com/semanticore/semanticore.git
-cd semanticore
+git clone https://github.com/semantica/semantica.git
+cd semantica
 pip install -e ".[dev]"
 ```
 
 ### ⚡ 30-Second Demo: From Any Format to Knowledge
 
 ```python
-from semanticore import SemantiCore
+from semantica import Semantica
 
 # Initialize with preferred providers
-core = SemantiCore(
+core = Semantica(
     llm_provider="openai",
     embedding_model="text-embedding-3-large",
     vector_store="pinecone",
@@ -299,17 +299,17 @@ results = knowledge_base.query("What are the key financial trends?")
 ## 🤝 Community & Support
 
 ### 🎓 **Learning Resources**
-- **📚 [Documentation](https://semanticore.readthedocs.io/)** - Comprehensive guides and API reference
-- **🎯 [Tutorials](https://semanticore.readthedocs.io/tutorials/)** - Step-by-step tutorials for common use cases
-- **💡 [Examples Repository](https://github.com/semanticore/examples)** - Real-world implementation examples
-- **🎥 [Video Tutorials](https://youtube.com/semanticore)** - Visual learning content
-- **📖 [Blog](https://blog.semanticore.io/)** - Latest updates and best practices
+- **📚 [Documentation](https://semantica.readthedocs.io/)** - Comprehensive guides and API reference
+- **🎯 [Tutorials](https://semantica.readthedocs.io/tutorials/)** - Step-by-step tutorials for common use cases
+- **💡 [Examples Repository](https://github.com/semantica/examples)** - Real-world implementation examples
+- **🎥 [Video Tutorials](https://youtube.com/semantica)** - Visual learning content
+- **📖 [Blog](https://blog.semantica.io/)** - Latest updates and best practices
 
 ### 💬 **Community Support**
-- **💬 [Discord Community](https://discord.gg/semanticore)** - Real-time chat and support
-- **🐙 [GitHub Discussions](https://github.com/semanticore/semanticore/discussions)** - Community Q&A
-- **📧 [Mailing List](https://groups.google.com/g/semanticore)** - Announcements and updates
-- **🐦 [Twitter](https://twitter.com/semanticore)** - Latest news and tips
+- **💬 [Discord Community](https://discord.gg/semantica)** - Real-time chat and support
+- **🐙 [GitHub Discussions](https://github.com/semantica/semantica/discussions)** - Community Q&A
+- **📧 [Mailing List](https://groups.google.com/g/semantica)** - Announcements and updates
+- **🐦 [Twitter](https://twitter.com/semantica)** - Latest news and tips
 
 ### 🏢 **Enterprise Support**
 - **🎯 Professional Services** - Custom implementation and consulting
@@ -328,7 +328,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - **🧠 Research Community** - Built upon cutting-edge research in NLP and semantic web
-- **🤝 Open Source Contributors** - Hundreds of contributors making SemantiCore better
+- **🤝 Open Source Contributors** - Hundreds of contributors making Semantica better
 - **🏢 Enterprise Partners** - Real-world feedback and requirements shaping development
 - **🎓 Academic Institutions** - Research collaborations and validation
 
@@ -338,6 +338,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **🚀 Ready to transform your data into intelligent knowledge?**
 
-[Get Started Now](https://semanticore.readthedocs.io/quickstart/) • [View Examples](https://github.com/semanticore/examples) • [Join Community](https://discord.gg/semanticore)
+[Get Started Now](https://semantica.readthedocs.io/quickstart/) • [View Examples](https://github.com/semantica/examples) • [Join Community](https://discord.gg/semantica)
 
 </div>

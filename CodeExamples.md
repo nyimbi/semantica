@@ -4,27 +4,27 @@
 
 ```bash
 # Complete installation with all format support
-pip install "semanticore[all]"
+pip install "semantica[all]"
 
 # Lightweight installation
-pip install semanticore
+pip install semantica
 
 # Specific format support
-pip install "semanticore[pdf,web,feeds,office]"
+pip install "semantica[pdf,web,feeds,office]"
 
 # Development installation
-git clone https://github.com/semanticore/semanticore.git
-cd semanticore
+git clone https://github.com/semantica/semantica.git
+cd semantica
 pip install -e ".[dev]"
 ```
 
 ### ⚡ 30-Second Demo: From Any Format to Knowledge
 
 ```python
-from semanticore import SemantiCore
+from semantica import Semantica
 
 # Initialize with preferred providers
-core = SemantiCore(
+core = Semantica(
     llm_provider="openai",
     embedding_model="text-embedding-3-large",
     vector_store="pinecone",
@@ -61,7 +61,7 @@ results = knowledge_base.query("What are the key financial trends?")
 Process complex document formats with semantic understanding:
 
 ```python
-from semanticore.processors import DocumentProcessor
+from semantica.processors import DocumentProcessor
 
 # Initialize document processor
 doc_processor = DocumentProcessor(
@@ -89,7 +89,7 @@ for content in [pdf_content, docx_content, pptx_content]:
 Real-time web content and feed processing:
 
 ```python
-from semanticore.processors import WebProcessor, FeedProcessor
+from semantica.processors import WebProcessor, FeedProcessor
 
 # Web content processor
 web_processor = WebProcessor(
@@ -131,7 +131,7 @@ async for item in feed_processor.stream_items():
 Handle structured and semi-structured data formats:
 
 ```python
-from semanticore.processors import StructuredDataProcessor
+from semantica.processors import StructuredDataProcessor
 
 # Initialize structured data processor
 structured_processor = StructuredDataProcessor(
@@ -158,7 +158,7 @@ for data in [json_data, csv_data, yaml_data, xml_data]:
 Process email archives and compressed files:
 
 ```python
-from semanticore.processors import EmailProcessor, ArchiveProcessor
+from semantica.processors import EmailProcessor, ArchiveProcessor
 
 # Email processing
 email_processor = EmailProcessor(
@@ -192,7 +192,7 @@ for content in archive_contents:
 Specialized processing for academic and scientific content:
 
 ```python
-from semanticore.processors import AcademicProcessor
+from semantica.processors import AcademicProcessor
 
 # Academic content processor
 academic_processor = AcademicProcessor(
@@ -223,7 +223,7 @@ for content in [latex_content, bibtex_content, jats_content]:
 Generate RDF triples from any content automatically:
 
 ```python
-from semanticore.extraction import TripleExtractor
+from semantica.extraction import TripleExtractor
 
 # Initialize triple extractor
 triple_extractor = TripleExtractor(
@@ -255,7 +255,7 @@ jsonld_format = triple_extractor.to_jsonld(triples)
 Automatically generate ontologies from extracted semantic patterns:
 
 ```python
-from semanticore.ontology import OntologyGenerator
+from semantica.ontology import OntologyGenerator
 
 # Initialize ontology generator
 ontology_gen = OntologyGenerator(
@@ -283,7 +283,7 @@ ontology.save_to_triple_store("http://localhost:9999/blazegraph/sparql")
 Create context-aware embeddings optimized for semantic search:
 
 ```python
-from semanticore.embeddings import SemanticEmbedder
+from semantica.embeddings import SemanticEmbedder
 
 # Initialize semantic embedder
 embedder = SemanticEmbedder(
@@ -316,7 +316,7 @@ results = vector_store.semantic_search(query, top_k=10)
 Monitor and process live data feeds with semantic understanding:
 
 ```python
-from semanticore.streaming import LiveFeedProcessor
+from semantica.streaming import LiveFeedProcessor
 
 # Initialize live feed processor
 feed_processor = LiveFeedProcessor(
@@ -358,7 +358,7 @@ async for feed_item in feed_processor.stream():
 Integrate with popular streaming platforms:
 
 ```python
-from semanticore.streaming import StreamProcessor
+from semantica.streaming import StreamProcessor
 
 # Kafka integration
 kafka_processor = StreamProcessor(
@@ -400,7 +400,7 @@ async for message in kafka_processor.consume():
 ### 🔐 Multi-Format Cybersecurity Intelligence
 
 ```python
-from semanticore.domains.cyber import CyberIntelProcessor
+from semantica.domains.cyber import CyberIntelProcessor
 
 # Initialize cybersecurity processor
 cyber_processor = CyberIntelProcessor(
@@ -435,7 +435,7 @@ cyber_knowledge.export_to_opencti()
 ### 🧬 Biomedical Literature Processing
 
 ```python
-from semanticore.domains.biomedical import BiomedicalProcessor
+from semantica.domains.biomedical import BiomedicalProcessor
 
 # Initialize biomedical processor
 bio_processor = BiomedicalProcessor(
@@ -466,7 +466,7 @@ biomedical_knowledge.export_to_bioportal()
 ### 📊 Financial Data Aggregation & Analysis
 
 ```python
-from semanticore.domains.finance import FinancialProcessor
+from semantica.domains.finance import FinancialProcessor
 
 # Initialize financial processor
 finance_processor = FinancialProcessor(
@@ -502,7 +502,7 @@ financial_knowledge.export_to_refinitiv()
 ### 🚀 Scalable Deployment Options
 
 ```python
-from semanticore.deployment import ScaleManager
+from semantica.deployment import ScaleManager
 
 # Kubernetes deployment configuration
 k8s_config = {
@@ -532,7 +532,7 @@ print(f"Memory usage: {metrics.memory_usage_percent}%")
 ### 🔧 Custom Pipeline Configuration
 
 ```python
-from semanticore.pipeline import PipelineBuilder
+from semantica.pipeline import PipelineBuilder
 
 # Build custom processing pipeline
 pipeline = PipelineBuilder() \
@@ -572,7 +572,7 @@ results = pipeline.process(input_sources)
 ### 📊 Real-Time Analytics Dashboard
 
 ```python
-from semanticore.monitoring import AnalyticsDashboard
+from semantica.monitoring import AnalyticsDashboard
 
 # Initialize analytics dashboard
 dashboard = AnalyticsDashboard(
@@ -604,7 +604,7 @@ dashboard.add_alert(
 ### 🔍 Quality Assurance & Validation
 
 ```python
-from semanticore.quality import QualityAssurance
+from semantica.quality import QualityAssurance
 
 # Initialize quality assurance
 qa = QualityAssurance(
@@ -635,10 +635,10 @@ qa.enable_continuous_monitoring()
 
 ### 📋 Schema-First Knowledge Graph Construction
 
-Unlike other libraries that infer schemas, SemantiCore enforces predefined business schemas:
+Unlike other libraries that infer schemas, Semantica enforces predefined business schemas:
 
 ```python
-from semanticore.schema import SchemaManager, BusinessEntity
+from semantica.schema import SchemaManager, BusinessEntity
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -671,7 +671,7 @@ schema_manager = SchemaManager()
 schema_manager.register_entities([Employee, Department, Product])
 
 # Process documents with schema enforcement
-core = SemantiCore(schema_manager=schema_manager)
+core = Semantica(schema_manager=schema_manager)
 results = core.process_with_schema("hr_documents/", strict_mode=True)
 
 # Only entities matching your schema are extracted and validated
@@ -685,7 +685,7 @@ print(f"Schema violations: {len(results.violations)}")
 Start with known entities and enhance with automated extraction:
 
 ```python
-from semanticore.knowledge import SeedManager
+from semantica.knowledge import SeedManager
 
 # Initialize with known business entities
 seed_manager = SeedManager()
@@ -715,7 +715,7 @@ print(f"Linked to existing: {len(results.linked_entities)}")
 Automatic deduplication with configurable business rules:
 
 ```python
-from semanticore.deduplication import EntityDeduplicator
+from semantica.deduplication import EntityDeduplicator
 
 # Configure deduplication rules for each entity type
 dedup_config = {
@@ -765,7 +765,7 @@ for merge in results.auto_merged:
 Flag contradictions with complete source tracking:
 
 ```python
-from semanticore.conflicts import ConflictDetector
+from semantica.conflicts import ConflictDetector
 
 # Configure conflict detection rules
 conflict_detector = ConflictDetector(
@@ -819,7 +819,7 @@ resolved_conflicts = conflict_detector.resolve_conflicts(
 Implement custom business logic and constraints:
 
 ```python
-from semanticore.validation import BusinessRuleEngine
+from semantica.validation import BusinessRuleEngine
 
 # Define business rules
 rules = BusinessRuleEngine()
@@ -878,7 +878,7 @@ for violation in validation_report.violations:
 Built-in UI for reviewing and resolving conflicts:
 
 ```python
-from semanticore.ui import ConflictResolutionDashboard
+from semantica.ui import ConflictResolutionDashboard
 
 # Start interactive dashboard
 dashboard = ConflictResolutionDashboard(
@@ -912,18 +912,18 @@ knowledge_graph.apply_resolutions(resolved_data)
 
 ### 🎓 Learning Resources
 
-- **📚 [Documentation](https://semanticore.readthedocs.io/)** - Comprehensive guides and API reference
-- **🎯 [Tutorials](https://semanticore.readthedocs.io/tutorials/)** - Step-by-step tutorials for common use cases
-- **💡 [Examples Repository](https://github.com/semanticore/examples)** - Real-world implementation examples
-- **🎥 [Video Tutorials](https://youtube.com/semanticore)** - Visual learning content
-- **📖 [Blog](https://blog.semanticore.io/)** - Latest updates and best practices
+- **📚 [Documentation](https://semantica.readthedocs.io/)** - Comprehensive guides and API reference
+- **🎯 [Tutorials](https://semantica.readthedocs.io/tutorials/)** - Step-by-step tutorials for common use cases
+- **💡 [Examples Repository](https://github.com/semantica/examples)** - Real-world implementation examples
+- **🎥 [Video Tutorials](https://youtube.com/semantica)** - Visual learning content
+- **📖 [Blog](https://blog.semantica.io/)** - Latest updates and best practices
 
 ### 💬 Community Support
 
-- **💬 [Discord Community](https://discord.gg/semanticore)** - Real-time chat and support
-- **🐙 [GitHub Discussions](https://github.com/semanticore/semanticore/discussions)** - Community Q&A
-- **📧 [Mailing List](https://groups.google.com/g/semanticore)** - Announcements and updates
-- **🐦 [Twitter](https://twitter.com/semanticore)** - Latest news and tips
+- **💬 [Discord Community](https://discord.gg/semantica)** - Real-time chat and support
+- **🐙 [GitHub Discussions](https://github.com/semantica/semantica/discussions)** - Community Q&A
+- **📧 [Mailing List](https://groups.google.com/g/semantica)** - Announcements and updates
+- **🐦 [Twitter](https://twitter.com/semantica)** - Latest news and tips
 
 ### 🏢 Enterprise Support
 
@@ -943,7 +943,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - **🧠 Research Community** - Built upon cutting-edge research in NLP and semantic web
-- **🤝 Open Source Contributors** - Hundreds of contributors making SemantiCore better
+- **🤝 Open Source Contributors** - Hundreds of contributors making Semantica better
 - **🏢 Enterprise Partners** - Real-world feedback and requirements shaping development
 - **🎓 Academic Institutions** - Research collaborations and validation
 
@@ -953,6 +953,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **🚀 Ready to transform your data into intelligent knowledge?**
 
-[Get Started Now](https://semanticore.readthedocs.io/quickstart/) • [View Examples](https://github.com/semanticore/examples) • [Join Community](https://discord.gg/semanticore)
+[Get Started Now](https://semantica.readthedocs.io/quickstart/) • [View Examples](https://github.com/semantica/examples) • [Join Community](https://discord.gg/semantica)
 
 </div>
