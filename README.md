@@ -21,7 +21,6 @@
 
 </div>
 
-
 ## 🌟 What is Semantica?
 
 Semantica is the **first comprehensive open-source framework** that bridges the critical gap between raw data chaos and AI-ready knowledge. It's not just another data processing library—it's a complete **semantic intelligence platform** that transforms unstructured information into structured, queryable knowledge graphs that power the next generation of AI applications.
@@ -36,7 +35,7 @@ In the era of AI agents and autonomous systems, data alone isn't enough. **Conte
 |------------------------|---------------------|
 | Process data as isolated documents | Understands semantic relationships across all content |
 | Extract text and store vectors | Builds knowledge graphs with meaningful connections |
-| Generic entity recognition | Domain-specific ontology generation and validation |
+| Generic entity recognition | General-purpose ontology generation and validation |
 | Manual schema definition | Automatic semantic modeling from content patterns |
 | Disconnected data silos | Unified semantic layer across all data sources |
 | Basic quality checks | Production-grade QA with conflict detection & resolution |
@@ -225,16 +224,31 @@ Transform raw text into structured semantic knowledge with state-of-the-art NLP 
 **Key Capabilities:**
 
 - **Multi-Layer Understanding**: From lexical analysis to pragmatic interpretation
-- **Domain Adaptation**: Custom models for domain-specific extraction
+- **General-Purpose Processing**: Works across all domains without domain-specific modules
 - **High Accuracy**: Achieves 95%+ F1 scores on standard benchmarks
 - **Real-Time Processing**: Sub-second response times for most documents
 - **Scalable**: Handles documents from 1KB to 100MB+
 
 #### Entity & Relationship Extraction
 
-Semantica's semantic intelligence engine extracts structured knowledge from unstructured text using state-of-the-art NLP models. This example demonstrates the complete extraction pipeline with detailed output.
+Semantica's semantic intelligence engine extracts structured knowledge from unstructured text using state-of-the-art NLP models. This comprehensive example demonstrates the complete extraction pipeline with detailed, structured output.
 
-**Example Input Text:**
+---
+
+##### 📋 **Example Overview**
+
+**Goal**: Extract structured knowledge from unstructured text about a company acquisition.
+
+**What We'll Extract:**
+- ✅ **Named Entities**: Organizations, people, dates, locations, money amounts
+- ✅ **Relationships**: Actions between entities (acquired, founded, joined, etc.)
+- ✅ **Semantic Triples**: RDF-ready subject-predicate-object structures
+- ✅ **Temporal Information**: When events occurred
+- ✅ **Confidence Scores**: Extraction certainty metrics
+
+---
+
+##### 📝 **Step 1: Prepare Input Text**
 
 ```python
 # Sample unstructured text about a company acquisition
@@ -248,18 +262,43 @@ directly with Spotify and other streaming platforms. The Cupertino-based company
 Beats Music into what became Apple Music in 2015, which now has over 100 million subscribers 
 worldwide.
 """
+
+print(f"Input text length: {len(text)} characters")
+print(f"Input text words: {len(text.split())} words")
 ```
 
-**What We'll Extract:**
-- **Named Entities**: Organizations, people, dates, locations, money amounts
-- **Relationships**: Actions between entities (acquired, founded, joined, etc.)
-- **Semantic Triples**: RDF-ready subject-predicate-object structures
-- **Temporal Information**: When events occurred
-- **Confidence Scores**: How certain the extraction is
+**Output:**
+```
+Input text length: 567 characters
+Input text words: 98 words
+```
 
-**Complete Extraction Example:**
+---
+
+##### 🔧 **Step 2: Initialize and Run Extraction**
 
 ```python
+from semantica import Semantica
+
+# Initialize Semantica with default configuration
+core = Semantica()
+
+# Run complete semantic extraction pipeline
+results = core.extract_semantics(text)
+
+print(f"✅ Extraction complete!")
+print(f"   Processing time: {results.processing_time:.2f} seconds")
+print(f"   Entities found: {len(results.entities)}")
+print(f"   Relationships found: {len(results.relationships)}")
+print(f"   Triples generated: {len(results.triples)}")
+```
+
+---
+
+##### 📊 **Step 3: Analyze Extracted Entities**
+
+```python
+# Entity Extraction Results
 from semantica import Semantica
 
 core = Semantica()
@@ -400,7 +439,7 @@ print(f"✅ Processing time: {results.processing_time:.2f} seconds")
 | Feature | Description | Technology Stack | Use Cases |
 |---------|-------------|-----------------|-----------|
 | **Multi-Layer Analysis** | Lexical → Syntactic → Semantic → Pragmatic understanding | spaCy, NLTK, Transformers, Custom pipelines | Deep semantic understanding for complex documents |
-| **Named Entity Recognition** | 18+ entity types (Person, Organization, Location, etc.) with custom domain support | Transformers (BERT, RoBERTa), spaCy, Custom models | Extract structured entities from unstructured text |
+| **Named Entity Recognition** | 18+ entity types (Person, Organization, Location, etc.) | Transformers (BERT, RoBERTa), spaCy, Custom models | Extract structured entities from unstructured text |
 | **Relationship Extraction** | Open Information Extraction + pattern-based + ML-based extraction | Stanford OpenIE, Dependency parsing, Transformers | Build knowledge graph relationships automatically |
 | **Event Detection** | Complex event recognition with participants, time, location | Event extraction pipelines, Temporal reasoning | Extract events and their participants for temporal knowledge graphs |
 | **Coreference Resolution** | Entity linking across sentences, paragraphs, and documents | NeuralCoref, Transformer-based, Custom algorithms | Resolve pronouns and references for accurate entity tracking |
@@ -420,7 +459,7 @@ from semantica.semantic_extract import (
 )
 
 # Initialize extractors
-ner = NamedEntityRecognizer(model="transformer", domain="finance")
+ner = NamedEntityRecognizer(model="transformer")  # General-purpose NER works for all domains
 rel_extractor = RelationExtractor(strategy="hybrid")  # OpenIE + Pattern
 event_detector = EventDetector()
 triple_extractor = TripleExtractor()
@@ -479,7 +518,7 @@ relationships = rel_extractor.extract(document, entities)
 print(f"Found {len(relationships)} relationships using hybrid extraction strategy\n")
 print("Extraction Strategy Breakdown:")
 print("  • OpenIE: General relationship patterns (e.g., 'announced', 'reported')")
-print("  • Pattern-based: Domain-specific patterns (e.g., financial reporting patterns)")
+print("  • Pattern-based: Common relationship patterns across domains")
 print("  • ML-based: Learned patterns from training data\n")
 
 print("Extracted Relationships (sorted by confidence):\n")
@@ -638,7 +677,7 @@ Build production-ready knowledge graphs from any data source with automatic enti
 | **Automatic Entity Resolution** | Merge duplicate entities across sources using semantic similarity | Clean, unified knowledge graph without duplicates |
 | **Relationship Inference** | Discover implicit relationships through graph patterns and reasoning | Richer knowledge representation with inferred connections |
 | **Graph Optimization** | Optimize graph structure for query performance and storage | Fast queries and efficient storage |
-| **Multi-Graph Support** | Build and merge graphs from multiple domains | Unified knowledge from diverse sources |
+| **Multi-Graph Support** | Build and merge graphs from multiple sources | Unified knowledge from diverse inputs |
 | **Graph Analytics** | Centrality analysis, community detection, path finding | Understand graph structure and relationships |
 | **Provenance Tracking** | Track source and confidence for every assertion | Trustworthy, auditable knowledge |
 | **Graph Validation** | Validate graph consistency and quality | Production-ready, reliable graphs |
@@ -820,7 +859,7 @@ Generate formal ontologies automatically using a sophisticated 6-stage LLM-based
 - **Automatic Generation**: Transform documents into formal ontologies without manual modeling
 - **6-Stage Pipeline**: From document parsing to TTL export with validation at each stage
 - **Symbolic Validation**: HermiT/Pellet reasoner integration for consistency checking
-- **Domain Adaptation**: Generate domain-specific ontologies tailored to your content
+- **Universal Generation**: Generate ontologies from any content type using general-purpose modules
 - **Quality Assurance**: F1 scores up to 0.99 with hybrid LLM + reasoner approach
 - **Best Practices**: Follows semantic modeling guidelines for knowledge engineers
 
@@ -900,7 +939,6 @@ generator = OntologyGenerator(
 # Generate ontology from documents
 ontology = generator.generate_from_documents(
     sources=documents,  # Using the documents defined above
-    domain="business_technology",
     quality_threshold=0.95
 )
 
@@ -1480,11 +1518,11 @@ from semantica.ontology import SharedOntologyManager
 
 # Create shared ontology for agent coordination
 ontology_manager = SharedOntologyManager()
-domain_ontology = ontology_manager.load("business_domain.ttl")
+ontology = ontology_manager.load("domain_ontology.ttl")
 
 # Initialize multi-agent system
 mas = MultiAgentSystem(
-    shared_ontology=domain_ontology,
+    shared_ontology=ontology,
     coordination_mode="semantic"
 )
 
@@ -2167,42 +2205,55 @@ kb.deploy(environment="production")
 
 ## 🎯 Use Cases
 
-### 1. 🏢 Enterprise Knowledge Management
+### 1. 🏢 Enterprise Knowledge Engineering
 
-**Challenge**: Organizations have data scattered across thousands of documents, databases, and applications with no unified view.
+**Challenge**: Process diverse enterprise data sources and build unified knowledge graphs.
 
-**Solution**: Build a unified enterprise knowledge graph that connects all information sources.
+**Solution**: Use Semantica's universal processing modules to ingest and process any enterprise data source.
+
+**Example: Enterprise Document Processing**
 
 ```python
 from semantica import Semantica
-from semantica.enterprise import EnterpriseIntegration
+from semantica.ingest import FileIngestor, WebIngestor, DBIngestor
+from semantica.parse import PDFParser, DOCXParser, HTMLParser
 
-# Initialize enterprise integration
-enterprise = EnterpriseIntegration(
-    data_sources={
-        "sharepoint": {"url": "...", "credentials": "..."},
-        "confluence": {"url": "...", "token": "..."},
-        "databases": ["postgresql://...", "mongodb://..."],
-        "file_shares": ["/shared/documents/", "/shared/projects/"]
-    }
-)
-
-# Build unified knowledge graph
+# Initialize (works for any enterprise data)
 core = Semantica(graph_db="neo4j")
-knowledge_graph = core.build_enterprise_graph(
-    data_sources=enterprise.sources,
-    update_mode="incremental",  # Daily updates
-    enable_versioning=True,
-    enable_access_control=True
+
+# Step 1: Ingest from enterprise sources using universal ingestors
+file_ingestor = FileIngestor()
+web_ingestor = WebIngestor()
+db_ingestor = DBIngestor()
+
+sources = []
+sources.extend(file_ingestor.ingest("/shared/documents/"))
+sources.extend(file_ingestor.ingest("/shared/projects/"))
+sources.extend(web_ingestor.ingest("https://confluence.company.com/api"))
+sources.extend(db_ingestor.ingest("postgresql://db", query="SELECT * FROM articles"))
+
+print(f"✅ Ingested {len(sources)} enterprise sources")
+
+# Step 2: Process all through universal pipeline
+knowledge_graph = core.build_knowledge_graph(
+    sources=sources,
+    merge_entities=True,
+    resolve_conflicts=True,
+    generate_embeddings=True
 )
 
-# Enterprise features
-# - Single source of truth
-# - Cross-departmental search
-# - Automatic relationship discovery
-# - Version tracking and audit trails
-# - Role-based access control
+# Enterprise features using universal modules:
+# - Single source of truth (unified graph)
+# - Cross-departmental search (universal query)
+# - Automatic relationship discovery (general-purpose extraction)
+# - Version tracking (core module features)
+# - Access control (security module)
 ```
+
+**Processing Modules Used**:
+- ✅ `semantica.ingest`: Universal data ingestion from files, web, databases
+- ✅ `semantica.parse`: Document parsing (PDF, DOCX, HTML, etc.)
+- ✅ `semantica.kg`: Knowledge graph construction (domain-agnostic)
 
 **Business Impact**:
 - 🔍 **80% faster information discovery**
@@ -2212,285 +2263,262 @@ knowledge_graph = core.build_enterprise_graph(
 
 ---
 
-### 2. 🤖 Autonomous Analytics Copilots
+### 2. 🤖 AI Agents & Autonomous Systems
 
-**Challenge**: Business analysts spend 70% of their time preparing data instead of analyzing it.
+**Challenge**: Build AI agents that can process diverse data sources and make informed decisions.
 
-**Solution**: AI agents that autonomously plan, analyze, and report on business data.
+**Solution**: Use universal processing modules to build agent-ready knowledge infrastructure.
+
+**Example: Building Agent Knowledge Base**
 
 ```python
 from semantica import Semantica
-from semantica.analytics import AnalyticsCopilot
-from semantica.agents import AutonomousAgent
+from semantica.agents import AgentManager
+from semantica.ingest import FileIngestor, DBIngestor
+from semantica.ontology import OntologyGenerator
 
-# Build semantic layer from business data
+# Step 1: Build knowledge base from diverse sources
 core = Semantica()
-semantic_layer = core.build_semantic_layer(
-    data_warehouses=["snowflake://...", "bigquery://..."],
-    business_glossary="business_terms.yaml",
-    metric_definitions="metrics.yaml"
+ingestor = FileIngestor()
+db_ingestor = DBIngestor()
+
+# Ingest from various sources (any domain)
+sources = []
+sources.extend(ingestor.ingest("documents/"))
+sources.extend(db_ingestor.ingest("postgresql://db", query="SELECT * FROM data"))
+
+# Build knowledge graph (universal process)
+kb = core.build_knowledge_base(
+    sources=sources,
+    extract_entities=True,
+    extract_relationships=True,
+    build_graph=True,
+    generate_embeddings=True
 )
 
-# Create autonomous analytics copilot
-copilot = AnalyticsCopilot(
-    semantic_layer=semantic_layer,
-    capabilities=[
-        "data_analysis",
-        "visualization",
-        "report_generation",
-        "anomaly_detection",
-        "forecasting"
-    ]
+# Step 2: Generate ontology (general-purpose)
+ontology_generator = OntologyGenerator()
+ontology = ontology_generator.generate_from_documents(sources, quality_threshold=0.95)
+
+# Step 3: Initialize agent with knowledge
+agent_manager = AgentManager(
+    knowledge_graph=kb.graph,
+    shared_ontology=ontology
 )
 
-# Natural language to insights
-result = copilot.analyze(
-    request="Show me Q4 revenue trends by product category, "
-            "highlight anomalies, and forecast Q1 2025"
+# Create agent (works for any domain)
+agent = agent_manager.create_agent(
+    role="data_analyst",
+    capabilities=["query_graph", "generate_reports", "detect_patterns"]
 )
 
-# Copilot autonomously:
-# 1. Understands business context from semantic layer
-# 2. Plans multi-step analysis workflow
-# 3. Executes queries and computations
-# 4. Detects anomalies using semantic rules
-# 5. Generates forecasts with explanations
-# 6. Creates executive-ready report
+# Agent uses universal modules to:
+# 1. Query knowledge graph
+# 2. Extract insights using semantic extraction
+# 3. Generate reports using universal formatting
+# 4. Detect patterns using graph analytics
 
-print(result.report)  # Board-ready insights
-result.save("executive_report.pdf")
+result = agent.analyze("Show me trends and patterns in the data")
+print(result.report)
 ```
 
 **Gartner Prediction**: By 2028, 15% of business decisions will be made autonomously through agentic AI.
 
 ---
 
-### 3. 🔐 Threat Intelligence & Cybersecurity
+### 3. 📄 Multi-Format Document Processing
 
-**Challenge**: Security teams manually process thousands of threat reports daily from multiple sources.
+**Challenge**: Process documents from various sources and formats to extract structured knowledge.
 
-**Solution**: Automated threat intelligence processing and knowledge graph construction.
+**Solution**: Universal processing modules that work with any document type or domain.
 
-```python
-from semantica import Semantica
-from semantica.security import ThreatIntelligence
-
-# Initialize threat intelligence processor
-core = Semantica()
-threat_intel = ThreatIntelligence(
-    output_format="stix",  # STIX 2.1 bundles
-    threat_feeds=[
-        "https://feeds.malwarepatrol.net/",
-        "https://openphish.com/feed.txt",
-        "https://threatfeeds.io/rss",
-        "misp_instance_url"
-    ]
-)
-
-# Process threat reports
-threat_graph = core.build_threat_graph(
-    sources=[
-        "threat_reports/*.pdf",
-        "iocs/*.json",
-        "vulnerability_databases/",
-        threat_intel.feeds
-    ],
-    extract_iocs=True,  # IPs, domains, hashes, URLs
-    map_to_mitre=True,  # MITRE ATT&CK mapping
-    enrich_with_context=True
-)
-
-# Query threat landscape
-results = threat_graph.query(
-    "Find all APT groups targeting financial sector with ransomware"
-)
-
-# Export to security platforms
-threat_graph.export_stix("threat_intel.json")
-threat_graph.push_to_misp(misp_url, misp_key)
-threat_graph.push_to_opencti(opencti_url, opencti_token)
-```
-
-**Security Impact**:
-- ⚡ **90% reduction in manual processing**
-- 🎯 **Automatic IOC extraction and correlation**
-- 🔍 **Cross-source threat pattern detection**
-- 📊 **Real-time threat landscape visualization**
-
----
-
-### 4. 🧬 Biomedical Research & Healthcare
-
-**Challenge**: Researchers manually review thousands of papers to find relevant connections.
-
-**Solution**: Automated biomedical literature processing and knowledge graph construction.
+**Example: Processing Various Document Types**
 
 ```python
 from semantica import Semantica
-from semantica.biomedical import BiomedicalProcessor
+from semantica.ingest import FileIngestor, WebIngestor, FeedIngestor
+from semantica.parse import PDFParser, DOCXParser, HTMLParser
 
-# Initialize biomedical processor
+# Initialize Semantica (general-purpose, works for all domains)
 core = Semantica()
-biomed = BiomedicalProcessor(
-    ontologies=["UMLS", "GO", "SNOMED-CT", "MeSH"],
-    entity_types=[
-        "genes", "proteins", "diseases", "drugs",
-        "pathways", "phenotypes", "species"
-    ]
-)
 
-# Process biomedical literature
-biomed_graph = core.build_biomedical_graph(
-    sources=[
-        "pubmed://query=cancer+AND+immunotherapy",
-        "research_papers/*.pdf",
-        "clinical_trials_database"
-    ],
+# Step 1: Ingest documents from multiple sources
+ingestor = FileIngestor()
+web_ingestor = WebIngestor()
+feed_ingestor = FeedIngestor()
+
+# Ingest from various sources
+sources = [
+    ingestor.ingest("documents/*.pdf"),
+    ingestor.ingest("reports/*.docx"),
+    web_ingestor.ingest("https://example.com/article"),
+    feed_ingestor.ingest("https://example.com/rss"),
+    ingestor.ingest("data/*.json"),
+    ingestor.ingest("spreadsheets/*.xlsx")
+]
+
+print(f"✅ Ingested {len(sources)} document sources")
+
+# Step 2: Parse documents using universal parsers
+pdf_parser = PDFParser()
+docx_parser = DOCXParser()
+html_parser = HTMLParser()
+
+# All documents processed through same pipeline
+parsed_docs = []
+for source in sources:
+    if source.format == "pdf":
+        doc = pdf_parser.parse(source)
+    elif source.format == "docx":
+        doc = docx_parser.parse(source)
+    elif source.format == "html":
+        doc = html_parser.parse(source)
+    parsed_docs.append(doc)
+
+print(f"✅ Parsed {len(parsed_docs)} documents")
+
+# Step 3: Extract semantic knowledge (same process for all domains)
+knowledge_base = core.build_knowledge_base(
+    sources=parsed_docs,
+    extract_entities=True,
     extract_relationships=True,
-    normalize_entities=True,  # Map to standard ontologies
-    detect_drug_interactions=True
+    generate_triples=True
 )
 
-# Research queries
-results = biomed_graph.query(
-    "Find genes associated with breast cancer that are targeted by FDA-approved drugs"
+# Step 4: Build knowledge graph (domain-agnostic)
+kg = core.build_knowledge_graph(
+    sources=parsed_docs,
+    merge_entities=True,
+    resolve_conflicts=True
 )
 
-# Export to biomedical formats
-biomed_graph.export_to_bioportal()
-biomed_graph.export_to_string_db()
+# Query the unified knowledge graph
+results = kg.query("What are the key entities and relationships?")
+
+print(f"✅ Knowledge graph created with {kg.node_count} nodes and {kg.edge_count} edges")
 ```
+
+**Key Point**: Same processing modules work for any document type—PDFs, web pages, emails, reports, etc. No domain-specific processors needed.
 
 ---
 
-### 5. 📊 Financial Intelligence & Investment Research
+### 4. 🔄 Data Pipeline Processing
 
-**Challenge**: Investment analysts manually analyze hundreds of financial documents.
+**Challenge**: Process diverse data sources through a unified pipeline.
 
-**Solution**: Automated financial document processing and relationship extraction.
+**Solution**: Modular pipeline that adapts to any data format or domain.
+
+**Example: Building Custom Processing Pipeline**
 
 ```python
 from semantica import Semantica
-from semantica.finance import FinancialAnalyzer
+from semantica.pipeline import PipelineBuilder
+from semantica.ingest import FileIngestor
+from semantica.parse import PDFParser, DOCXParser
+from semantica.normalize import TextCleaner, LanguageDetector
+from semantica.split import SemanticChunker
+from semantica.semantic_extract import NamedEntityRecognizer, RelationExtractor
 
-# Initialize financial analyzer
+# Initialize core
 core = Semantica()
-finance = FinancialAnalyzer(
-    data_sources=[
-        "sec_filings",  # 10-K, 10-Q, 8-K
-        "earnings_calls",
-        "financial_news",
-        "market_data"
-    ]
-)
 
-# Build financial knowledge graph
-financial_graph = core.build_financial_graph(
-    companies=["AAPL", "MSFT", "GOOGL"],
-    time_period="2020-2024",
-    extract_metrics=True,
-    detect_relationships=True,
-    sentiment_analysis=True
-)
+# Build custom pipeline using processing modules
+pipeline = PipelineBuilder() \
+    .add_step("ingest", {
+        "ingestor": FileIngestor(),
+        "sources": ["documents/*.pdf", "reports/*.docx", "data/*.json"]
+    }) \
+    .add_step("parse", {
+        "parsers": {
+            "pdf": PDFParser(),
+            "docx": DOCXParser()
+        }
+    }) \
+    .add_step("normalize", {
+        "cleaner": TextCleaner(),
+        "language_detector": LanguageDetector()
+    }) \
+    .add_step("chunk", {
+        "chunker": SemanticChunker(),
+        "chunk_size": 512,
+        "chunk_overlap": 50
+    }) \
+    .add_step("extract", {
+        "ner": NamedEntityRecognizer(),
+        "relation_extractor": RelationExtractor()
+    }) \
+    .add_step("build_graph", {
+        "merge_entities": True,
+        "resolve_conflicts": True
+    }) \
+    .set_parallelism(4) \
+    .build()
 
-# Investment research queries
-results = financial_graph.query(
-    """
-    Find companies with:
-    - Revenue growth > 20% YoY
-    - Mentioned positively in earnings calls
-    - Strategic partnerships announced in last 6 months
-    """
-)
+# Execute pipeline
+results = pipeline.run()
 
-# Export to financial platforms
-financial_graph.export_to_bloomberg()
-financial_graph.export_to_refinitiv()
+print(f"✅ Pipeline completed")
+print(f"   Documents processed: {results.document_count}")
+print(f"   Entities extracted: {results.entity_count}")
+print(f"   Knowledge graph nodes: {results.graph.node_count}")
 ```
+
+**Key Point**: Pipeline modules are domain-agnostic. They process any content using the same universal methods.
 
 ---
 
-### 6. 🎓 Academic Research & Literature Review
+### 5. 📊 Knowledge Graph from Diverse Sources
 
-**Challenge**: Researchers spend months on literature reviews across disciplines.
+**Challenge**: Combine data from multiple sources into a unified knowledge graph.
 
-**Solution**: Automated academic literature processing and citation network analysis.
+**Solution**: Universal ingestion and processing modules handle any source type.
 
-```python
-from semantica import Semantica
-from semantica.academic import ResearchAnalyzer
-
-# Initialize research analyzer
-core = Semantica()
-research = ResearchAnalyzer(
-    sources=[
-        "arxiv",
-        "semantic_scholar",
-        "google_scholar",
-        "pubmed"
-    ]
-)
-
-# Build research knowledge graph
-research_graph = core.build_research_graph(
-    query="machine learning in healthcare",
-    max_papers=1000,
-    extract_citations=True,
-    extract_methods=True,
-    extract_datasets=True,
-    build_citation_network=True
-)
-
-# Research analysis
-influential_papers = research_graph.find_influential_papers()
-emerging_topics = research_graph.detect_emerging_topics()
-research_gaps = research_graph.identify_research_gaps()
-
-# Generate literature review
-review = research_graph.generate_literature_review(
-    style="academic",
-    sections=["introduction", "methods", "findings", "gaps"]
-)
-```
-
----
-
-### 7. ⚖️ Legal Document Analysis & Contract Intelligence
-
-**Challenge**: Legal teams manually review thousands of contracts for risks and obligations.
-
-**Solution**: Automated legal document processing and clause extraction.
+**Example: Multi-Source Knowledge Graph Construction**
 
 ```python
 from semantica import Semantica
-from semantica.legal import LegalAnalyzer
+from semantica.ingest import FileIngestor, WebIngestor, FeedIngestor, DBIngestor
 
-# Initialize legal analyzer
+# Initialize (works for any domain)
 core = Semantica()
-legal = LegalAnalyzer(
-    document_types=["contracts", "agreements", "policies"],
-    extract_clauses=True,
-    detect_obligations=True,
-    identify_risks=True
+
+# Ingest from multiple source types
+file_ingestor = FileIngestor()
+web_ingestor = WebIngestor()
+feed_ingestor = FeedIngestor()
+db_ingestor = DBIngestor()
+
+# Collect diverse sources
+sources = []
+
+# File-based sources
+sources.extend(file_ingestor.ingest("documents/*.pdf"))
+sources.extend(file_ingestor.ingest("spreadsheets/*.xlsx"))
+
+# Web sources
+sources.extend(web_ingestor.ingest("https://example.com/api/articles"))
+sources.extend(feed_ingestor.ingest("https://example.com/rss"))
+
+# Database sources
+sources.extend(db_ingestor.ingest("postgresql://localhost/db", query="SELECT * FROM articles"))
+
+print(f"✅ Collected {len(sources)} sources from multiple types")
+
+# Process all through same pipeline
+knowledge_graph = core.build_knowledge_graph(
+    sources=sources,
+    merge_entities=True,
+    resolve_conflicts=True,
+    generate_embeddings=True
 )
 
-# Build legal knowledge graph
-legal_graph = core.build_legal_graph(
-    contracts=["contracts/*.pdf"],
-    extract_entities=True,  # Parties, dates, amounts
-    extract_obligations=True,  # Must do, must not do
-    extract_rights=True,
-    detect_conflicts=True
-)
+# Query unified graph
+results = knowledge_graph.query("What entities are connected across all sources?")
 
-# Legal queries
-high_risk_clauses = legal_graph.find_high_risk_clauses()
-expiring_contracts = legal_graph.find_expiring_contracts(days=90)
-non_standard_terms = legal_graph.find_non_standard_terms()
-
-# Due diligence report
-report = legal_graph.generate_due_diligence_report()
+print(f"✅ Unified knowledge graph: {knowledge_graph.node_count} nodes, {knowledge_graph.edge_count} edges")
 ```
+
+**Key Point**: Same ingestion and processing modules work across file, web, database, and feed sources.
 
 ---
 
@@ -2571,7 +2599,7 @@ ontology_manager.import_ontology(
     format="turtle"
 )
 
-# Extend with domain-specific classes
+# Extend with custom classes
 ontology_manager.add_class(
     name="CustomEntity",
     parent="schema:Thing",
@@ -3489,7 +3517,7 @@ A: Semantica is Python-based (3.8+). REST API available for other languages.
 A: Yes! With proper infrastructure (Kubernetes, distributed graph DBs), Semantica scales horizontally.
 
 **Q: How accurate is the entity extraction?**
-A: 90-95% accuracy on general domains. Higher with fine-tuned models for specific domains.
+A: 90-95% accuracy with general-purpose models. Semantica uses universal processing modules that work across all domains without requiring domain-specific models.
 
 **Q: Does Semantica support real-time processing?**
 A: Yes! Streaming APIs support real-time data ingestion and processing.
