@@ -44,7 +44,13 @@ class GraphAnalyzer:
         • analyze_connectivity(): Analyze graph connectivity
     """
     
-    def __init__(self, config=None, **kwargs):
+    def __init__(
+        self,
+        config=None,
+        enable_temporal=False,
+        temporal_granularity="day",
+        **kwargs
+    ):
         """
         Initialize graph analyzer.
         
@@ -53,8 +59,17 @@ class GraphAnalyzer:
         • Initialize community detection
         • Setup connectivity analysis
         • Configure metrics calculation
+        • Enable temporal analysis if requested
+        
+        Args:
+            config: Configuration dictionary
+            enable_temporal: Enable temporal graph analysis
+            temporal_granularity: Time granularity for temporal analysis
+            **kwargs: Additional configuration options
         """
         self.config = config or {}
+        self.enable_temporal = enable_temporal
+        self.temporal_granularity = temporal_granularity
         self.centrality_calculator = CentralityCalculator(**self.config)
         self.community_detector = CommunityDetector(**self.config)
         self.connectivity_analyzer = ConnectivityAnalyzer(**self.config)
@@ -65,6 +80,7 @@ class GraphAnalyzer:
         # - Initialize community detection and analysis
         # - Setup connectivity analysis and metrics
         # - Configure performance optimization settings
+        # - Initialize temporal analysis if enabled
     
     def analyze_graph(self, graph, **options):
         """
@@ -117,4 +133,50 @@ class GraphAnalyzer:
         • Return connectivity analysis
         """
         return self.connectivity_analyzer.analyze_connectivity(graph, **options)
+    
+    def compute_metrics(self, at_time=None, time_range=None, **options):
+        """
+        Compute comprehensive graph metrics.
+        
+        • Calculate graph statistics
+        • Compute structural metrics
+        • Analyze graph properties
+        • Support temporal metrics if temporal enabled
+        • Return metrics dictionary
+        
+        Args:
+            at_time: Calculate metrics at specific time point (temporal graphs)
+            time_range: Calculate metrics for time range (temporal graphs)
+            **options: Additional metric calculation options
+            
+        Returns:
+            Dictionary of graph metrics
+        """
+        pass
+    
+    def analyze_temporal_evolution(
+        self,
+        graph,
+        start_time=None,
+        end_time=None,
+        metrics=["node_count", "edge_count", "density", "communities"],
+        interval=None,
+        **options
+    ):
+        """
+        Analyze temporal evolution of graph.
+        
+        Args:
+            graph: Temporal knowledge graph
+            start_time: Start of analysis period
+            end_time: End of analysis period
+            metrics: Metrics to track over time
+            interval: Time interval for analysis snapshots
+            **options: Additional analysis options
+            
+        Returns:
+            Evolution analysis results with time series data
+        """
+        # TODO: Implement temporal evolution analysis
+        pass
 

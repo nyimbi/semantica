@@ -480,7 +480,11 @@ kg = core.build_knowledge_graph(
 graph_builder = GraphBuilder(
     merge_entities=True,
     entity_resolution_strategy="fuzzy",
-    resolve_conflicts=True
+    resolve_conflicts=True,
+    enable_temporal=True,  # Enable temporal knowledge graph features
+    temporal_granularity="day",
+    track_history=True,
+    version_snapshots=True
 )
 
 entity_resolver = EntityResolver(
@@ -544,6 +548,134 @@ kg.to_neo4j("bolt://localhost:7687", "neo4j", "password")
 kg.to_memgraph("localhost", 7687, username="admin", password="password")
 
 print("✅ Graph exported to multiple formats!")
+```
+
+**Temporal Knowledge Graph Example**
+
+```python
+from semantica import Semantica
+from semantica.kg import (
+    GraphBuilder,
+    TemporalGraphQuery,
+    TemporalPatternDetector,
+    TemporalVersionManager,
+    GraphAnalyzer
+)
+from datetime import datetime, timedelta
+
+# Initialize with temporal support
+core = Semantica(
+    graph_db="neo4j",
+    enable_temporal=True,
+    temporal_granularity="day"
+)
+
+# Build temporal knowledge graph
+graph_builder = GraphBuilder(
+    enable_temporal=True,
+    temporal_granularity="day",
+    track_history=True,
+    version_snapshots=True
+)
+
+kg = graph_builder.build(
+    sources=documents,
+    entity_resolver=entity_resolver
+)
+
+# Add temporal edges with validity periods
+graph_builder.add_temporal_edge(
+    graph=kg,
+    source="Apple Inc.",
+    target="Steve Jobs",
+    relationship="founded_by",
+    valid_from="1976-04-01",
+    valid_until=None,  # Ongoing relationship
+    temporal_metadata={"timezone": "UTC", "precision": "day"}
+)
+
+graph_builder.add_temporal_edge(
+    graph=kg,
+    source="Apple Inc.",
+    target="Beats Electronics",
+    relationship="acquired",
+    valid_from="2014-05-28",
+    valid_until="2014-08-01",  # Acquisition completed
+    temporal_metadata={"amount": "$3B", "status": "completed"}
+)
+
+# Create temporal snapshot
+version_manager = TemporalVersionManager(
+    snapshot_interval=timedelta(days=30),
+    auto_snapshot=True
+)
+
+snapshot = version_manager.create_version(
+    graph=kg,
+    timestamp="2024-01-15",
+    version_label="Q1_2024",
+    metadata={"description": "Q1 2024 knowledge graph snapshot"}
+)
+
+# Query temporal graph
+temporal_query = TemporalGraphQuery(
+    enable_temporal_reasoning=True,
+    temporal_granularity="day"
+)
+
+# Query at specific time point
+results_at_2014 = temporal_query.query_at_time(
+    graph=kg,
+    query="Who founded Apple Inc.?",
+    at_time="2014-06-15",
+    include_history=True
+)
+
+# Query within time range
+results_range = temporal_query.query_time_range(
+    graph=kg,
+    query="What acquisitions did Apple make?",
+    start_time="2010-01-01",
+    end_time="2020-12-31",
+    temporal_aggregation="union"
+)
+
+# Analyze temporal evolution
+analyzer = GraphAnalyzer(enable_temporal=True)
+evolution = analyzer.analyze_temporal_evolution(
+    graph=kg,
+    start_time="2000-01-01",
+    end_time="2024-12-31",
+    metrics=["node_count", "edge_count", "density", "communities"],
+    interval=timedelta(days=365)  # Yearly snapshots
+)
+
+print("=== TEMPORAL EVOLUTION ===")
+for snapshot in evolution.snapshots:
+    print(f"{snapshot.timestamp}: {snapshot.metrics}")
+
+# Detect temporal patterns
+pattern_detector = TemporalPatternDetector()
+patterns = pattern_detector.detect_temporal_patterns(
+    graph=kg,
+    pattern_type="sequence",
+    min_frequency=2,
+    time_window=timedelta(days=365)
+)
+
+print(f"\n✅ Detected {len(patterns)} temporal patterns")
+
+# Find temporal paths
+temporal_paths = temporal_query.find_temporal_paths(
+    graph=kg,
+    source="Apple Inc.",
+    target="Beats Electronics",
+    start_time="2010-01-01",
+    end_time="2015-12-31",
+    max_path_length=3
+)
+
+print(f"\n✅ Found {len(temporal_paths)} temporal paths")
 ```
 
 **Advanced Graph Analytics**
@@ -1407,9 +1539,12 @@ print(f"  Missing properties: {report.missing_property_count}")
 #### Knowledge Graph (3 modules)
 
 **`semantica.kg`** - Graph construction & analysis
-- `GraphBuilder` - Knowledge graph construction
+- `GraphBuilder` - Knowledge graph construction with temporal support
 - `EntityResolver` - Entity resolution and deduplication
-- `GraphAnalyzer` - Graph analytics engine
+- `GraphAnalyzer` - Graph analytics engine with temporal evolution analysis
+- `TemporalGraphQuery` - Time-aware graph querying
+- `TemporalPatternDetector` - Temporal pattern detection
+- `TemporalVersionManager` - Temporal versioning and snapshots
 - `CentralityCalculator` - Centrality measures
 - `CommunityDetector` - Community detection
 - `ConnectivityAnalyzer` - Connectivity analysis
