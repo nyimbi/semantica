@@ -17,253 +17,332 @@ Main Classes:
     - TripleQualityChecker: Triple quality assessment
 """
 
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional
+from urllib.parse import quote
+
+from ..utils.exceptions import ProcessingError, ValidationError
+from ..utils.logging import get_logger
+from .ner_extractor import Entity
+from .relation_extractor import Relation
+
+
+@dataclass
+class Triple:
+    """RDF triple representation."""
+    
+    subject: str
+    predicate: str
+    object: str
+    confidence: float = 1.0
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
 
 class TripleExtractor:
-    """
-    RDF triple extraction handler.
-    
-    • Extracts RDF triples from text and data
-    • Generates subject-predicate-object structures
-    • Validates triple quality and consistency
-    • Supports various RDF serialization formats
-    • Handles batch triple processing
-    • Manages triple metadata and provenance
-    
-    Attributes:
-        • triple_validator: Triple validation engine
-        • rdf_serializer: RDF serialization handler
-        • quality_checker: Triple quality assessor
-        • supported_formats: List of supported RDF formats
-        • extraction_models: Triple extraction models
-        
-    Methods:
-        • extract_triples(): Extract triples from text
-        • validate_triples(): Validate triple quality
-        • serialize_triples(): Serialize triples to RDF
-        • process_batch(): Process multiple texts
-    """
+    """RDF triple extraction handler."""
     
     def __init__(self, config=None, **kwargs):
-        """
-        Initialize triple extractor.
+        """Initialize triple extractor."""
+        self.logger = get_logger("triple_extractor")
+        self.config = config or {}
+        self.config.update(kwargs)
         
-        • Setup triple extraction models
-        • Configure RDF serialization
-        • Initialize validation tools
-        • Setup quality assessment
-        • Configure batch processing
-        """
-        pass
+        self.triple_validator = TripleValidator(**self.config.get("validator", {}))
+        self.rdf_serializer = RDFSerializer(**self.config.get("serializer", {}))
+        self.quality_checker = TripleQualityChecker(**self.config.get("quality", {}))
+        
+        self.supported_formats = ["turtle", "ntriples", "jsonld", "xml"]
     
-    def extract_triples(self, text, entities=None, relationships=None, **options):
+    def extract_triples(
+        self,
+        text: str,
+        entities: Optional[List[Entity]] = None,
+        relationships: Optional[List[Relation]] = None,
+        **options
+    ) -> List[Triple]:
         """
         Extract RDF triples from text.
         
-        • Process text for triple patterns
-        • Extract subject-predicate-object structures
-        • Generate triple metadata
-        • Apply triple validation
-        • Calculate quality scores
-        • Return triple collection
+        Args:
+            text: Input text
+            entities: Pre-extracted entities (optional)
+            relationships: Pre-extracted relations (optional)
+            **options: Extraction options
+            
+        Returns:
+            list: List of extracted triples
         """
-        pass
+        from .ner_extractor import NERExtractor
+        from .relation_extractor import RelationExtractor
+        
+        # Extract entities if not provided
+        if entities is None:
+            ner = NERExtractor(**self.config.get("ner", {}))
+            entities = ner.extract_entities(text)
+        
+        # Extract relations if not provided
+        if relationships is None:
+            rel_extractor = RelationExtractor(**self.config.get("relation", {}))
+            relationships = rel_extractor.extract_relations(text, entities)
+        
+        # Convert relations to triples
+        triples = []
+        for relation in relationships:
+            triple = Triple(
+                subject=self._format_uri(relation.subject.text),
+                predicate=self._format_uri(relation.predicate),
+                object=self._format_uri(relation.object.text),
+                confidence=relation.confidence,
+                metadata={
+                    "context": relation.context,
+                    **relation.metadata
+                }
+            )
+            triples.append(triple)
+        
+        # Validate triples
+        if options.get("validate", True):
+            triples = self.triple_validator.validate_triples(triples)
+        
+        return triples
     
-    def validate_triples(self, triples, **criteria):
+    def _format_uri(self, value: str) -> str:
+        """Format value as URI."""
+        # Simple URI formatting
+        if value.startswith("http://") or value.startswith("https://"):
+            return value
+        
+        # Format as local URI
+        formatted = quote(value.replace(" ", "_"), safe="")
+        return f"http://example.org/{formatted}"
+    
+    def validate_triples(self, triples: List[Triple], **criteria) -> List[Triple]:
         """
         Validate triple quality and consistency.
         
-        • Check triple structure validity
-        • Validate subject-predicate-object relationships
-        • Check triple consistency
-        • Apply quality criteria
-        • Return validation results
+        Args:
+            triples: List of triples
+            **criteria: Validation criteria
+            
+        Returns:
+            list: Validated triples
         """
-        pass
+        return self.triple_validator.validate_triples(triples, **criteria)
     
-    def serialize_triples(self, triples, format="turtle", **options):
+    def serialize_triples(self, triples: List[Triple], format: str = "turtle", **options) -> str:
         """
         Serialize triples to RDF format.
         
-        • Convert triples to RDF format
-        • Apply serialization options
-        • Handle format-specific requirements
-        • Return serialized RDF
+        Args:
+            triples: List of triples
+            format: RDF format (turtle, ntriples, jsonld, xml)
+            **options: Serialization options
+            
+        Returns:
+            str: Serialized RDF
         """
-        pass
+        return self.rdf_serializer.serialize_to_rdf(triples, format, **options)
     
-    def process_batch(self, texts, **options):
+    def process_batch(self, texts: List[str], **options) -> List[List[Triple]]:
         """
         Process multiple texts for triple extraction.
         
-        • Process texts concurrently
-        • Extract triples from each text
-        • Aggregate triple results
-        • Handle processing errors
-        • Return batch results
+        Args:
+            texts: List of input texts
+            **options: Processing options
+            
+        Returns:
+            list: List of triple lists for each text
         """
-        pass
+        return [self.extract_triples(text, **options) for text in texts]
 
 
 class TripleValidator:
-    """
-    Triple validation engine.
-    
-    • Validates triple structure and content
-    • Checks triple consistency
-    • Handles validation rules
-    • Manages validation errors
-    """
+    """Triple validation engine."""
     
     def __init__(self, **config):
-        """
-        Initialize triple validator.
-        
-        • Setup validation rules
-        • Configure consistency checkers
-        • Initialize error handlers
-        • Setup quality metrics
-        """
-        pass
+        """Initialize triple validator."""
+        self.logger = get_logger("triple_validator")
+        self.config = config
     
-    def validate_triple(self, triple, **criteria):
+    def validate_triple(self, triple: Triple, **criteria) -> bool:
         """
         Validate individual triple.
         
-        • Check triple structure
-        • Validate subject-predicate-object
-        • Check triple consistency
-        • Return validation result
+        Args:
+            triple: Triple to validate
+            **criteria: Validation criteria
+            
+        Returns:
+            bool: True if valid
         """
-        pass
+        # Check structure
+        if not triple.subject or not triple.predicate or not triple.object:
+            return False
+        
+        # Check confidence
+        min_confidence = criteria.get("min_confidence", 0.5)
+        if triple.confidence < min_confidence:
+            return False
+        
+        return True
     
-    def check_triple_consistency(self, triples):
+    def validate_triples(self, triples: List[Triple], **criteria) -> List[Triple]:
+        """
+        Validate list of triples.
+        
+        Args:
+            triples: List of triples
+            **criteria: Validation criteria
+            
+        Returns:
+            list: Valid triples
+        """
+        return [t for t in triples if self.validate_triple(t, **criteria)]
+    
+    def check_triple_consistency(self, triples: List[Triple]) -> Dict[str, Any]:
         """
         Check consistency among triples.
         
-        • Analyze triple relationships
-        • Detect conflicts and contradictions
-        • Check logical consistency
-        • Return consistency report
+        Args:
+            triples: List of triples
+            
+        Returns:
+            dict: Consistency report
         """
-        pass
-    
-    def validate_triple_quality(self, triple, **metrics):
-        """
-        Validate triple quality metrics.
+        issues = []
         
-        • Check completeness
-        • Assess accuracy
-        • Evaluate relevance
-        • Return quality assessment
-        """
-        pass
+        # Check for contradictory triples
+        # (simplified - would need domain knowledge for full implementation)
+        
+        return {
+            "total_triples": len(triples),
+            "issues": issues,
+            "consistent": len(issues) == 0
+        }
 
 
 class RDFSerializer:
-    """
-    RDF serialization handler.
-    
-    • Serializes triples to RDF formats
-    • Handles various RDF serializations
-    • Manages RDF namespaces
-    • Processes RDF metadata
-    """
+    """RDF serialization handler."""
     
     def __init__(self, **config):
-        """
-        Initialize RDF serializer.
-        
-        • Setup RDF serialization libraries
-        • Configure format handlers
-        • Initialize namespace management
-        • Setup metadata processing
-        """
-        pass
+        """Initialize RDF serializer."""
+        self.logger = get_logger("rdf_serializer")
+        self.config = config
     
-    def serialize_to_rdf(self, triples, format="turtle", **options):
+    def serialize_to_rdf(self, triples: List[Triple], format: str = "turtle", **options) -> str:
         """
         Serialize triples to RDF format.
         
-        • Convert triples to RDF
-        • Apply format-specific serialization
-        • Handle namespace declarations
-        • Return serialized RDF
+        Args:
+            triples: List of triples
+            format: RDF format
+            **options: Serialization options
+            
+        Returns:
+            str: Serialized RDF
         """
-        pass
+        if format == "turtle":
+            return self._serialize_turtle(triples, **options)
+        elif format == "ntriples":
+            return self._serialize_ntriples(triples, **options)
+        elif format == "jsonld":
+            return self._serialize_jsonld(triples, **options)
+        elif format == "xml":
+            return self._serialize_xml(triples, **options)
+        else:
+            raise ValidationError(f"Unsupported RDF format: {format}")
     
-    def handle_namespaces(self, triples, **namespaces):
-        """
-        Handle RDF namespace declarations.
+    def _serialize_turtle(self, triples: List[Triple], **options) -> str:
+        """Serialize to Turtle format."""
+        lines = ["@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> ."]
         
-        • Extract namespace requirements
-        • Generate namespace declarations
-        • Handle namespace conflicts
-        • Return namespace declarations
-        """
-        pass
+        for triple in triples:
+            line = f"{triple.subject} <{triple.predicate}> {triple.object} ."
+            lines.append(line)
+        
+        return "\n".join(lines)
     
-    def add_metadata(self, triples, metadata):
-        """
-        Add metadata to RDF serialization.
+    def _serialize_ntriples(self, triples: List[Triple], **options) -> str:
+        """Serialize to N-Triples format."""
+        lines = []
+        for triple in triples:
+            line = f"<{triple.subject}> <{triple.predicate}> <{triple.object}> ."
+            lines.append(line)
+        return "\n".join(lines)
+    
+    def _serialize_jsonld(self, triples: List[Triple], **options) -> str:
+        """Serialize to JSON-LD format."""
+        import json
         
-        • Process triple metadata
-        • Add provenance information
-        • Include quality metrics
-        • Return enhanced RDF
-        """
-        pass
+        graph = []
+        for triple in triples:
+            graph.append({
+                "@id": triple.subject,
+                triple.predicate: triple.object
+            })
+        
+        return json.dumps({"@graph": graph}, indent=2)
+    
+    def _serialize_xml(self, triples: List[Triple], **options) -> str:
+        """Serialize to RDF/XML format."""
+        lines = ['<?xml version="1.0"?>', '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">']
+        
+        for triple in triples:
+            lines.append(f'  <rdf:Description rdf:about="{triple.subject}">')
+            lines.append(f'    <{triple.predicate}>{triple.object}</{triple.predicate}>')
+            lines.append('  </rdf:Description>')
+        
+        lines.append('</rdf:RDF>')
+        return "\n".join(lines)
 
 
 class TripleQualityChecker:
-    """
-    Triple quality assessment engine.
-    
-    • Assesses triple quality metrics
-    • Calculates quality scores
-    • Handles quality thresholds
-    • Manages quality reporting
-    """
+    """Triple quality assessment engine."""
     
     def __init__(self, **config):
-        """
-        Initialize triple quality checker.
-        
-        • Setup quality metrics
-        • Configure scoring algorithms
-        • Initialize threshold management
-        • Setup reporting tools
-        """
-        pass
+        """Initialize triple quality checker."""
+        self.logger = get_logger("triple_quality_checker")
+        self.config = config
     
-    def assess_triple_quality(self, triple, **metrics):
+    def assess_triple_quality(self, triple: Triple, **metrics) -> Dict[str, Any]:
         """
         Assess quality of individual triple.
         
-        • Calculate quality metrics
-        • Apply scoring algorithms
-        • Check quality thresholds
-        • Return quality assessment
+        Args:
+            triple: Triple to assess
+            **metrics: Quality metrics
+            
+        Returns:
+            dict: Quality assessment
         """
-        pass
+        return {
+            "confidence": triple.confidence,
+            "completeness": 1.0 if triple.subject and triple.predicate and triple.object else 0.0,
+            "quality_score": triple.confidence
+        }
     
-    def calculate_quality_scores(self, triples, **options):
+    def calculate_quality_scores(self, triples: List[Triple], **options) -> Dict[str, Any]:
         """
         Calculate quality scores for triples.
         
-        • Apply quality metrics
-        • Calculate composite scores
-        • Handle quality weighting
-        • Return quality scores
+        Args:
+            triples: List of triples
+            **options: Quality options
+            
+        Returns:
+            dict: Quality scores
         """
-        pass
-    
-    def generate_quality_report(self, triples, **options):
-        """
-        Generate quality report for triples.
+        if not triples:
+            return {}
         
-        • Analyze quality metrics
-        • Generate quality statistics
-        • Create quality recommendations
-        • Return quality report
-        """
-        pass
+        scores = [self.assess_triple_quality(t)["quality_score"] for t in triples]
+        
+        return {
+            "average_score": sum(scores) / len(scores),
+            "min_score": min(scores),
+            "max_score": max(scores),
+            "high_quality": len([s for s in scores if s >= 0.8]),
+            "medium_quality": len([s for s in scores if 0.5 <= s < 0.8]),
+            "low_quality": len([s for s in scores if s < 0.5])
+        }

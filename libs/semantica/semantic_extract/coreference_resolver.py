@@ -17,258 +17,317 @@ Main Classes:
     - CoreferenceChainBuilder: Coreference chain construction
 """
 
+from dataclasses import dataclass, field
+import re
+from typing import Any, Dict, List, Optional, Tuple
+
+from ..utils.exceptions import ProcessingError
+from ..utils.logging import get_logger
+from .ner_extractor import Entity
+
+
+@dataclass
+class Mention:
+    """Mention representation."""
+    
+    text: str
+    start_char: int
+    end_char: int
+    mention_type: str  # pronoun, entity, nominal
+    entity_id: Optional[str] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class CoreferenceChain:
+    """Coreference chain representation."""
+    
+    mentions: List[Mention]
+    representative: Mention
+    entity_type: Optional[str] = None
+
 
 class CoreferenceResolver:
-    """
-    Coreference resolution handler.
-    
-    • Resolves coreferences and pronoun references
-    • Identifies entity coreference chains
-    • Handles cross-document coreference
-    • Resolves ambiguous references
-    • Manages coreference consistency
-    • Supports multiple languages
-    
-    Attributes:
-        • pronoun_resolver: Pronoun resolution engine
-        • entity_detector: Entity coreference detector
-        • chain_builder: Coreference chain builder
-        • ambiguity_resolver: Ambiguity resolution engine
-        • supported_languages: List of supported languages
-        
-    Methods:
-        • resolve_coreferences(): Resolve coreferences in text
-        • build_coreference_chains(): Build coreference chains
-        • resolve_pronouns(): Resolve pronoun references
-        • detect_entity_coreferences(): Detect entity coreferences
-    """
+    """Coreference resolution handler."""
     
     def __init__(self, config=None, **kwargs):
-        """
-        Initialize coreference resolver.
+        """Initialize coreference resolver."""
+        self.logger = get_logger("coreference_resolver")
+        self.config = config or {}
+        self.config.update(kwargs)
         
-        • Setup coreference resolution models
-        • Configure pronoun resolution
-        • Initialize entity detection
-        • Setup chain building
-        • Configure ambiguity resolution
-        """
-        pass
+        self.pronoun_resolver = PronounResolver(**self.config.get("pronoun", {}))
+        self.entity_detector = EntityCoreferenceDetector(**self.config.get("entity", {}))
+        self.chain_builder = CoreferenceChainBuilder(**self.config.get("chain", {}))
     
-    def resolve_coreferences(self, text, **options):
+    def resolve_coreferences(self, text: str, **options) -> List[CoreferenceChain]:
         """
         Resolve coreferences in text.
         
-        • Identify coreference mentions
-        • Resolve pronoun references
-        • Detect entity coreferences
-        • Build coreference chains
-        • Handle ambiguous references
-        • Return resolved coreferences
+        Args:
+            text: Input text
+            **options: Resolution options
+            
+        Returns:
+            list: List of coreference chains
         """
-        pass
+        # Extract mentions
+        mentions = self._extract_mentions(text)
+        
+        # Resolve pronouns
+        pronoun_resolutions = self.pronoun_resolver.resolve_pronouns(text, mentions, **options)
+        
+        # Detect entity coreferences
+        entity_corefs = self.entity_detector.detect_entity_coreferences(text, mentions, **options)
+        
+        # Build chains
+        chains = self.chain_builder.build_coreference_chains(mentions, **options)
+        
+        return chains
     
-    def build_coreference_chains(self, mentions, **options):
+    def _extract_mentions(self, text: str) -> List[Mention]:
+        """Extract all mentions from text."""
+        mentions = []
+        
+        # Extract pronouns
+        pronoun_patterns = {
+            "he": r"\bhe\b",
+            "she": r"\bshe\b",
+            "it": r"\bit\b",
+            "they": r"\bthey\b",
+            "his": r"\bhis\b",
+            "her": r"\bher\b",
+            "their": r"\btheir\b"
+        }
+        
+        for pronoun, pattern in pronoun_patterns.items():
+            for match in re.finditer(pattern, text, re.IGNORECASE):
+                mentions.append(Mention(
+                    text=match.group(0),
+                    start_char=match.start(),
+                    end_char=match.end(),
+                    mention_type="pronoun",
+                    metadata={"pronoun": pronoun}
+                ))
+        
+        return mentions
+    
+    def build_coreference_chains(self, mentions: List[Mention], **options) -> List[CoreferenceChain]:
         """
         Build coreference chains from mentions.
         
-        • Group related mentions
-        • Identify chain heads
-        • Build chain structures
-        • Validate chain consistency
-        • Return coreference chains
+        Args:
+            mentions: List of mentions
+            **options: Chain building options
+            
+        Returns:
+            list: List of coreference chains
         """
-        pass
+        return self.chain_builder.build_coreference_chains(mentions, **options)
     
-    def resolve_pronouns(self, text, **options):
+    def resolve_pronouns(self, text: str, **options) -> List[Tuple[str, str]]:
         """
         Resolve pronoun references in text.
         
-        • Identify pronoun mentions
-        • Find antecedent candidates
-        • Apply resolution rules
-        • Handle ambiguous cases
-        • Return pronoun resolutions
+        Args:
+            text: Input text
+            **options: Resolution options
+            
+        Returns:
+            list: List of (pronoun, antecedent) tuples
         """
-        pass
+        mentions = self._extract_mentions(text)
+        return self.pronoun_resolver.resolve_pronouns(text, mentions, **options)
     
-    def detect_entity_coreferences(self, text, entities, **options):
+    def detect_entity_coreferences(self, text: str, entities: List[Entity], **options) -> List[CoreferenceChain]:
         """
         Detect entity coreferences in text.
         
-        • Identify entity mentions
-        • Group coreferent mentions
-        • Apply entity resolution rules
-        • Handle entity ambiguity
-        • Return entity coreferences
+        Args:
+            text: Input text
+            entities: List of entities
+            **options: Detection options
+            
+        Returns:
+            list: List of coreference chains
         """
-        pass
+        # Convert entities to mentions
+        mentions = [
+            Mention(
+                text=e.text,
+                start_char=e.start_char,
+                end_char=e.end_char,
+                mention_type="entity",
+                metadata={"entity_label": e.label}
+            )
+            for e in entities
+        ]
+        
+        return self.entity_detector.detect_entity_coreferences(text, mentions, **options)
 
 
 class PronounResolver:
-    """
-    Pronoun resolution engine.
-    
-    • Resolves pronoun references
-    • Handles different pronoun types
-    • Manages pronoun ambiguity
-    • Processes pronoun rules
-    """
+    """Pronoun resolution engine."""
     
     def __init__(self, **config):
-        """
-        Initialize pronoun resolver.
-        
-        • Setup pronoun resolution models
-        • Configure pronoun types
-        • Initialize resolution rules
-        • Setup ambiguity handling
-        """
-        pass
+        """Initialize pronoun resolver."""
+        self.logger = get_logger("pronoun_resolver")
+        self.config = config
     
-    def resolve_pronouns(self, text, **options):
+    def resolve_pronouns(
+        self,
+        text: str,
+        mentions: List[Mention],
+        **options
+    ) -> List[Tuple[str, str]]:
         """
         Resolve pronoun references in text.
         
-        • Identify pronoun mentions
-        • Find antecedent candidates
-        • Apply resolution algorithms
-        • Handle resolution conflicts
-        • Return pronoun resolutions
+        Args:
+            text: Input text
+            mentions: List of mentions
+            **options: Resolution options
+            
+        Returns:
+            list: List of (pronoun, antecedent) tuples
         """
-        pass
-    
-    def find_antecedents(self, pronoun, text, **constraints):
-        """
-        Find antecedent candidates for pronoun.
+        resolutions = []
         
-        • Search for potential antecedents
-        • Apply grammatical constraints
-        • Check semantic compatibility
-        • Return antecedent candidates
-        """
-        pass
-    
-    def resolve_pronoun_ambiguity(self, pronoun, candidates, **context):
-        """
-        Resolve ambiguity in pronoun resolution.
+        # Get pronouns and entities
+        pronouns = [m for m in mentions if m.mention_type == "pronoun"]
+        entities = [m for m in mentions if m.mention_type == "entity" or m.mention_type == "nominal"]
         
-        • Analyze candidate antecedents
-        • Apply disambiguation rules
-        • Use contextual information
-        • Select best antecedent
-        • Return resolution result
-        """
-        pass
+        # Simple resolution: find closest preceding entity
+        for pronoun in pronouns:
+            # Find preceding entities
+            preceding = [e for e in entities if e.end_char < pronoun.start_char]
+            
+            if preceding:
+                # Take closest
+                antecedent = max(preceding, key=lambda e: e.end_char)
+                resolutions.append((pronoun.text, antecedent.text))
+        
+        return resolutions
 
 
 class EntityCoreferenceDetector:
-    """
-    Entity coreference detection engine.
-    
-    • Detects entity coreferences
-    • Handles entity mention grouping
-    • Manages entity resolution
-    • Processes entity chains
-    """
+    """Entity coreference detection."""
     
     def __init__(self, **config):
-        """
-        Initialize entity coreference detector.
-        
-        • Setup entity detection models
-        • Configure mention grouping
-        • Initialize resolution algorithms
-        • Setup chain processing
-        """
-        pass
+        """Initialize entity coreference detector."""
+        self.logger = get_logger("entity_coreference_detector")
+        self.config = config
     
-    def detect_entity_coreferences(self, text, entities, **options):
+    def detect_entity_coreferences(
+        self,
+        text: str,
+        mentions: List[Mention],
+        **options
+    ) -> List[CoreferenceChain]:
         """
         Detect entity coreferences in text.
         
-        • Identify entity mentions
-        • Group coreferent mentions
-        • Apply resolution rules
-        • Handle entity conflicts
-        • Return coreference groups
+        Args:
+            text: Input text
+            mentions: List of mentions
+            **options: Detection options
+            
+        Returns:
+            list: List of coreference chains
         """
-        pass
-    
-    def group_entity_mentions(self, mentions, **criteria):
-        """
-        Group entity mentions into coreference sets.
+        chains = []
         
-        • Apply grouping criteria
-        • Handle mention similarity
-        • Process grouping conflicts
-        • Return grouped mentions
-        """
-        pass
-    
-    def resolve_entity_conflicts(self, conflicting_mentions):
-        """
-        Resolve conflicts in entity coreference.
+        # Group mentions by text similarity
+        entity_mentions = [m for m in mentions if m.mention_type in ["entity", "nominal"]]
         
-        • Identify conflict types
-        • Apply resolution strategies
-        • Handle entity ambiguity
-        • Return resolved entities
-        """
-        pass
+        # Simple grouping by exact text match
+        text_groups = {}
+        for mention in entity_mentions:
+            key = mention.text.lower()
+            if key not in text_groups:
+                text_groups[key] = []
+            text_groups[key].append(mention)
+        
+        # Create chains from groups
+        for key, group_mentions in text_groups.items():
+            if len(group_mentions) > 1:
+                # Use first mention as representative
+                representative = group_mentions[0]
+                chain = CoreferenceChain(
+                    mentions=group_mentions,
+                    representative=representative
+                )
+                chains.append(chain)
+        
+        return chains
 
 
 class CoreferenceChainBuilder:
-    """
-    Coreference chain construction engine.
-    
-    • Builds coreference chains
-    • Manages chain consistency
-    • Handles chain validation
-    • Processes chain relationships
-    """
+    """Coreference chain construction."""
     
     def __init__(self, **config):
-        """
-        Initialize coreference chain builder.
-        
-        • Setup chain building algorithms
-        • Configure consistency checking
-        • Initialize validation tools
-        • Setup relationship processing
-        """
-        pass
+        """Initialize coreference chain builder."""
+        self.logger = get_logger("coreference_chain_builder")
+        self.config = config
     
-    def build_coreference_chains(self, mentions, **options):
+    def build_coreference_chains(self, mentions: List[Mention], **options) -> List[CoreferenceChain]:
         """
         Build coreference chains from mentions.
         
-        • Group related mentions
-        • Identify chain heads
-        • Build chain structures
-        • Validate chain consistency
-        • Return coreference chains
+        Args:
+            mentions: List of mentions
+            **options: Chain building options
+            
+        Returns:
+            list: List of coreference chains
         """
-        pass
-    
-    def validate_chain_consistency(self, chain):
-        """
-        Validate coreference chain consistency.
+        chains = []
         
-        • Check chain structure
-        • Validate mention relationships
-        • Check semantic consistency
-        • Return validation result
-        """
-        pass
-    
-    def merge_coreference_chains(self, chains):
-        """
-        Merge related coreference chains.
+        # Simple implementation: group by text similarity
+        processed = set()
         
-        • Identify related chains
-        • Merge chain structures
-        • Handle merge conflicts
-        • Return merged chains
-        """
-        pass
+        for mention in mentions:
+            if mention.text.lower() in processed:
+                continue
+            
+            # Find similar mentions
+            similar = [
+                m for m in mentions
+                if m.text.lower() == mention.text.lower() or
+                self._similar_mentions(mention.text, m.text)
+            ]
+            
+            if len(similar) > 1:
+                processed.add(mention.text.lower())
+                
+                # Representative is first (leftmost) mention
+                representative = min(similar, key=lambda m: m.start_char)
+                
+                chain = CoreferenceChain(
+                    mentions=similar,
+                    representative=representative,
+                    entity_type=similar[0].metadata.get("entity_label")
+                )
+                chains.append(chain)
+        
+        return chains
+    
+    def _similar_mentions(self, text1: str, text2: str) -> bool:
+        """Check if two mentions are similar."""
+        t1_lower = text1.lower()
+        t2_lower = text2.lower()
+        
+        # Exact match
+        if t1_lower == t2_lower:
+            return True
+        
+        # One contains the other
+        if t1_lower in t2_lower or t2_lower in t1_lower:
+            return True
+        
+        # Word overlap
+        words1 = set(t1_lower.split())
+        words2 = set(t2_lower.split())
+        overlap = len(words1 & words2) / max(len(words1), len(words2)) if words1 or words2 else 0
+        
+        return overlap > 0.7
