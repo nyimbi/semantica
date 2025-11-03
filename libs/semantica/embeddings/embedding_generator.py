@@ -17,6 +17,19 @@ Main Classes:
     - EmbeddingOptimizer: Embedding optimization engine
 """
 
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+
+import numpy as np
+
+from ..utils.exceptions import ProcessingError
+from ..utils.logging import get_logger
+from .text_embedder import TextEmbedder
+from .image_embedder import ImageEmbedder
+from .audio_embedder import AudioEmbedder
+from .multimodal_embedder import MultimodalEmbedder
+from .embedding_optimizer import EmbeddingOptimizer
+
 
 class EmbeddingGenerator:
     """
@@ -28,252 +41,175 @@ class EmbeddingGenerator:
     • Optimizes embedding quality
     • Manages embedding metadata
     • Supports various embedding formats
-    
-    Attributes:
-        • text_embedder: Text embedding generator
-        • multimodal_embedder: Multi-modal embedding generator
-        • embedding_optimizer: Embedding optimization engine
-        • quality_assessor: Embedding quality assessor
-        • supported_models: List of supported models
-        
-    Methods:
-        • generate_embeddings(): Generate embeddings for data
-        • optimize_embeddings(): Optimize embedding quality
-        • compare_embeddings(): Compare embedding similarity
-        • process_batch(): Process multiple data items
     """
     
     def __init__(self, config=None, **kwargs):
-        """
-        Initialize embedding generator.
+        """Initialize embedding generator."""
+        self.logger = get_logger("embedding_generator")
+        self.config = config or {}
+        self.config.update(kwargs)
         
-        • Setup embedding models
-        • Configure generation parameters
-        • Initialize optimization tools
-        • Setup quality assessment
-        • Configure batch processing
-        """
-        pass
+        # Initialize embedders
+        self.text_embedder = TextEmbedder(**self.config.get("text", {}))
+        self.image_embedder = ImageEmbedder(**self.config.get("image", {}))
+        self.audio_embedder = AudioEmbedder(**self.config.get("audio", {}))
+        self.multimodal_embedder = MultimodalEmbedder(**self.config.get("multimodal", {}))
+        self.embedding_optimizer = EmbeddingOptimizer(**self.config.get("optimizer", {}))
+        
+        # Supported models
+        self.supported_models = ["sentence-transformers", "openai", "bge", "clip"]
     
-    def generate_embeddings(self, data, **options):
+    def generate_embeddings(self, data: Union[str, Path, List], data_type: Optional[str] = None, **options) -> np.ndarray:
         """
         Generate embeddings for data.
         
-        • Process data with embedding models
-        • Generate vector representations
-        • Apply embedding optimizations
-        • Calculate quality metrics
-        • Return generated embeddings
+        Args:
+            data: Input data (text, file path, or list)
+            data_type: Data type ("text", "image", "audio", auto-detected if None)
+            **options: Generation options
+            
+        Returns:
+            np.ndarray: Generated embeddings
         """
-        pass
+        # Auto-detect data type
+        if data_type is None:
+            data_type = self._detect_data_type(data)
+        
+        if data_type == "text":
+            if isinstance(data, str):
+                return self.text_embedder.embed_text(data, **options)
+            elif isinstance(data, list):
+                return self.text_embedder.embed_batch(data, **options)
+        elif data_type == "image":
+            if isinstance(data, (str, Path)):
+                return self.image_embedder.embed_image(data, **options)
+            elif isinstance(data, list):
+                return self.image_embedder.embed_batch(data, **options)
+        elif data_type == "audio":
+            if isinstance(data, (str, Path)):
+                return self.audio_embedder.embed_audio(data, **options)
+            elif isinstance(data, list):
+                return self.audio_embedder.embed_batch(data, **options)
+        else:
+            raise ProcessingError(f"Unsupported data type: {data_type}")
     
-    def optimize_embeddings(self, embeddings, **options):
+    def _detect_data_type(self, data: Union[str, Path, List]) -> str:
+        """Detect data type from input."""
+        if isinstance(data, list):
+            if not data:
+                return "text"
+            # Check first item
+            return self._detect_data_type(data[0])
+        
+        if isinstance(data, Path) or (isinstance(data, str) and Path(data).exists()):
+            file_path = Path(data)
+            suffix = file_path.suffix.lower()
+            
+            image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp']
+            audio_extensions = ['.mp3', '.wav', '.flac', '.aac', '.ogg']
+            
+            if suffix in image_extensions:
+                return "image"
+            elif suffix in audio_extensions:
+                return "audio"
+        
+        return "text"
+    
+    def optimize_embeddings(self, embeddings: np.ndarray, **options) -> np.ndarray:
         """
         Optimize embedding quality and performance.
         
-        • Analyze embedding characteristics
-        • Apply optimization algorithms
-        • Improve embedding quality
-        • Handle dimensionality reduction
-        • Return optimized embeddings
+        Args:
+            embeddings: Input embeddings
+            **options: Optimization options
+            
+        Returns:
+            np.ndarray: Optimized embeddings
         """
-        pass
+        return self.embedding_optimizer.compress(embeddings, **options)
     
-    def compare_embeddings(self, embedding1, embedding2, **options):
+    def compare_embeddings(self, embedding1: np.ndarray, embedding2: np.ndarray, **options) -> float:
         """
         Compare embeddings for similarity.
         
-        • Calculate similarity metrics
-        • Apply comparison algorithms
-        • Handle different embedding types
-        • Return similarity scores
+        Args:
+            embedding1: First embedding
+            embedding2: Second embedding
+            **options: Comparison options:
+                - method: Similarity method ("cosine", "euclidean")
+                
+        Returns:
+            float: Similarity score (0-1)
         """
-        pass
+        method = options.get("method", "cosine")
+        
+        if method == "cosine":
+            return self._cosine_similarity(embedding1, embedding2)
+        elif method == "euclidean":
+            return self._euclidean_similarity(embedding1, embedding2)
+        else:
+            return self._cosine_similarity(embedding1, embedding2)
     
-    def process_batch(self, data_items, **options):
+    def _cosine_similarity(self, emb1: np.ndarray, emb2: np.ndarray) -> float:
+        """Compute cosine similarity."""
+        dot_product = np.dot(emb1, emb2)
+        norm1 = np.linalg.norm(emb1)
+        norm2 = np.linalg.norm(emb2)
+        
+        if norm1 == 0 or norm2 == 0:
+            return 0.0
+        
+        return float(dot_product / (norm1 * norm2))
+    
+    def _euclidean_similarity(self, emb1: np.ndarray, emb2: np.ndarray) -> float:
+        """Compute Euclidean similarity (converted to 0-1 scale)."""
+        distance = np.linalg.norm(emb1 - emb2)
+        # Normalize to 0-1 (simple approach)
+        max_distance = np.linalg.norm(emb1) + np.linalg.norm(emb2)
+        similarity = 1.0 - (distance / max_distance) if max_distance > 0 else 0.0
+        return max(0.0, min(1.0, similarity))
+    
+    def process_batch(self, data_items: List[Union[str, Path]], **options) -> Dict[str, Any]:
         """
         Process multiple data items for embedding generation.
         
-        • Process items concurrently
-        • Generate embeddings for each item
-        • Aggregate embedding results
-        • Handle processing errors
-        • Return batch results
+        Args:
+            data_items: List of data items
+            **options: Processing options
+            
+        Returns:
+            dict: Batch processing results
         """
-        pass
+        results = {
+            "embeddings": [],
+            "successful": [],
+            "failed": []
+        }
+        
+        for item in data_items:
+            try:
+                embedding = self.generate_embeddings(item, **options)
+                results["embeddings"].append(embedding)
+                results["successful"].append(str(item))
+            except Exception as e:
+                results["failed"].append({
+                    "item": str(item),
+                    "error": str(e)
+                })
+        
+        results["total"] = len(data_items)
+        results["success_count"] = len(results["successful"])
+        results["failure_count"] = len(results["failed"])
+        
+        return results
 
 
-class TextEmbedder:
-    """
-    Text-specific embedding generation engine.
-    
-    • Generates embeddings for text content
-    • Handles different text formats
-    • Manages text preprocessing
-    • Processes text chunks and segments
-    """
-    
-    def __init__(self, **config):
-        """
-        Initialize text embedder.
-        
-        • Setup text embedding models
-        • Configure text preprocessing
-        • Initialize chunking strategies
-        • Setup embedding parameters
-        """
-        pass
-    
-    def embed_text(self, text, **options):
-        """
-        Generate embeddings for text.
-        
-        • Preprocess text content
-        • Apply embedding models
-        • Handle text length limitations
-        • Return text embeddings
-        """
-        pass
-    
-    def embed_text_chunks(self, text_chunks, **options):
-        """
-        Generate embeddings for text chunks.
-        
-        • Process multiple text chunks
-        • Generate embeddings for each chunk
-        • Handle chunk relationships
-        • Return chunk embeddings
-        """
-        pass
-    
-    def embed_documents(self, documents, **options):
-        """
-        Generate embeddings for documents.
-        
-        • Process document content
-        • Generate document-level embeddings
-        • Handle document metadata
-        • Return document embeddings
-        """
-        pass
+# Re-export classes from other modules for convenience
+from .text_embedder import TextEmbedder as TextEmbedderImpl
+from .multimodal_embedder import MultimodalEmbedder as MultimodalEmbedderImpl
+from .embedding_optimizer import EmbeddingOptimizer as EmbeddingOptimizerImpl
 
-
-class MultiModalEmbedder:
-    """
-    Multi-modal embedding generation engine.
-    
-    • Generates embeddings for multiple data types
-    • Handles text, images, audio, and other modalities
-    • Manages cross-modal embedding alignment
-    • Processes multi-modal data fusion
-    """
-    
-    def __init__(self, **config):
-        """
-        Initialize multi-modal embedder.
-        
-        • Setup modality-specific embedders
-        • Configure cross-modal alignment
-        • Initialize fusion strategies
-        • Setup embedding integration
-        """
-        pass
-    
-    def embed_multimodal(self, data, **options):
-        """
-        Generate embeddings for multi-modal data.
-        
-        • Process different data modalities
-        • Generate modality-specific embeddings
-        • Align embeddings across modalities
-        • Return multi-modal embeddings
-        """
-        pass
-    
-    def align_embeddings(self, embeddings1, embeddings2, **options):
-        """
-        Align embeddings across modalities.
-        
-        • Calculate alignment transformations
-        • Apply cross-modal alignment
-        • Handle embedding space differences
-        • Return aligned embeddings
-        """
-        pass
-    
-    def fuse_embeddings(self, embeddings, **options):
-        """
-        Fuse embeddings from multiple modalities.
-        
-        • Combine embeddings from different modalities
-        • Apply fusion strategies
-        • Handle embedding weighting
-        • Return fused embeddings
-        """
-        pass
-
-
-class EmbeddingOptimizer:
-    """
-    Embedding optimization engine.
-    
-    • Optimizes embedding quality and performance
-    • Handles dimensionality reduction
-    • Manages embedding fine-tuning
-    • Processes embedding quality assessment
-    """
-    
-    def __init__(self, **config):
-        """
-        Initialize embedding optimizer.
-        
-        • Setup optimization algorithms
-        • Configure quality metrics
-        • Initialize fine-tuning tools
-        • Setup assessment methods
-        """
-        pass
-    
-    def optimize_embeddings(self, embeddings, **options):
-        """
-        Optimize embedding quality and performance.
-        
-        • Analyze embedding characteristics
-        • Apply optimization algorithms
-        • Improve embedding quality
-        • Return optimized embeddings
-        """
-        pass
-    
-    def reduce_dimensionality(self, embeddings, target_dimensions):
-        """
-        Reduce embedding dimensionality.
-        
-        • Apply dimensionality reduction
-        • Preserve important information
-        • Handle different reduction methods
-        • Return reduced embeddings
-        """
-        pass
-    
-    def fine_tune_embeddings(self, embeddings, training_data, **options):
-        """
-        Fine-tune embeddings on specific data.
-        
-        • Prepare training data
-        • Apply fine-tuning algorithms
-        • Optimize for specific tasks
-        • Return fine-tuned embeddings
-        """
-        pass
-    
-    def assess_embedding_quality(self, embeddings, **metrics):
-        """
-        Assess embedding quality using various metrics.
-        
-        • Calculate quality metrics
-        • Assess embedding coherence
-        • Evaluate embedding performance
-        • Return quality assessment
-        """
-        pass
+# Make classes available with same names
+TextEmbedder = TextEmbedderImpl
+MultiModalEmbedder = MultimodalEmbedderImpl
+EmbeddingOptimizer = EmbeddingOptimizerImpl
