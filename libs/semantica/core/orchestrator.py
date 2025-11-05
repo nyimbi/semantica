@@ -332,9 +332,22 @@ class Semantica:
     
     def _initialize_modules(self) -> None:
         """Initialize framework modules."""
-        # Module initialization will be implemented when modules are available
-        # For now, this is a placeholder
-        pass
+        # Initialize core modules if needed
+        # This is called during startup to ensure all modules are ready
+        try:
+            # Import and initialize key modules to ensure they're available
+            from ..kg import GraphBuilder
+            from ..pipeline import PipelineBuilder
+            from ..ingest import FileIngestor
+            from ..parse import DocumentParser
+            
+            # Log initialization
+            if hasattr(self, 'logger'):
+                self.logger.debug("Framework modules initialized")
+        except ImportError as e:
+            # Log but don't fail - modules may be optional
+            if hasattr(self, 'logger'):
+                self.logger.warning(f"Some modules could not be imported: {e}")
     
     def _load_plugins(self) -> None:
         """Load configured plugins."""
@@ -393,8 +406,28 @@ class Semantica:
     
     def _release_resources(self, resources: Dict[str, Any]) -> None:
         """Release allocated resources."""
-        # Resource release logic
-        pass
+        if not resources:
+            return
+        
+        # Release any allocated resources
+        if "connections" in resources:
+            for conn in resources.get("connections", []):
+                try:
+                    if hasattr(conn, "close"):
+                        conn.close()
+                except Exception:
+                    pass
+        
+        if "files" in resources:
+            for file_obj in resources.get("files", []):
+                try:
+                    if hasattr(file_obj, "close"):
+                        file_obj.close()
+                except Exception:
+                    pass
+        
+        # Clear resource dictionary
+        resources.clear()
     
     def _collect_metrics(self, pipeline: Any) -> Dict[str, Any]:
         """Collect performance metrics from pipeline execution."""

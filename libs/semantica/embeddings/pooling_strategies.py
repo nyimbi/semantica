@@ -27,7 +27,11 @@ class PoolingStrategy:
         Returns:
             np.ndarray: Pooled embedding (dim,)
         """
-        raise NotImplementedError
+        # Base implementation - should be overridden
+        # Default: return mean pooling
+        if embeddings.ndim == 2:
+            return embeddings.mean(axis=0)
+        return embeddings
 
 
 class MeanPooling(PoolingStrategy):

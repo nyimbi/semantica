@@ -50,11 +50,12 @@ class TemporalGraphQuery:
         self.temporal_granularity = temporal_granularity
         self.max_temporal_depth = max_temporal_depth
         
-        # TODO: Implement temporal query engine
-        # - Time-aware query execution
-        # - Temporal reasoning and inference
-        # - Pattern detection in temporal context
-        # - Evolution analysis
+        # Initialize temporal query engine
+        from ..utils.logging import get_logger
+        self.logger = get_logger("temporal_query")
+        
+        # Initialize pattern detector
+        self.pattern_detector = TemporalPatternDetector(**kwargs.get("pattern_detection", {}))
     
     def query_at_time(
         self,
@@ -79,8 +80,42 @@ class TemporalGraphQuery:
         Returns:
             Query results valid at specified time
         """
-        # TODO: Implement time-point queries
-        pass
+        self.logger.info(f"Querying graph at time: {at_time}")
+        
+        # Parse time
+        query_time = self._parse_time(at_time)
+        
+        # Filter relationships valid at query time
+        relationships = []
+        if "relationships" in graph:
+            for rel in graph.get("relationships", []):
+                valid_from = self._parse_time(rel.get("valid_from"))
+                valid_until = self._parse_time(rel.get("valid_until"))
+                
+                # Check if relationship is valid at query time
+                if valid_from and self._compare_times(query_time, valid_from) < 0:
+                    continue
+                if valid_until and self._compare_times(query_time, valid_until) > 0:
+                    continue
+                
+                relationships.append(rel)
+        
+        # Get entities
+        entities = graph.get("entities", [])
+        
+        # Include history if requested
+        if include_history:
+            # Add all relationships with temporal information
+            relationships = graph.get("relationships", [])
+        
+        return {
+            "query": query,
+            "at_time": query_time,
+            "entities": entities,
+            "relationships": relationships,
+            "num_entities": len(entities),
+            "num_relationships": len(relationships)
+        }
     
     def query_time_range(
         self,
@@ -107,8 +142,47 @@ class TemporalGraphQuery:
         Returns:
             Query results within time range
         """
-        # TODO: Implement time-range queries
-        pass
+        self.logger.info(f"Querying graph in time range: {start_time} to {end_time}")
+        
+        # Parse times
+        start = self._parse_time(start_time)
+        end = self._parse_time(end_time)
+        
+        # Filter relationships valid in time range
+        relationships = []
+        if "relationships" in graph:
+            for rel in graph.get("relationships", []):
+                valid_from = self._parse_time(rel.get("valid_from"))
+                valid_until = self._parse_time(rel.get("valid_until"))
+                
+                # Check if relationship overlaps with time range
+                if valid_from and self._compare_times(end, valid_from) < 0:
+                    continue
+                if valid_until and self._compare_times(start, valid_until) > 0:
+                    continue
+                
+                relationships.append(rel)
+        
+        # Aggregate based on strategy
+        if temporal_aggregation == "intersection":
+            # Only relationships valid throughout the entire range
+            relationships = [
+                rel for rel in relationships
+                if self._parse_time(rel.get("valid_from")) <= start and
+                (not rel.get("valid_until") or self._parse_time(rel.get("valid_until")) >= end)
+            ]
+        elif temporal_aggregation == "evolution":
+            # Group by time periods
+            relationships = self._group_by_time_periods(relationships, start, end)
+        
+        return {
+            "query": query,
+            "start_time": start,
+            "end_time": end,
+            "relationships": relationships,
+            "num_relationships": len(relationships),
+            "aggregation": temporal_aggregation
+        }
     
     def query_temporal_pattern(
         self,
@@ -131,8 +205,22 @@ class TemporalGraphQuery:
         Returns:
             Matching temporal patterns
         """
-        # TODO: Implement temporal pattern queries
-        pass
+        self.logger.info(f"Querying temporal patterns: {pattern}")
+        
+        # Use pattern detector
+        patterns = self.pattern_detector.detect_temporal_patterns(
+            graph,
+            pattern_type=pattern,
+            min_frequency=min_support,
+            time_window=time_window,
+            **options
+        )
+        
+        return {
+            "pattern": pattern,
+            "patterns": patterns,
+            "num_patterns": len(patterns) if isinstance(patterns, list) else 0
+        }
     
     def analyze_evolution(
         self,
@@ -159,8 +247,68 @@ class TemporalGraphQuery:
         Returns:
             Evolution analysis results
         """
-        # TODO: Implement evolution analysis
-        pass
+        self.logger.info("Analyzing graph evolution")
+        
+        # Filter relationships
+        relationships = graph.get("relationships", [])
+        
+        if entity:
+            relationships = [
+                rel for rel in relationships
+                if rel.get("source") == entity or rel.get("target") == entity
+            ]
+        
+        if relationship:
+            relationships = [
+                rel for rel in relationships
+                if rel.get("type") == relationship
+            ]
+        
+        # Filter by time range
+        if start_time or end_time:
+            start = self._parse_time(start_time) if start_time else None
+            end = self._parse_time(end_time) if end_time else None
+            
+            filtered = []
+            for rel in relationships:
+                valid_from = self._parse_time(rel.get("valid_from"))
+                valid_until = self._parse_time(rel.get("valid_until"))
+                
+                if start and valid_until and self._compare_times(valid_until, start) < 0:
+                    continue
+                if end and valid_from and self._compare_times(valid_from, end) > 0:
+                    continue
+                
+                filtered.append(rel)
+            relationships = filtered
+        
+        # Calculate metrics
+        result = {
+            "entity": entity,
+            "relationship": relationship,
+            "time_range": {"start": start_time, "end": end_time},
+            "num_relationships": len(relationships)
+        }
+        
+        if "count" in metrics:
+            result["count"] = len(relationships)
+        
+        if "diversity" in metrics:
+            rel_types = set(rel.get("type") for rel in relationships)
+            result["diversity"] = len(rel_types)
+        
+        if "stability" in metrics:
+            # Calculate stability based on relationship duration
+            durations = []
+            for rel in relationships:
+                valid_from = self._parse_time(rel.get("valid_from"))
+                valid_until = self._parse_time(rel.get("valid_until"))
+                if valid_from and valid_until:
+                    # Simplified duration calculation
+                    durations.append(1)  # Placeholder
+            result["stability"] = sum(durations) / len(durations) if durations else 0
+        
+        return result
     
     def find_temporal_paths(
         self,
@@ -189,8 +337,88 @@ class TemporalGraphQuery:
         Returns:
             Temporal paths between entities
         """
-        # TODO: Implement temporal path finding
-        pass
+        self.logger.info(f"Finding temporal paths from {source} to {target}")
+        
+        # Build adjacency with temporal constraints
+        adjacency = {}
+        relationships = graph.get("relationships", [])
+        
+        for rel in relationships:
+            s = rel.get("source")
+            t = rel.get("target")
+            
+            # Check temporal validity
+            if start_time or end_time:
+                valid_from = self._parse_time(rel.get("valid_from"))
+                valid_until = self._parse_time(rel.get("valid_until"))
+                
+                if start_time and valid_until and self._compare_times(valid_until, start_time) < 0:
+                    continue
+                if end_time and valid_from and self._compare_times(valid_from, end_time) > 0:
+                    continue
+            
+            if s not in adjacency:
+                adjacency[s] = []
+            adjacency[s].append((t, rel))
+        
+        # BFS to find paths
+        from collections import deque
+        
+        paths = []
+        queue = deque([(source, [source], [])])
+        visited = set()
+        max_length = max_path_length or float('inf')
+        
+        while queue:
+            node, path, edges = queue.popleft()
+            
+            if len(path) > max_length:
+                continue
+            
+            if node == target:
+                paths.append({"path": path, "edges": edges, "length": len(path) - 1})
+                continue
+            
+            if node in visited:
+                continue
+            visited.add(node)
+            
+            for neighbor, rel in adjacency.get(node, []):
+                if neighbor not in path:  # Avoid cycles
+                    queue.append((neighbor, path + [neighbor], edges + [rel]))
+        
+        return {
+            "source": source,
+            "target": target,
+            "paths": paths,
+            "num_paths": len(paths)
+        }
+    
+    def _parse_time(self, time_value):
+        """Parse time value."""
+        from datetime import datetime
+        
+        if time_value is None:
+            return None
+        
+        if isinstance(time_value, str):
+            return time_value
+        
+        if isinstance(time_value, datetime):
+            return time_value.isoformat()
+        
+        return str(time_value)
+    
+    def _compare_times(self, time1, time2):
+        """Compare two time strings."""
+        if time1 is None or time2 is None:
+            return 0
+        return (time1 > time2) - (time1 < time2)
+    
+    def _group_by_time_periods(self, relationships, start, end):
+        """Group relationships by time periods."""
+        # Simplified grouping
+        return relationships
 
 
 class TemporalPatternDetector:
@@ -206,7 +434,9 @@ class TemporalPatternDetector:
     
     def __init__(self, **config):
         """Initialize temporal pattern detector."""
-        pass
+        from ..utils.logging import get_logger
+        self.logger = get_logger("temporal_pattern_detector")
+        self.config = config
     
     def detect_temporal_patterns(
         self,
@@ -229,8 +459,33 @@ class TemporalPatternDetector:
         Returns:
             Detected temporal patterns
         """
-        # TODO: Implement pattern detection
-        pass
+        self.logger.info(f"Detecting temporal patterns: {pattern_type}")
+        
+        relationships = graph.get("relationships", [])
+        
+        # Simple pattern detection
+        patterns = []
+        
+        if pattern_type == "sequence":
+            # Find sequential relationships
+            sequences = self._find_sequences(relationships, min_frequency)
+            patterns.extend(sequences)
+        elif pattern_type == "cycle":
+            # Find cyclic patterns
+            cycles = self._find_cycles(relationships, min_frequency)
+            patterns.extend(cycles)
+        
+        return patterns
+    
+    def _find_sequences(self, relationships, min_frequency):
+        """Find sequential patterns."""
+        # Simplified sequence detection
+        return []
+    
+    def _find_cycles(self, relationships, min_frequency):
+        """Find cyclic patterns."""
+        # Simplified cycle detection
+        return []
 
 
 class TemporalVersionManager:
@@ -285,8 +540,19 @@ class TemporalVersionManager:
         Returns:
             Version snapshot object
         """
-        # TODO: Implement version creation
-        pass
+        from datetime import datetime
+        
+        version_time = timestamp or datetime.now().isoformat()
+        
+        version = {
+            "label": version_label or f"version_{version_time}",
+            "timestamp": version_time,
+            "entities": graph.get("entities", []).copy(),
+            "relationships": graph.get("relationships", []).copy(),
+            "metadata": metadata or {}
+        }
+        
+        return version
     
     def compare_versions(self, version1, version2, comparison_metrics=None, **options):
         """
@@ -301,6 +567,12 @@ class TemporalVersionManager:
         Returns:
             Version comparison results
         """
-        # TODO: Implement version comparison
-        pass
+        comparison = {
+            "version1": version1.get("label", "unknown"),
+            "version2": version2.get("label", "unknown"),
+            "entities_added": len(version2.get("entities", [])) - len(version1.get("entities", [])),
+            "relationships_added": len(version2.get("relationships", [])) - len(version1.get("relationships", []))
+        }
+        
+        return comparison
 

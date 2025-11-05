@@ -218,6 +218,147 @@ class SeedDataManager:
         except Exception as e:
             raise ProcessingError(f"Failed to load JSON: {e}") from e
     
+    def load_from_database(
+        self,
+        connection_string: str,
+        query: Optional[str] = None,
+        table_name: Optional[str] = None,
+        entity_type: Optional[str] = None,
+        relationship_type: Optional[str] = None,
+        source_name: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Load seed data from database.
+        
+        Args:
+            connection_string: Database connection string
+            query: Optional SQL query
+            table_name: Optional table name (if no query provided)
+            entity_type: Entity type (if applicable)
+            relationship_type: Relationship type (if applicable)
+            source_name: Source name for tracking
+            
+        Returns:
+            List of loaded data records
+        """
+        try:
+            from ..ingest.db_ingestor import DBIngestor
+            
+            # Initialize DB ingestor
+            db_ingestor = DBIngestor(config={"connection_string": connection_string})
+            
+            # Execute query or export table
+            if query:
+                # Execute custom query
+                result = db_ingestor.execute_query(query)
+                records = result if isinstance(result, list) else [result]
+            elif table_name:
+                # Export table
+                table_data = db_ingestor.export_table(table_name)
+                records = table_data.rows if hasattr(table_data, 'rows') else []
+            else:
+                raise ProcessingError("Either 'query' or 'table_name' must be provided")
+            
+            # Add metadata
+            for record in records:
+                if entity_type and 'entity_type' not in record:
+                    record['entity_type'] = entity_type
+                if relationship_type and 'relationship_type' not in record:
+                    record['relationship_type'] = relationship_type
+                if source_name and 'source' not in record:
+                    record['source'] = source_name
+            
+            self.logger.info(f"Loaded {len(records)} records from database")
+            return records
+            
+        except ImportError:
+            raise ProcessingError("Database ingestion module not available. Install required dependencies.")
+        except Exception as e:
+            raise ProcessingError(f"Failed to load from database: {e}") from e
+    
+    def load_from_api(
+        self,
+        api_url: str,
+        endpoint: Optional[str] = None,
+        entity_type: Optional[str] = None,
+        relationship_type: Optional[str] = None,
+        source_name: Optional[str] = None,
+        api_key: Optional[str] = None,
+        headers: Optional[Dict[str, str]] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Load seed data from API.
+        
+        Args:
+            api_url: Base API URL
+            endpoint: API endpoint path
+            entity_type: Entity type (if applicable)
+            relationship_type: Relationship type (if applicable)
+            source_name: Source name for tracking
+            api_key: Optional API key
+            headers: Optional request headers
+            
+        Returns:
+            List of loaded data records
+        """
+        try:
+            import requests
+            
+            # Build full URL
+            if endpoint:
+                full_url = f"{api_url.rstrip('/')}/{endpoint.lstrip('/')}"
+            else:
+                full_url = api_url
+            
+            # Prepare headers
+            request_headers = headers or {}
+            if api_key:
+                request_headers["Authorization"] = f"Bearer {api_key}"
+            
+            # Make API request
+            response = requests.get(full_url, headers=request_headers, timeout=30)
+            response.raise_for_status()
+            
+            # Parse response
+            data = response.json()
+            
+            # Handle different response structures
+            if isinstance(data, list):
+                records = data
+            elif isinstance(data, dict):
+                # Try common keys
+                if 'entities' in data:
+                    records = data['entities']
+                elif 'data' in data:
+                    records = data['data']
+                elif 'results' in data:
+                    records = data['results']
+                elif 'items' in data:
+                    records = data['items']
+                else:
+                    records = [data]
+            else:
+                records = []
+            
+            # Add metadata
+            for record in records:
+                if not isinstance(record, dict):
+                    continue
+                if entity_type and 'entity_type' not in record:
+                    record['entity_type'] = entity_type
+                if relationship_type and 'relationship_type' not in record:
+                    record['relationship_type'] = relationship_type
+                if source_name and 'source' not in record:
+                    record['source'] = source_name
+            
+            self.logger.info(f"Loaded {len(records)} records from API: {full_url}")
+            return records
+            
+        except ImportError:
+            raise ProcessingError("requests library not available. Install with: pip install requests")
+        except Exception as e:
+            raise ProcessingError(f"Failed to load from API: {e}") from e
+    
     def load_source(self, source_name: str) -> List[Dict[str, Any]]:
         """
         Load data from registered source.
@@ -248,11 +389,19 @@ class SeedDataManager:
                 source_name=source_name
             )
         elif source.format == "database":
-            # Database loading would require DB connection
-            raise NotImplementedError("Database loading not yet implemented")
+            return self.load_from_database(
+                source.location,
+                entity_type=source.entity_type,
+                relationship_type=source.relationship_type,
+                source_name=source_name
+            )
         elif source.format == "api":
-            # API loading would require API client
-            raise NotImplementedError("API loading not yet implemented")
+            return self.load_from_api(
+                source.location,
+                entity_type=source.entity_type,
+                relationship_type=source.relationship_type,
+                source_name=source_name
+            )
         else:
             raise ProcessingError(f"Unsupported source format: {source.format}")
     

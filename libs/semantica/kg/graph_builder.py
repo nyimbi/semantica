@@ -66,16 +66,27 @@ class GraphBuilder:
         self.track_history = track_history
         self.version_snapshots = version_snapshots
         
-        # TODO: Implement knowledge graph building
-        # - Graph construction from entities and relationships
-        # - Node and edge creation and management
-        # - Graph structure optimization
-        # - Incremental graph building
-        # - Performance optimization for large graphs
-        # - Memory management and streaming
-        # - Temporal edge management
-        # - Temporal snapshot creation
-        # - Time-based query support
+        # Initialize graph building components
+        from ..utils.logging import get_logger
+        self.logger = get_logger("graph_builder")
+        config = kwargs
+        
+        # Initialize entity resolver if needed
+        if self.merge_entities:
+            from .entity_resolver import EntityResolver
+            self.entity_resolver = EntityResolver(
+                strategy=self.entity_resolution_strategy,
+                **kwargs.get("entity_resolution", {})
+            )
+        else:
+            self.entity_resolver = None
+        
+        # Initialize conflict detector if needed
+        if self.resolve_conflicts:
+            from .conflict_detector import ConflictDetector
+            self.conflict_detector = ConflictDetector(**kwargs.get("conflict_detection", {}))
+        else:
+            self.conflict_detector = None
     
     def build(self, sources, entity_resolver=None, **options):
         """
@@ -89,8 +100,64 @@ class GraphBuilder:
         Returns:
             Knowledge graph object
         """
-        # TODO: Implement graph building
-        pass
+        self.logger.info(f"Building knowledge graph from {len(sources)} sources")
+        
+        # Use provided resolver or default
+        resolver = entity_resolver or self.entity_resolver
+        
+        # Extract entities and relationships
+        entities = []
+        relationships = []
+        
+        for source in sources:
+            if isinstance(source, dict):
+                # Extract entities and relationships from source
+                if "entities" in source:
+                    entities.extend(source["entities"])
+                elif "id" in source or "entity_id" in source:
+                    entities.append(source)
+                
+                if "relationships" in source:
+                    relationships.extend(source["relationships"])
+                elif "source" in source and "target" in source:
+                    relationships.append(source)
+            elif isinstance(source, list):
+                # Assume list of entities or relationships
+                for item in source:
+                    if isinstance(item, dict):
+                        if "source" in item and "target" in item:
+                            relationships.append(item)
+                        else:
+                            entities.append(item)
+        
+        # Resolve entities if needed
+        if resolver and entities:
+            self.logger.info(f"Resolving {len(entities)} entities")
+            entities = resolver.resolve_entities(entities)
+            self.logger.info(f"Resolved to {len(entities)} unique entities")
+        
+        # Build graph structure
+        graph = {
+            "entities": entities,
+            "relationships": relationships,
+            "metadata": {
+                "num_entities": len(entities),
+                "num_relationships": len(relationships),
+                "temporal_enabled": self.enable_temporal,
+                "timestamp": self._get_timestamp()
+            }
+        }
+        
+        # Detect and resolve conflicts if needed
+        if self.conflict_detector:
+            conflicts = self.conflict_detector.detect_conflicts(graph)
+            if conflicts:
+                self.logger.warning(f"Detected {len(conflicts)} conflicts")
+                resolution = self.conflict_detector.resolve_conflicts(conflicts)
+                self.logger.info(f"Resolved {resolution.get('resolved_count', 0)} conflicts")
+        
+        self.logger.info(f"Built graph with {len(entities)} entities and {len(relationships)} relationships")
+        return graph
     
     def add_temporal_edge(
         self,
@@ -119,8 +186,29 @@ class GraphBuilder:
         Returns:
             Edge object with temporal annotations
         """
-        # TODO: Implement temporal edge addition
-        pass
+        self.logger.info(f"Adding temporal edge: {source} -{relationship}-> {target}")
+        
+        # Parse temporal information
+        valid_from = self._parse_time(valid_from) or self._get_timestamp()
+        valid_until = self._parse_time(valid_until) if valid_until else None
+        
+        # Create edge with temporal information
+        edge = {
+            "source": source,
+            "target": target,
+            "type": relationship,
+            "valid_from": valid_from,
+            "valid_until": valid_until,
+            "temporal_metadata": temporal_metadata or {},
+            **kwargs
+        }
+        
+        # Add to graph
+        if "relationships" not in graph:
+            graph["relationships"] = []
+        graph["relationships"].append(edge)
+        
+        return edge
     
     def create_temporal_snapshot(self, graph, timestamp=None, snapshot_name=None, **options):
         """
@@ -135,8 +223,45 @@ class GraphBuilder:
         Returns:
             Temporal snapshot object
         """
-        # TODO: Implement temporal snapshot creation
-        pass
+        self.logger.info(f"Creating temporal snapshot: {snapshot_name or 'unnamed'}")
+        
+        snapshot_time = self._parse_time(timestamp) or self._get_timestamp()
+        
+        # Filter entities and relationships valid at snapshot time
+        entities = []
+        relationships = []
+        
+        # Get all entities
+        if "entities" in graph:
+            entities = graph["entities"].copy()
+        
+        # Filter relationships valid at snapshot time
+        if "relationships" in graph:
+            for rel in graph["relationships"]:
+                valid_from = self._parse_time(rel.get("valid_from"))
+                valid_until = self._parse_time(rel.get("valid_until"))
+                
+                # Check if relationship is valid at snapshot time
+                if valid_from and self._compare_times(snapshot_time, valid_from) < 0:
+                    continue
+                if valid_until and self._compare_times(snapshot_time, valid_until) > 0:
+                    continue
+                
+                relationships.append(rel)
+        
+        snapshot = {
+            "name": snapshot_name or f"snapshot_{snapshot_time}",
+            "timestamp": snapshot_time,
+            "entities": entities,
+            "relationships": relationships,
+            "metadata": {
+                "num_entities": len(entities),
+                "num_relationships": len(relationships),
+                "snapshot_time": snapshot_time
+            }
+        }
+        
+        return snapshot
     
     def query_temporal(
         self,
@@ -161,8 +286,30 @@ class GraphBuilder:
         Returns:
             Query results with temporal context
         """
-        # TODO: Implement temporal queries
-        pass
+        self.logger.info(f"Executing temporal query: {query[:50]}...")
+        
+        # Create snapshot for query time
+        if at_time:
+            snapshot = self.create_temporal_snapshot(graph, timestamp=at_time)
+        elif time_range:
+            start_time, end_time = time_range
+            # Query at end time
+            snapshot = self.create_temporal_snapshot(graph, timestamp=end_time)
+        else:
+            # Use current graph
+            snapshot = graph
+        
+        # Basic query execution (simplified)
+        # In a real implementation, this would use a proper query engine
+        results = {
+            "query": query,
+            "timestamp": at_time or (time_range[1] if time_range else None),
+            "entities": snapshot.get("entities", []),
+            "relationships": snapshot.get("relationships", []),
+            "metadata": snapshot.get("metadata", {})
+        }
+        
+        return results
     
     def load_from_neo4j(
         self,
@@ -189,5 +336,93 @@ class GraphBuilder:
         Returns:
             Knowledge graph loaded from Neo4j
         """
-        # TODO: Implement Neo4j loading
-        pass
+        self.logger.info(f"Loading graph from Neo4j: {uri}")
+        
+        try:
+            from neo4j import GraphDatabase
+            
+            driver = GraphDatabase.driver(uri, auth=(username, password))
+            
+            with driver.session(database=database) as session:
+                # Load nodes
+                nodes_result = session.run("MATCH (n) RETURN n")
+                entities = []
+                for record in nodes_result:
+                    node = record["n"]
+                    entity = {
+                        "id": str(node.id),
+                        "type": list(node.labels)[0] if node.labels else "Entity",
+                        "properties": dict(node)
+                    }
+                    entities.append(entity)
+                
+                # Load relationships
+                rels_result = session.run("MATCH (a)-[r]->(b) RETURN a, r, b")
+                relationships = []
+                for record in rels_result:
+                    source = record["a"]
+                    rel = record["r"]
+                    target = record["b"]
+                    
+                    relationship = {
+                        "source": str(source.id),
+                        "target": str(target.id),
+                        "type": rel.type,
+                        "properties": dict(rel)
+                    }
+                    
+                    # Add temporal information if enabled
+                    if enable_temporal and temporal_property in rel:
+                        relationship["valid_from"] = rel[temporal_property]
+                    
+                    relationships.append(relationship)
+            
+            driver.close()
+            
+            graph = {
+                "entities": entities,
+                "relationships": relationships,
+                "metadata": {
+                    "source": "neo4j",
+                    "uri": uri,
+                    "database": database,
+                    "temporal_enabled": enable_temporal
+                }
+            }
+            
+            self.logger.info(f"Loaded {len(entities)} entities and {len(relationships)} relationships from Neo4j")
+            return graph
+            
+        except ImportError:
+            raise ImportError("neo4j library not available. Install with: pip install neo4j")
+        except Exception as e:
+            self.logger.error(f"Error loading from Neo4j: {e}")
+            raise
+    
+    def _get_timestamp(self):
+        """Get current timestamp."""
+        from datetime import datetime
+        return datetime.now().isoformat()
+    
+    def _parse_time(self, time_value):
+        """Parse time value to ISO string."""
+        from datetime import datetime
+        
+        if time_value is None:
+            return None
+        
+        if isinstance(time_value, str):
+            return time_value
+        
+        if isinstance(time_value, datetime):
+            return time_value.isoformat()
+        
+        return str(time_value)
+    
+    def _compare_times(self, time1, time2):
+        """Compare two time strings."""
+        if time1 is None or time2 is None:
+            return 0
+        
+        # Simple string comparison for ISO format
+        return (time1 > time2) - (time1 < time2)

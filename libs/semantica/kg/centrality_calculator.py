@@ -15,6 +15,11 @@ Main Classes:
     - CentralityCalculator: Main centrality calculation engine
 """
 
+from typing import Any, Dict, List, Optional
+from collections import defaultdict, deque
+
+from ..utils.logging import get_logger
+
 
 class CentralityCalculator:
     """
@@ -47,18 +52,22 @@ class CentralityCalculator:
         • Initialize ranking tools
         • Setup statistics processing
         """
+        self.logger = get_logger("centrality_calculator")
         self.supported_centrality_types = [
             "degree", "betweenness", "closeness", "eigenvector"
         ]
         self.calculation_config = config.get("calculation_config", {})
-        self.ranking_tools = None
-        self.statistics_processor = None
+        self.config = config
         
-        # TODO: Initialize centrality calculation components
-        # - Setup centrality algorithms and libraries
-        # - Configure calculation parameters and options
-        # - Initialize ranking and statistics tools
-        # - Setup performance optimization settings
+        # Try to use networkx if available
+        try:
+            import networkx as nx
+            self.nx = nx
+            self.use_networkx = True
+        except ImportError:
+            self.nx = None
+            self.use_networkx = False
+            self.logger.warning("NetworkX not available, using basic implementations")
     
     def calculate_degree_centrality(self, graph):
         """
@@ -75,13 +84,37 @@ class CentralityCalculator:
         Returns:
             dict: Node centrality scores and rankings
         """
-        # TODO: Implement degree centrality calculation
-        # - Count incoming and outgoing edges for each node
-        # - Calculate degree centrality scores
-        # - Normalize scores by maximum possible degree
-        # - Rank nodes by centrality scores
-        # - Return centrality results with metadata
-        pass
+        self.logger.info("Calculating degree centrality")
+        
+        # Build adjacency structure
+        adjacency = self._build_adjacency(graph)
+        
+        # Calculate degrees
+        degrees = {}
+        max_degree = 0
+        
+        for node in adjacency:
+            degree = len(adjacency[node])
+            degrees[node] = degree
+            max_degree = max(max_degree, degree)
+        
+        # Calculate normalized centrality
+        centrality = {}
+        n = len(adjacency)
+        normalization = n - 1 if n > 1 else 1
+        
+        for node, degree in degrees.items():
+            centrality[node] = degree / normalization if normalization > 0 else 0.0
+        
+        # Rank nodes
+        ranked = sorted(centrality.items(), key=lambda x: x[1], reverse=True)
+        
+        return {
+            "centrality": centrality,
+            "rankings": [{"node": node, "score": score} for node, score in ranked],
+            "max_degree": max_degree,
+            "total_nodes": n
+        }
     
     def calculate_betweenness_centrality(self, graph):
         """
@@ -98,13 +131,55 @@ class CentralityCalculator:
         Returns:
             dict: Node centrality scores and rankings
         """
-        # TODO: Implement betweenness centrality calculation
-        # - Find shortest paths between all node pairs
-        # - Count paths passing through each node
-        # - Calculate betweenness centrality scores
-        # - Normalize by total possible paths
-        # - Return centrality results with metadata
-        pass
+        self.logger.info("Calculating betweenness centrality")
+        
+        if self.use_networkx:
+            try:
+                nx_graph = self._to_networkx(graph)
+                centrality = self.nx.betweenness_centrality(nx_graph)
+                ranked = sorted(centrality.items(), key=lambda x: x[1], reverse=True)
+                
+                return {
+                    "centrality": centrality,
+                    "rankings": [{"node": node, "score": score} for node, score in ranked]
+                }
+            except Exception as e:
+                self.logger.warning(f"NetworkX calculation failed: {e}, using basic implementation")
+        
+        # Basic implementation using BFS
+        adjacency = self._build_adjacency(graph)
+        nodes = list(adjacency.keys())
+        betweenness = {node: 0.0 for node in nodes}
+        
+        # For each pair of nodes, find shortest paths
+        for source in nodes:
+            # BFS to find shortest paths
+            paths = self._bfs_shortest_paths(adjacency, source)
+            
+            for target in nodes:
+                if source == target:
+                    continue
+                
+                if target in paths:
+                    # Count paths through each node
+                    for path in paths[target]:
+                        for node in path[1:-1]:  # Exclude source and target
+                            if node in betweenness:
+                                betweenness[node] += 1.0
+        
+        # Normalize
+        n = len(nodes)
+        if n > 2:
+            normalization = (n - 1) * (n - 2) / 2
+            for node in betweenness:
+                betweenness[node] /= normalization if normalization > 0 else 1
+        
+        ranked = sorted(betweenness.items(), key=lambda x: x[1], reverse=True)
+        
+        return {
+            "centrality": betweenness,
+            "rankings": [{"node": node, "score": score} for node, score in ranked]
+        }
     
     def calculate_closeness_centrality(self, graph):
         """
@@ -121,15 +196,48 @@ class CentralityCalculator:
         Returns:
             dict: Node centrality scores and rankings
         """
-        # TODO: Implement closeness centrality calculation
-        # - Calculate shortest path distances from each node
-        # - Compute average distance to all reachable nodes
-        # - Calculate closeness centrality scores
-        # - Normalize by graph size and connectivity
-        # - Return centrality results with metadata
-        pass
+        self.logger.info("Calculating closeness centrality")
+        
+        if self.use_networkx:
+            try:
+                nx_graph = self._to_networkx(graph)
+                centrality = self.nx.closeness_centrality(nx_graph)
+                ranked = sorted(centrality.items(), key=lambda x: x[1], reverse=True)
+                
+                return {
+                    "centrality": centrality,
+                    "rankings": [{"node": node, "score": score} for node, score in ranked]
+                }
+            except Exception as e:
+                self.logger.warning(f"NetworkX calculation failed: {e}, using basic implementation")
+        
+        # Basic implementation
+        adjacency = self._build_adjacency(graph)
+        nodes = list(adjacency.keys())
+        closeness = {}
+        
+        for node in nodes:
+            # BFS to find distances
+            distances = self._bfs_distances(adjacency, node)
+            
+            # Calculate sum of distances
+            total_distance = sum(distances.values())
+            reachable = len(distances) - 1  # Exclude self
+            
+            if reachable > 0 and total_distance > 0:
+                # Closeness = (n-1) / sum of distances
+                closeness[node] = reachable / total_distance
+            else:
+                closeness[node] = 0.0
+        
+        ranked = sorted(closeness.items(), key=lambda x: x[1], reverse=True)
+        
+        return {
+            "centrality": closeness,
+            "rankings": [{"node": node, "score": score} for node, score in ranked]
+        }
     
-    def calculate_eigenvector_centrality(self, graph):
+    def calculate_eigenvector_centrality(self, graph, max_iter=100, tol=1e-6):
         """
         Calculate eigenvector centrality for all nodes.
         
@@ -140,17 +248,72 @@ class CentralityCalculator:
         
         Args:
             graph: Input graph for centrality calculation
+            max_iter: Maximum iterations
+            tol: Convergence tolerance
             
         Returns:
             dict: Node centrality scores and rankings
         """
-        # TODO: Implement eigenvector centrality calculation
-        # - Compute adjacency matrix and eigenvalues
-        # - Calculate eigenvector centrality scores
-        # - Handle convergence and numerical stability
-        # - Normalize and rank centrality scores
-        # - Return centrality results with metadata
-        pass
+        self.logger.info("Calculating eigenvector centrality")
+        
+        if self.use_networkx:
+            try:
+                nx_graph = self._to_networkx(graph)
+                centrality = self.nx.eigenvector_centrality(nx_graph, max_iter=max_iter, tol=tol)
+                ranked = sorted(centrality.items(), key=lambda x: x[1], reverse=True)
+                
+                return {
+                    "centrality": centrality,
+                    "rankings": [{"node": node, "score": score} for node, score in ranked]
+                }
+            except Exception as e:
+                self.logger.warning(f"NetworkX calculation failed: {e}, using basic implementation")
+        
+        # Basic power iteration method
+        import numpy as np
+        
+        adjacency = self._build_adjacency(graph)
+        nodes = sorted(adjacency.keys())
+        n = len(nodes)
+        node_to_index = {node: i for i, node in enumerate(nodes)}
+        
+        # Build adjacency matrix
+        A = np.zeros((n, n))
+        for i, node in enumerate(nodes):
+            for neighbor in adjacency[node]:
+                if neighbor in node_to_index:
+                    j = node_to_index[neighbor]
+                    A[i, j] = 1.0
+                    A[j, i] = 1.0
+        
+        # Power iteration
+        x = np.ones(n) / np.sqrt(n)
+        
+        for _ in range(max_iter):
+            x_new = A @ x
+            norm = np.linalg.norm(x_new)
+            if norm == 0:
+                break
+            x_new = x_new / norm
+            
+            if np.linalg.norm(x_new - x) < tol:
+                break
+            x = x_new
+        
+        # Normalize
+        centrality = {nodes[i]: float(x[i]) for i in range(n)}
+        
+        # Normalize to [0, 1]
+        max_val = max(centrality.values()) if centrality.values() else 1.0
+        if max_val > 0:
+            centrality = {node: score / max_val for node, score in centrality.items()}
+        
+        ranked = sorted(centrality.items(), key=lambda x: x[1], reverse=True)
+        
+        return {
+            "centrality": centrality,
+            "rankings": [{"node": node, "score": score} for node, score in ranked]
+        }
     
     def calculate_all_centrality(self, graph, centrality_types=None):
         """
@@ -168,9 +331,106 @@ class CentralityCalculator:
         Returns:
             dict: Comprehensive centrality analysis results
         """
-        # TODO: Implement comprehensive centrality calculation
-        # - Calculate all requested centrality types
-        # - Combine and normalize results
-        # - Provide comparative analysis
-        # - Return unified centrality results
-        pass
+        self.logger.info("Calculating all centrality measures")
+        
+        centrality_types = centrality_types or self.supported_centrality_types
+        results = {}
+        
+        if "degree" in centrality_types:
+            results["degree"] = self.calculate_degree_centrality(graph)
+        
+        if "betweenness" in centrality_types:
+            results["betweenness"] = self.calculate_betweenness_centrality(graph)
+        
+        if "closeness" in centrality_types:
+            results["closeness"] = self.calculate_closeness_centrality(graph)
+        
+        if "eigenvector" in centrality_types:
+            results["eigenvector"] = self.calculate_eigenvector_centrality(graph)
+        
+        return {
+            "centrality_measures": results,
+            "types_calculated": list(results.keys()),
+            "total_nodes": len(self._build_adjacency(graph))
+        }
+    
+    def _build_adjacency(self, graph) -> Dict[str, List[str]]:
+        """Build adjacency list from graph."""
+        adjacency = defaultdict(list)
+        
+        # Extract relationships
+        relationships = []
+        if hasattr(graph, "relationships"):
+            relationships = graph.relationships
+        elif hasattr(graph, "get_relationships"):
+            relationships = graph.get_relationships()
+        elif isinstance(graph, dict):
+            relationships = graph.get("relationships", [])
+        
+        # Build adjacency
+        for rel in relationships:
+            source = rel.get("source") or rel.get("subject")
+            target = rel.get("target") or rel.get("object")
+            
+            if source and target:
+                if target not in adjacency[source]:
+                    adjacency[source].append(target)
+                if source not in adjacency[target]:
+                    adjacency[target].append(source)
+        
+        return dict(adjacency)
+    
+    def _to_networkx(self, graph):
+        """Convert graph to NetworkX format."""
+        adjacency = self._build_adjacency(graph)
+        nx_graph = self.nx.Graph()
+        
+        for source, targets in adjacency.items():
+            for target in targets:
+                nx_graph.add_edge(source, target)
+        
+        return nx_graph
+    
+    def _bfs_distances(self, adjacency: Dict[str, List[str]], start: str) -> Dict[str, int]:
+        """Calculate distances using BFS."""
+        distances = {start: 0}
+        queue = deque([start])
+        
+        while queue:
+            node = queue.popleft()
+            for neighbor in adjacency.get(node, []):
+                if neighbor not in distances:
+                    distances[neighbor] = distances[node] + 1
+                    queue.append(neighbor)
+        
+        return distances
+    
+    def _bfs_shortest_paths(self, adjacency: Dict[str, List[str]], start: str) -> Dict[str, List[List[str]]]:
+        """Find all shortest paths using BFS."""
+        paths = {start: [[start]]}
+        queue = deque([start])
+        visited = {start}
+        
+        while queue:
+            node = queue.popleft()
+            for neighbor in adjacency.get(node, []):
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    # Find paths to neighbor
+                    neighbor_paths = []
+                    for path in paths[node]:
+                        neighbor_paths.append(path + [neighbor])
+                    paths[neighbor] = neighbor_paths
+                    queue.append(neighbor)
+                elif neighbor in paths:
+                    # Check if this is a shortest path
+                    current_length = len(paths[neighbor][0])
+                    new_length = len(paths[node][0]) + 1
+                    if new_length == current_length:
+                        # Add alternative paths
+                        for path in paths[node]:
+                            new_path = path + [neighbor]
+                            if new_path not in paths[neighbor]:
+                                paths[neighbor].append(new_path)
+        
+        return paths

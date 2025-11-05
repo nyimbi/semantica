@@ -74,13 +74,9 @@ class GraphAnalyzer:
         self.community_detector = CommunityDetector(**self.config)
         self.connectivity_analyzer = ConnectivityAnalyzer(**self.config)
         
-        # TODO: Initialize graph analysis components
-        # - Setup graph analysis algorithms and tools
-        # - Configure centrality calculations and options
-        # - Initialize community detection and analysis
-        # - Setup connectivity analysis and metrics
-        # - Configure performance optimization settings
-        # - Initialize temporal analysis if enabled
+        # Initialize graph analysis components
+        from ..utils.logging import get_logger
+        self.logger = get_logger("graph_analyzer")
     
     def analyze_graph(self, graph, **options):
         """
@@ -92,7 +88,26 @@ class GraphAnalyzer:
         • Detect patterns and anomalies
         • Return comprehensive analysis results
         """
-        pass
+        self.logger.info("Performing comprehensive graph analysis")
+        
+        # Calculate centrality
+        centrality = self.calculate_centrality(graph, **options)
+        
+        # Detect communities
+        communities = self.detect_communities(graph, **options)
+        
+        # Analyze connectivity
+        connectivity = self.analyze_connectivity(graph, **options)
+        
+        # Compute metrics
+        metrics = self.compute_metrics(graph=graph, **options)
+        
+        return {
+            "centrality": centrality,
+            "communities": communities,
+            "connectivity": connectivity,
+            "metrics": metrics
+        }
     
     def calculate_centrality(self, graph, centrality_type="degree", **options):
         """
@@ -134,7 +149,7 @@ class GraphAnalyzer:
         """
         return self.connectivity_analyzer.analyze_connectivity(graph, **options)
     
-    def compute_metrics(self, at_time=None, time_range=None, **options):
+    def compute_metrics(self, graph=None, at_time=None, time_range=None, **options):
         """
         Compute comprehensive graph metrics.
         
@@ -145,6 +160,7 @@ class GraphAnalyzer:
         • Return metrics dictionary
         
         Args:
+            graph: Graph to analyze (if not provided, uses stored graph)
             at_time: Calculate metrics at specific time point (temporal graphs)
             time_range: Calculate metrics for time range (temporal graphs)
             **options: Additional metric calculation options
@@ -152,7 +168,23 @@ class GraphAnalyzer:
         Returns:
             Dictionary of graph metrics
         """
-        pass
+        if graph is None:
+            return {}
+        
+        # Get connectivity metrics
+        connectivity_metrics = self.connectivity_analyzer.calculate_connectivity_metrics(graph)
+        
+        # Get entities and relationships
+        entities = graph.get("entities", []) if isinstance(graph, dict) else []
+        relationships = graph.get("relationships", []) if isinstance(graph, dict) else []
+        
+        metrics = {
+            "num_nodes": len(entities),
+            "num_edges": len(relationships),
+            **connectivity_metrics
+        }
+        
+        return metrics
     
     def analyze_temporal_evolution(
         self,
@@ -177,6 +209,24 @@ class GraphAnalyzer:
         Returns:
             Evolution analysis results with time series data
         """
-        # TODO: Implement temporal evolution analysis
-        pass
+        self.logger.info("Analyzing temporal evolution")
+        
+        from .temporal_query import TemporalGraphQuery
+        
+        temporal_query = TemporalGraphQuery(**self.config)
+        
+        # Analyze evolution
+        evolution = temporal_query.analyze_evolution(
+            graph,
+            start_time=start_time,
+            end_time=end_time,
+            metrics=metrics,
+            **options
+        )
+        
+        return {
+            "evolution": evolution,
+            "time_range": {"start": start_time, "end": end_time},
+            "metrics_tracked": metrics
+        }
 

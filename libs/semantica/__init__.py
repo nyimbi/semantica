@@ -14,6 +14,67 @@ __version__ = "0.1.0"
 __author__ = "Semantica Contributors"
 __license__ = "MIT"
 
-# Core imports will be added here
-# from .core import Semantica, PipelineBuilder, Config
+# Core imports
+from .core import Semantica, Config, ConfigManager, LifecycleManager, PluginRegistry
+
+# Pipeline imports
+from .pipeline import (
+    PipelineBuilder,
+    ExecutionEngine,
+    FailureHandler,
+    ParallelismManager,
+    ResourceScheduler,
+    PipelineValidator,
+)
+
+# KG Quality Assurance
+from .kg_qa import (
+    KGQualityAssessor,
+    ConsistencyChecker,
+    CompletenessValidator,
+    QualityMetrics,
+    CompletenessMetrics,
+    ConsistencyMetrics,
+    ValidationEngine,
+    RuleValidator,
+    ConstraintValidator,
+    QualityReporter,
+    IssueTracker,
+    ImprovementSuggestions,
+    AutomatedFixer,
+    AutoMerger,
+    AutoResolver,
+)
+
+__all__ = [
+    # Core
+    "Semantica",
+    "Config",
+    "ConfigManager",
+    "LifecycleManager",
+    "PluginRegistry",
+    # Pipeline
+    "PipelineBuilder",
+    "ExecutionEngine",
+    "FailureHandler",
+    "ParallelismManager",
+    "ResourceScheduler",
+    "PipelineValidator",
+    # KG Quality Assurance
+    "KGQualityAssessor",
+    "ConsistencyChecker",
+    "CompletenessValidator",
+    "QualityMetrics",
+    "CompletenessMetrics",
+    "ConsistencyMetrics",
+    "ValidationEngine",
+    "RuleValidator",
+    "ConstraintValidator",
+    "QualityReporter",
+    "IssueTracker",
+    "ImprovementSuggestions",
+    "AutomatedFixer",
+    "AutoMerger",
+    "AutoResolver",
+]
 
