@@ -1,8 +1,31 @@
 """
-Class inference for Semantica framework.
+Class Inference Module
 
-This module provides automatic class discovery and inference
-from extracted entities and data patterns.
+This module provides automatic class discovery and inference from extracted entities
+and data patterns. It analyzes entity types, properties, and relationships to infer
+ontology classes with proper naming conventions and hierarchical structures.
+
+Key Features:
+    - Automatic class discovery from entities
+    - Pattern-based class inference
+    - Hierarchical class structure building
+    - Class validation and consistency checking
+    - Multi-domain class support
+    - Circular hierarchy detection
+    - Performance optimization
+
+Main Classes:
+    - ClassInferrer: Class inference engine for ontology generation
+
+Example Usage:
+    >>> from semantica.ontology import ClassInferrer
+    >>> inferrer = ClassInferrer(min_occurrences=2)
+    >>> classes = inferrer.infer_classes(entities, build_hierarchy=True)
+    >>> hierarchical = inferrer.build_class_hierarchy(classes)
+    >>> validation = inferrer.validate_classes(classes)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional, Set
@@ -17,12 +40,23 @@ class ClassInferrer:
     """
     Class inference engine for ontology generation.
     
-    • Automatic class discovery from entities
-    • Pattern-based class inference
-    • Hierarchical class structure building
-    • Class validation and consistency checking
-    • Multi-domain class support
-    • Performance optimization
+    This class provides automatic discovery and inference of ontology classes from
+    entity data, building hierarchical structures and validating class definitions.
+    
+    Features:
+        - Automatic class discovery from entities
+        - Pattern-based class inference
+        - Hierarchical class structure building
+        - Class validation and consistency checking
+        - Multi-domain class support
+        - Circular hierarchy detection
+        - Performance optimization
+    
+    Example:
+        ```python
+        inferrer = ClassInferrer(min_occurrences=2, similarity_threshold=0.8)
+        classes = inferrer.infer_classes(entities)
+        ```
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None, **kwargs):
@@ -34,6 +68,15 @@ class ClassInferrer:
             **kwargs: Additional configuration options:
                 - min_occurrences: Minimum occurrences for class inference (default: 2)
                 - similarity_threshold: Similarity threshold for class merging (default: 0.8)
+                - namespace_manager: Optional namespace manager instance
+        
+        Example:
+            ```python
+            inferrer = ClassInferrer(
+                min_occurrences=3,
+                similarity_threshold=0.85
+            )
+            ```
         """
         self.logger = get_logger("class_inferrer")
         self.config = config or {}
@@ -51,12 +94,38 @@ class ClassInferrer:
         """
         Infer classes from entities.
         
+        Analyzes a list of entities and infers ontology classes based on entity types
+        and common properties. Groups entities by type and creates class definitions
+        for types that meet the minimum occurrence threshold.
+        
         Args:
-            entities: List of entity dictionaries
-            **options: Additional options
+            entities: List of entity dictionaries, each containing at least:
+                - type or entity_type: Entity type name
+                - Additional properties that will be analyzed
+            **options: Additional options:
+                - build_hierarchy: Whether to build class hierarchy (default: True)
+                - namespace_manager: Optional namespace manager for URI generation
         
         Returns:
-            List of inferred class definitions
+            List of inferred class definition dictionaries, each containing:
+                - name: Normalized class name
+                - uri: Class URI (if namespace_manager provided)
+                - label: Class label
+                - comment: Class description
+                - properties: List of common property names
+                - entity_count: Number of entities of this type
+                - metadata: Additional metadata
+        
+        Example:
+            ```python
+            entities = [
+                {"type": "Person", "name": "John", "age": 30},
+                {"type": "Person", "name": "Jane", "age": 25},
+                {"type": "Organization", "name": "Acme Corp"}
+            ]
+            
+            classes = inferrer.infer_classes(entities, build_hierarchy=True)
+            ```
         """
         # Group entities by type
         entity_types = defaultdict(list)
@@ -85,12 +154,30 @@ class ClassInferrer:
         """
         Build class hierarchy from classes.
         
+        Analyzes class names and relationships to infer parent-child relationships,
+        building a taxonomic hierarchy. Uses naming patterns and common parent classes
+        to establish subClassOf relationships.
+        
         Args:
-            classes: List of class definitions
-            **options: Additional options
+            classes: List of class definition dictionaries
+            **options: Additional options (currently unused)
         
         Returns:
-            Classes with hierarchy information
+            List of class definitions with hierarchy information added:
+                - subClassOf: Parent class name (if found)
+                - parent: Alias for subClassOf
+        
+        Example:
+            ```python
+            classes = [
+                {"name": "Person"},
+                {"name": "Employee"},
+                {"name": "Manager"}
+            ]
+            
+            hierarchical = inferrer.build_class_hierarchy(classes)
+            # Manager may have subClassOf: "Employee"
+            ```
         """
         # Create class map
         class_map = {cls["name"]: cls for cls in classes}
@@ -186,12 +273,27 @@ class ClassInferrer:
         """
         Validate inferred classes.
         
+        Validates class definitions for naming conventions, duplicate names,
+        and circular hierarchies. Provides suggestions for improvements.
+        
         Args:
-            classes: List of class definitions
-            **criteria: Validation criteria
+            classes: List of class definition dictionaries
+            **criteria: Validation criteria (currently unused)
         
         Returns:
-            Validation results
+            Dictionary with validation results:
+                - valid: Boolean indicating if validation passed
+                - errors: List of error messages
+                - warnings: List of warning messages with suggestions
+        
+        Example:
+            ```python
+            validation = inferrer.validate_classes(classes)
+            if not validation["valid"]:
+                print(f"Errors: {validation['errors']}")
+            if validation["warnings"]:
+                print(f"Warnings: {validation['warnings']}")
+            ```
         """
         errors = []
         warnings = []

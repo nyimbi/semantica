@@ -1,8 +1,31 @@
 """
-Pre-built domain ontologies for Semantica framework.
+Pre-built Domain Ontologies Module
 
-This module provides pre-built domain-specific ontologies
-for common use cases and domains.
+This module provides pre-built domain-specific ontologies for common use cases
+and domains. It includes templates for healthcare, finance, legal, research,
+and cybersecurity domains, and allows registration of custom domain templates.
+
+Key Features:
+    - Healthcare domain ontology templates
+    - Finance domain ontology templates
+    - Legal domain ontology templates
+    - Research domain ontology templates
+    - Cybersecurity domain ontology templates
+    - Custom domain ontology support
+    - Domain template registration
+
+Main Classes:
+    - DomainOntologies: Manager for pre-built domain ontologies
+
+Example Usage:
+    >>> from semantica.ontology import DomainOntologies
+    >>> domains = DomainOntologies()
+    >>> template = domains.get_domain_template("healthcare")
+    >>> ontology = domains.create_domain_ontology("healthcare", uri="https://example.org/healthcare/")
+    >>> domains.register_domain_template("custom", {"classes": [...], "properties": [...]})
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional

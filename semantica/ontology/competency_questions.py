@@ -1,8 +1,32 @@
 """
-Competency Questions Manager
+Competency Questions Manager Module
 
-Manages competency questions that define what an ontology should answer,
-serving as functional requirements that guide modeling decisions.
+This module manages competency questions that define what an ontology should answer,
+serving as functional requirements that guide modeling decisions. Competency questions
+help ensure that the ontology can answer the queries it was designed to support.
+
+Key Features:
+    - Define and manage competency questions
+    - Validate ontology against competency questions
+    - Trace questions to ontology elements
+    - Refine questions based on ontology evolution
+    - Generate question-answer validation reports
+    - Support natural language question formulation
+    - Categorize questions by domain and priority
+
+Main Classes:
+    - CompetencyQuestionsManager: Manager for competency questions
+    - CompetencyQuestion: Dataclass representing a competency question
+
+Example Usage:
+    >>> from semantica.ontology import CompetencyQuestionsManager
+    >>> manager = CompetencyQuestionsManager()
+    >>> manager.add_question("Who are the employees of a given organization?", category="organizational")
+    >>> results = manager.validate_ontology(ontology)
+    >>> report = manager.generate_report(ontology)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional
@@ -15,7 +39,29 @@ from ..utils.logging import get_logger
 
 @dataclass
 class CompetencyQuestion:
-    """Competency question definition."""
+    """
+    Competency question definition.
+    
+    Represents a question that the ontology should be able to answer, serving as
+    a functional requirement for ontology design.
+    
+    Attributes:
+        question: Question text in natural language
+        category: Question category (e.g., "general", "organizational", "temporal")
+        priority: Priority level (1=high, 2=medium, 3=low)
+        answerable: Whether the ontology can currently answer this question
+        trace_to_elements: List of ontology element names relevant to this question
+        metadata: Additional metadata dictionary
+    
+    Example:
+        ```python
+        cq = CompetencyQuestion(
+            question="Who are the employees of a given organization?",
+            category="organizational",
+            priority=1
+        )
+        ```
+    """
     question: str
     category: str = "general"
     priority: int = 1  # 1=high, 2=medium, 3=low
@@ -28,12 +74,25 @@ class CompetencyQuestionsManager:
     """
     Competency questions manager for ontology requirements.
     
-    • Define and manage competency questions
-    • Validate ontology against competency questions
-    • Trace questions to ontology elements
-    • Refine questions based on ontology evolution
-    • Generate question-answer validation reports
-    • Support natural language question formulation
+    This class manages competency questions that serve as functional requirements
+    for ontology design. It validates whether an ontology can answer these questions
+    and traces questions to relevant ontology elements.
+    
+    Features:
+        - Define and manage competency questions
+        - Validate ontology against competency questions
+        - Trace questions to ontology elements
+        - Refine questions based on ontology evolution
+        - Generate question-answer validation reports
+        - Support natural language question formulation
+        - Categorize and prioritize questions
+    
+    Example:
+        ```python
+        manager = CompetencyQuestionsManager()
+        manager.add_question("Who are the employees?", category="organizational")
+        results = manager.validate_ontology(ontology)
+        ```
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None, **kwargs):
@@ -43,6 +102,11 @@ class CompetencyQuestionsManager:
         Args:
             config: Configuration dictionary
             **kwargs: Additional configuration options
+        
+        Example:
+            ```python
+            manager = CompetencyQuestionsManager()
+            ```
         """
         self.logger = get_logger("competency_questions_manager")
         self.config = config or {}
@@ -60,14 +124,26 @@ class CompetencyQuestionsManager:
         """
         Add a competency question.
         
+        Adds a new competency question to the manager. Competency questions define
+        what the ontology should be able to answer.
+        
         Args:
-            question: Question text
-            category: Question category
-            priority: Priority (1=high, 2=medium, 3=low)
-            **metadata: Additional metadata
+            question: Question text in natural language
+            category: Question category (default: "general")
+            priority: Priority level (1=high, 2=medium, 3=low, default: 1)
+            **metadata: Additional metadata dictionary
         
         Returns:
-            Created competency question
+            Created CompetencyQuestion instance
+        
+        Example:
+            ```python
+            cq = manager.add_question(
+                "Who are the employees of a given organization?",
+                category="organizational",
+                priority=1
+            )
+            ```
         """
         cq = CompetencyQuestion(
             question=question,
@@ -89,12 +165,27 @@ class CompetencyQuestionsManager:
         """
         Validate ontology against competency questions.
         
+        Checks whether the ontology can answer each competency question by analyzing
+        the presence of relevant classes and properties. Updates the answerable
+        status of each question.
+        
         Args:
-            ontology: Ontology dictionary
-            **options: Additional options
+            ontology: Ontology dictionary containing classes and properties
+            **options: Additional options (currently unused)
         
         Returns:
-            Validation results
+            Dictionary with validation results:
+                - total_questions: Total number of questions
+                - answerable: Number of answerable questions
+                - unanswerable: Number of unanswerable questions
+                - by_category: Breakdown by category
+                - by_priority: Breakdown by priority
+        
+        Example:
+            ```python
+            results = manager.validate_ontology(ontology)
+            print(f"Answerable: {results['answerable']}/{results['total_questions']}")
+            ```
         """
         results = {
             "total_questions": len(self.questions),
@@ -155,12 +246,22 @@ class CompetencyQuestionsManager:
         """
         Trace question to ontology elements.
         
+        Identifies which ontology elements (classes and properties) are relevant
+        to answering a specific competency question. Uses keyword matching to find
+        relevant elements.
+        
         Args:
-            question: Competency question
-            ontology: Ontology dictionary
+            question: CompetencyQuestion instance to trace
+            ontology: Ontology dictionary containing classes and properties
         
         Returns:
-            List of relevant ontology element names
+            List of relevant ontology element names (classes and properties)
+        
+        Example:
+            ```python
+            elements = manager.trace_to_elements(question, ontology)
+            print(f"Relevant elements: {elements}")
+            ```
         """
         elements = []
         question_lower = question.question.lower()
@@ -187,11 +288,24 @@ class CompetencyQuestionsManager:
         """
         Generate competency question validation report.
         
+        Generates a comprehensive report showing which questions are answerable,
+        which elements trace to each question, and overall coverage statistics.
+        
         Args:
-            ontology: Ontology dictionary
+            ontology: Ontology dictionary to validate
         
         Returns:
-            Validation report
+            Dictionary containing:
+                - validation: Validation results dictionary
+                - questions: List of question details with trace information
+                - generated_at: Timestamp of report generation
+        
+        Example:
+            ```python
+            report = manager.generate_report(ontology)
+            for q in report["questions"]:
+                print(f"{q['question']}: {q['answerable']}")
+            ```
         """
         validation = self.validate_ontology(ontology)
         

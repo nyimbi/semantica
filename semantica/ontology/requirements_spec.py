@@ -1,8 +1,32 @@
 """
 Ontology Requirements Specification Module
 
-This module supports the ontology requirements specification phase,
-including competency questions, scope definition, and purpose documentation.
+This module supports the ontology requirements specification phase, including
+competency questions, scope definition, and purpose documentation. It helps
+ensure that ontologies are designed to meet specific functional requirements.
+
+Key Features:
+    - Competency question management
+    - Scope definition and validation
+    - Purpose and use case documentation
+    - Stakeholder collaboration tracking
+    - Domain expert input integration
+    - Requirements traceability
+    - Specification validation
+
+Main Classes:
+    - RequirementsSpecManager: Manager for requirements specifications
+    - RequirementsSpec: Dataclass representing a requirements specification
+
+Example Usage:
+    >>> from semantica.ontology import RequirementsSpecManager
+    >>> manager = RequirementsSpecManager()
+    >>> spec = manager.create_spec("PersonOntologySpec", "Model person-related concepts", "Person, Organization, Role entities")
+    >>> manager.add_competency_question("PersonOntologySpec", "Who are the employees of an organization?", category="organizational")
+    >>> trace = manager.trace_requirements("PersonOntologySpec", ontology)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional

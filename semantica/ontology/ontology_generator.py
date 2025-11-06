@@ -1,20 +1,33 @@
 """
 Ontology Generation Module
 
-Handles automatic generation of ontologies from data and text.
+This module handles automatic generation of ontologies from data and text using
+a 6-stage pipeline that transforms raw data into structured OWL ontologies.
 
 Key Features:
-    - Automatic ontology generation
+    - Automatic ontology generation (6-stage pipeline)
     - Class and property inference
     - Ontology structure optimization
     - Domain-specific ontology creation
     - Ontology quality assessment
+    - Semantic network parsing
+    - Hierarchy generation
 
 Main Classes:
     - OntologyGenerator: Main ontology generation class (6-stage pipeline)
-    - ClassInferencer: Class inference engine
-    - PropertyInferencer: Property inference engine
+    - ClassInferencer: Class inference engine (legacy alias)
+    - PropertyInferencer: Property inference engine (legacy alias)
     - OntologyOptimizer: Ontology optimization engine
+
+Example Usage:
+    >>> from semantica.ontology import OntologyGenerator
+    >>> generator = OntologyGenerator(base_uri="https://example.org/ontology/")
+    >>> ontology = generator.generate_ontology({"entities": [...], "relationships": [...]})
+    >>> classes = generator.infer_classes(data)
+    >>> properties = generator.infer_properties(data, classes)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional
@@ -52,11 +65,23 @@ class OntologyGenerator:
         """
         Initialize ontology generator.
         
+        Sets up the ontology generator with namespace management, naming conventions,
+        and inference engines for classes and properties.
+        
         Args:
             config: Configuration dictionary
             **kwargs: Additional configuration options:
-                - base_uri: Base URI for ontology
-                - namespace_manager: Namespace manager instance
+                - base_uri: Base URI for ontology (default: "https://semantica.dev/ontology/")
+                - namespace_manager: Optional namespace manager instance
+                - min_occurrences: Minimum occurrences for class inference (default: 2)
+        
+        Example:
+            ```python
+            generator = OntologyGenerator(
+                base_uri="https://example.org/ontology/",
+                min_occurrences=3
+            )
+            ```
         """
         self.logger = get_logger("ontology_generator")
         self.config = config or {}
@@ -78,12 +103,41 @@ class OntologyGenerator:
         """
         Generate ontology from data using 6-stage pipeline.
         
+        Executes the complete 6-stage ontology generation pipeline:
+        1. Semantic Network Parsing: Extract domain concepts from entities/relationships
+        2. YAML-to-Definition: Transform concepts into class definitions
+        3. Definition-to-Types: Map definitions to OWL types
+        4. Hierarchy Generation: Build taxonomic structures
+        5. TTL Generation: (Handled by OWLGenerator)
+        6. Symbolic Validation: (Handled by OntologyValidator)
+        
         Args:
-            data: Input data (entities, relationships, semantic network)
-            **options: Generation options
+            data: Input data dictionary containing:
+                - entities: List of entity dictionaries
+                - relationships: List of relationship dictionaries
+                - semantic_network: Optional pre-parsed semantic network
+            **options: Generation options:
+                - name: Ontology name (default: "GeneratedOntology")
+                - build_hierarchy: Whether to build class hierarchy (default: True)
+                - namespace_manager: Optional namespace manager instance
         
         Returns:
-            Generated ontology dictionary
+            Generated ontology dictionary containing:
+                - uri: Ontology URI
+                - name: Ontology name
+                - version: Version string
+                - classes: List of class definitions
+                - properties: List of property definitions
+                - metadata: Additional metadata
+        
+        Example:
+            ```python
+            generator = OntologyGenerator(base_uri="https://example.org/ontology/")
+            ontology = generator.generate_ontology({
+                "entities": [{"type": "Person", "name": "John"}],
+                "relationships": [{"type": "worksFor", "source": "John", "target": "Acme"}]
+            })
+            ```
         """
         # Stage 1: Semantic Network Parsing
         semantic_network = self._stage1_parse_semantic_network(data, **options)

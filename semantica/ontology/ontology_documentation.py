@@ -1,8 +1,32 @@
 """
-Ontology Documentation Manager
+Ontology Documentation Manager Module
 
-Provides comprehensive ontology documentation including metadata,
-descriptions, version information, and contributor tracking.
+This module provides comprehensive ontology documentation including metadata,
+descriptions, version information, and contributor tracking. It supports
+generation of Markdown documentation and export to various formats.
+
+Key Features:
+    - Ontology metadata management (description, purpose, scope)
+    - Author and contributor tracking
+    - Creation date and version tracking
+    - License and IRI namespace management
+    - Documentation generation and export
+    - Documentation validation
+    - Markdown and HTML export support
+
+Main Classes:
+    - OntologyDocumentationManager: Manager for ontology documentation
+    - OntologyDocumentation: Dataclass representing ontology documentation
+
+Example Usage:
+    >>> from semantica.ontology import OntologyDocumentationManager
+    >>> manager = OntologyDocumentationManager()
+    >>> doc = manager.create_documentation("PersonOntology", "Ontology for person entities", "Model person-related concepts", "Person, Organization, Role")
+    >>> markdown = manager.generate_markdown("PersonOntology", ontology)
+    >>> manager.export_documentation("PersonOntology", "docs.md", format="markdown")
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional, Union

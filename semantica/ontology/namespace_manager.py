@@ -1,8 +1,33 @@
 """
-Namespace and IRI Manager
+Namespace and IRI Manager Module
 
-Manages ontology namespaces and generates consistent, human-readable
-IRIs following best practices (speaking IRIs, version management).
+This module manages ontology namespaces and generates consistent, human-readable
+IRIs following best practices (speaking IRIs, version management). It provides
+PascalCase for classes, camelCase for properties, and supports version-aware IRI
+generation.
+
+Key Features:
+    - Define stable host namespaces
+    - Generate consistent IRI conventions
+    - PascalCase for classes
+    - camelCase for properties and relations
+    - Version-aware IRI management
+    - Resolvable IRI generation
+    - Speaking IRI support (human-readable)
+    - Standard namespace registration (RDF, RDFS, OWL, XSD, SKOS, DC)
+
+Main Classes:
+    - NamespaceManager: Manager for namespaces and IRI generation
+
+Example Usage:
+    >>> from semantica.ontology import NamespaceManager
+    >>> manager = NamespaceManager(base_uri="https://example.org/ontology/", version="1.0")
+    >>> class_iri = manager.generate_class_iri("Person")
+    >>> prop_iri = manager.generate_property_iri("hasName")
+    >>> manager.register_namespace("ex", "https://example.org/")
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional

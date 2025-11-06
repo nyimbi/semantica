@@ -1,8 +1,30 @@
 """
-Property generation for Semantica framework.
+Property Generation Module
 
-This module provides property inference and generation
-for ontology classes and relationships.
+This module provides property inference and generation for ontology classes and
+relationships. It analyzes entity attributes and relationships to infer object
+and data properties with appropriate domains, ranges, and types.
+
+Key Features:
+    - Property inference from data patterns
+    - Relationship property generation
+    - Property type inference and validation
+    - Domain and range specification
+    - Property hierarchy management
+    - Multi-language property support
+    - Automatic XSD type detection
+
+Main Classes:
+    - PropertyGenerator: Generator for ontology properties
+
+Example Usage:
+    >>> from semantica.ontology import PropertyGenerator
+    >>> generator = PropertyGenerator()
+    >>> properties = generator.infer_properties(entities, relationships, classes)
+    >>> validation = generator.validate_properties(properties)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional

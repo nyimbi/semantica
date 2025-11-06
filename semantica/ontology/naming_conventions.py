@@ -1,8 +1,32 @@
 """
-Naming Conventions Manager
+Naming Conventions Manager Module
 
-Enforces and validates naming conventions for ontology elements following
-semantic modeling best practices.
+This module enforces and validates naming conventions for ontology elements
+following semantic modeling best practices. It provides validation, suggestions,
+and normalization for class names, property names, and ontology names.
+
+Key Features:
+    - Class naming: singular, PascalCase, nouns/noun phrases
+    - Attribute naming: lowercase, nouns or verbs
+    - Relation naming: camelCase, verbs/verb phrases
+    - Ontology naming: title case with "Ontology" suffix
+    - Vocabulary naming: title case with "Vocabulary" suffix
+    - Naming validation and suggestions
+    - Consistency checking across ontology
+    - Automatic name normalization
+
+Main Classes:
+    - NamingConventions: Manager for naming convention enforcement
+
+Example Usage:
+    >>> from semantica.ontology import NamingConventions
+    >>> conventions = NamingConventions()
+    >>> is_valid, suggestion = conventions.validate_class_name("Person")
+    >>> normalized = conventions.normalize_class_name("person class")
+    >>> suggested = conventions.suggest_property_name("has name", "object")
+
+Author: Semantica Contributors
+License: MIT
 """
 
 import re

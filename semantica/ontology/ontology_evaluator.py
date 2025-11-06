@@ -1,8 +1,32 @@
 """
-Ontology Evaluator
+Ontology Evaluator Module
 
-Evaluates ontologies against competency questions and refines them
-to ensure they meet requirements and can answer intended questions.
+This module evaluates ontologies against competency questions and refines them
+to ensure they meet requirements and can answer intended questions. It provides
+coverage scores, completeness metrics, gap identification, and improvement suggestions.
+
+Key Features:
+    - Validate ontology against competency questions
+    - Identify gaps in ontology coverage
+    - Suggest refinements and improvements
+    - Evaluate class granularity and generalization
+    - Check relation completeness
+    - Generate evaluation reports
+    - Calculate coverage and completeness scores
+
+Main Classes:
+    - OntologyEvaluator: Evaluator for ontology quality assessment
+    - EvaluationResult: Dataclass representing evaluation results
+
+Example Usage:
+    >>> from semantica.ontology import OntologyEvaluator
+    >>> evaluator = OntologyEvaluator()
+    >>> result = evaluator.evaluate_ontology(ontology, competency_questions=["Who are the employees?"])
+    >>> report = evaluator.generate_report(ontology)
+    >>> granularity = evaluator.evaluate_class_granularity(ontology)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional

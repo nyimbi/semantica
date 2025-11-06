@@ -1,9 +1,33 @@
 """
-Associative Class Builder
+Associative Class Builder Module
 
-Supports creating associative classes (like Position) that connect
-multiple classes together when simple relations are insufficient.
-Useful for modeling complex relationships like Person-Role-Organization.
+This module provides support for creating associative classes (like Position) that connect
+multiple classes together when simple relations are insufficient. This is useful for
+modeling complex relationships like Person-Role-Organization, where the relationship
+itself has properties and temporal characteristics.
+
+Key Features:
+    - Create associative classes connecting multiple entities
+    - Model complex multi-entity relationships
+    - Support temporal associations (time-based connections)
+    - Enable position/role modeling
+    - Handle association cardinality
+    - Support association property management
+    - Validate associative class definitions
+
+Main Classes:
+    - AssociativeClassBuilder: Builder for creating associative classes
+    - AssociativeClass: Dataclass representing an associative class
+
+Example Usage:
+    >>> from semantica.ontology import AssociativeClassBuilder
+    >>> builder = AssociativeClassBuilder()
+    >>> position = builder.create_position_class("Person", "Organization", "Role")
+    >>> membership = builder.create_temporal_association("Membership", ["Person", "Organization"])
+    >>> result = builder.validate_associative_class(position)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional
@@ -15,7 +39,29 @@ from ..utils.logging import get_logger
 
 @dataclass
 class AssociativeClass:
-    """Associative class definition."""
+    """
+    Associative class definition.
+    
+    Associative classes are used to model relationships that have their own properties
+    and characteristics, beyond simple binary relationships.
+    
+    Attributes:
+        name: Name of the associative class
+        connects: List of class names this associative class connects
+        properties: Dictionary of properties for the association
+        temporal: Whether this is a temporal association (time-based)
+        metadata: Additional metadata for the associative class
+    
+    Example:
+        ```python
+        assoc = AssociativeClass(
+            name="Position",
+            connects=["Person", "Organization", "Role"],
+            properties={"startDate": "xsd:date", "endDate": "xsd:date"},
+            temporal=True
+        )
+        ```
+    """
     name: str
     connects: List[str]  # List of class names this connects
     properties: Dict[str, Any] = field(default_factory=dict)
@@ -27,12 +73,31 @@ class AssociativeClassBuilder:
     """
     Associative class builder for complex relationships.
     
-    • Create associative classes connecting multiple entities
-    • Model complex multi-entity relationships
-    • Support temporal associations (time-based connections)
-    • Enable position/role modeling
-    • Handle association cardinality
-    • Support association property management
+    This class provides functionality to create and manage associative classes that
+    connect multiple entities when simple binary relationships are insufficient.
+    
+    Features:
+        - Create associative classes connecting multiple entities
+        - Model complex multi-entity relationships
+        - Support temporal associations (time-based connections)
+        - Enable position/role modeling
+        - Handle association cardinality
+        - Support association property management
+        - Validate associative class definitions
+    
+    Example:
+        ```python
+        builder = AssociativeClassBuilder()
+        
+        # Create position class
+        position = builder.create_position_class(
+            person_class="Person",
+            organization_class="Organization"
+        )
+        
+        # Validate
+        result = builder.validate_associative_class(position)
+        ```
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None, **kwargs):
@@ -42,6 +107,11 @@ class AssociativeClassBuilder:
         Args:
             config: Configuration dictionary
             **kwargs: Additional configuration options
+        
+        Example:
+            ```python
+            builder = AssociativeClassBuilder()
+            ```
         """
         self.logger = get_logger("associative_class_builder")
         self.config = config or {}
@@ -58,15 +128,33 @@ class AssociativeClassBuilder:
         """
         Create an associative class.
         
+        Creates a new associative class that connects multiple classes together.
+        This is useful for modeling relationships that have their own properties
+        and characteristics.
+        
         Args:
-            name: Class name
-            connects: List of class names this connects
+            name: Class name (must be non-empty)
+            connects: List of class names this connects (must have at least 2 classes)
             **options: Additional options:
-                - temporal: Whether this is a temporal association
-                - properties: Properties for the association
+                - temporal: Whether this is a temporal association (default: False)
+                - properties: Dictionary of properties for the association (default: {})
+                - metadata: Additional metadata dictionary (default: {})
         
         Returns:
-            Created associative class
+            Created associative class instance
+        
+        Raises:
+            ValidationError: If name is empty or connects has fewer than 2 classes
+        
+        Example:
+            ```python
+            assoc = builder.create_associative_class(
+                name="Membership",
+                connects=["Person", "Organization"],
+                temporal=True,
+                properties={"startDate": "xsd:date", "endDate": "xsd:date"}
+            )
+            ```
         """
         if not name:
             raise ValidationError("Associative class name is required")
@@ -98,14 +186,31 @@ class AssociativeClassBuilder:
         """
         Create a position/role associative class.
         
+        Creates a specialized associative class for modeling positions or roles
+        that connect a person to an organization (and optionally a role). This
+        is a common pattern in organizational modeling.
+        
         Args:
             person_class: Person class name
             organization_class: Organization class name
             role_class: Optional role class name
-            **options: Additional options
+            **options: Additional options:
+                - name: Name for the position class (default: "Position")
+                - temporal: Whether this is temporal (default: True)
+                - properties: Additional properties dictionary
+                - metadata: Additional metadata dictionary
         
         Returns:
-            Created associative class
+            Created associative class instance
+        
+        Example:
+            ```python
+            position = builder.create_position_class(
+                person_class="Person",
+                organization_class="Organization",
+                role_class="Role"
+            )
+            ```
         """
         connects = [person_class, organization_class]
         if role_class:
@@ -132,13 +237,26 @@ class AssociativeClassBuilder:
         """
         Create a temporal associative class.
         
+        Creates an associative class with temporal characteristics, automatically
+        adding startDate and endDate properties for time-based relationships.
+        
         Args:
             name: Class name
-            connects: List of class names
-            **options: Additional options
+            connects: List of class names this connects
+            **options: Additional options:
+                - properties: Additional properties dictionary (startDate and endDate are added automatically)
+                - metadata: Additional metadata dictionary
         
         Returns:
-            Created associative class
+            Created associative class instance with temporal properties
+        
+        Example:
+            ```python
+            membership = builder.create_temporal_association(
+                name="Membership",
+                connects=["Person", "Organization"]
+            )
+            ```
         """
         return self.create_associative_class(
             name=name,
@@ -156,11 +274,20 @@ class AssociativeClassBuilder:
         """
         Get associative class by name.
         
+        Retrieves an associative class that was previously created.
+        
         Args:
-            name: Class name
+            name: Class name to retrieve
         
         Returns:
-            Associative class or None
+            Associative class instance if found, None otherwise
+        
+        Example:
+            ```python
+            assoc = builder.get_associative_class("Position")
+            if assoc:
+                print(f"Found: {assoc.name}")
+            ```
         """
         return self.associative_classes.get(name)
     
@@ -168,8 +295,17 @@ class AssociativeClassBuilder:
         """
         List all associative classes.
         
+        Returns a list of all associative classes that have been created.
+        
         Returns:
-            List of associative classes
+            List of associative class instances
+        
+        Example:
+            ```python
+            all_classes = builder.list_associative_classes()
+            for assoc in all_classes:
+                print(assoc.name)
+            ```
         """
         return list(self.associative_classes.values())
     
@@ -177,11 +313,26 @@ class AssociativeClassBuilder:
         """
         Validate associative class.
         
+        Validates an associative class definition, checking for required fields,
+        proper structure, and potential issues.
+        
         Args:
-            assoc_class: Associative class to validate
+            assoc_class: Associative class instance to validate
         
         Returns:
-            Validation result
+            Dictionary with validation results:
+                - valid: Boolean indicating if validation passed
+                - errors: List of error messages
+                - warnings: List of warning messages
+        
+        Example:
+            ```python
+            result = builder.validate_associative_class(assoc_class)
+            if result["valid"]:
+                print("Valid associative class")
+            else:
+                print(f"Errors: {result['errors']}")
+            ```
         """
         errors = []
         warnings = []

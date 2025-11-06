@@ -1,11 +1,34 @@
 """
-Ontology validation for Semantica framework.
+Ontology Validator Module
 
-This module provides schema validation and consistency checking
-for generated ontologies using symbolic reasoners (HermiT, Pellet)
-to achieve F1 scores up to 0.99 while maintaining sub-hour generation times.
+This module provides schema validation and consistency checking for generated
+ontologies using symbolic reasoners (HermiT, Pellet) to achieve F1 scores up
+to 0.99 while maintaining sub-hour generation times. It supports hybrid validation
+with LLM draft generation + symbolic reasoner validation + domain expert refinement.
 
-Hybrid architecture: LLM draft generation + symbolic reasoner validation + domain expert refinement
+Key Features:
+    - Symbolic reasoner integration (HermiT, Pellet)
+    - Consistency checking and validation
+    - Constraint validation against domain rules
+    - Hallucination detection in LLM-generated ontologies
+    - Hybrid validation (LLM + symbolic reasoner)
+    - Performance optimization for large ontologies
+    - Integration with domain expert refinement
+    - Circular hierarchy detection
+    - Satisfiability checking
+
+Main Classes:
+    - OntologyValidator: Validator for ontology structure and consistency
+    - ValidationResult: Dataclass representing validation results
+
+Example Usage:
+    >>> from semantica.ontology import OntologyValidator
+    >>> validator = OntologyValidator(reasoner="hermit")
+    >>> result = validator.validate_ontology(ontology)
+    >>> if result.valid: print("Ontology is valid")
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional

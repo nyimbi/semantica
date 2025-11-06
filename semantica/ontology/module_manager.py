@@ -1,8 +1,32 @@
 """
-Ontology Module Manager
+Ontology Module Manager Module
 
-Manages modular ontology development, supporting imports, subdomain
-organization, and coordinated multi-team ontology development.
+This module manages modular ontology development, supporting imports, subdomain
+organization, and coordinated multi-team ontology development. It handles ontology
+imports, module creation, and import closure resolution.
+
+Key Features:
+    - Ontology import management
+    - Modular ontology organization
+    - Subdomain ontology coordination
+    - Cross-module reference handling
+    - Import closure resolution
+    - Module versioning and dependencies
+    - Module validation
+
+Main Classes:
+    - ModuleManager: Manager for ontology modules
+    - OntologyModule: Dataclass representing an ontology module
+
+Example Usage:
+    >>> from semantica.ontology import ModuleManager
+    >>> manager = ModuleManager()
+    >>> module = manager.create_module("PersonModule", "https://example.org/person/", "1.0")
+    >>> manager.add_import("PersonModule", "https://example.org/core/")
+    >>> imports = manager.resolve_imports("PersonModule")
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional

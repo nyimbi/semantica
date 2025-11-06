@@ -1,8 +1,30 @@
 """
-OWL/RDF generation for Semantica framework.
+OWL/RDF Generation Module
 
-This module provides OWL and RDF generation capabilities
-using rdflib for ontology serialization.
+This module provides OWL and RDF generation capabilities using rdflib for ontology
+serialization. It supports multiple RDF formats and provides fallback string-based
+generation when rdflib is not available.
+
+Key Features:
+    - OWL ontology generation using rdflib
+    - RDF serialization in multiple formats (Turtle, RDF/XML, JSON-LD, N3)
+    - Namespace management and prefix handling
+    - Ontology validation and consistency checking
+    - Export to various RDF formats
+    - Performance optimization for large ontologies
+    - Fallback string-based generation without rdflib
+
+Main Classes:
+    - OWLGenerator: Generator for OWL/RDF serialization
+
+Example Usage:
+    >>> from semantica.ontology import OWLGenerator
+    >>> generator = OWLGenerator()
+    >>> turtle = generator.generate_owl(ontology, format="turtle")
+    >>> generator.export_owl(ontology, "ontology.ttl", format="turtle")
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional, Union
@@ -67,13 +89,28 @@ class OWLGenerator:
         """
         Generate OWL from ontology dictionary.
         
+        Converts an ontology dictionary to OWL/RDF format. Uses rdflib if available,
+        otherwise falls back to basic string formatting.
+        
         Args:
-            ontology: Ontology dictionary
-            format: Output format ('turtle', 'rdfxml', 'json-ld', 'n3')
-            **options: Additional options
+            ontology: Ontology dictionary containing:
+                - uri: Ontology URI
+                - name: Ontology name
+                - version: Version string
+                - classes: List of class definitions
+                - properties: List of property definitions
+            format: Output format ('turtle', 'rdfxml', 'json-ld', 'n3', default: 'turtle')
+            **options: Additional options (currently unused)
         
         Returns:
-            OWL serialization string or Graph object
+            OWL serialization string (if rdflib not available or format specified)
+            or rdflib Graph object (if rdflib available and no format specified)
+        
+        Example:
+            ```python
+            turtle = generator.generate_owl(ontology, format="turtle")
+            graph = generator.generate_owl(ontology)  # Returns Graph if rdflib available
+            ```
         """
         output_format = format or self.default_format
         

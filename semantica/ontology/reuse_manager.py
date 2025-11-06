@@ -1,8 +1,33 @@
 """
-Ontology Reuse Manager
+Ontology Reuse Manager Module
 
-Manages ontology reuse including research, evaluation, and integration
-of existing ontologies (internal and external) and non-ontological resources.
+This module manages ontology reuse including research, evaluation, and integration
+of existing ontologies (internal and external) and non-ontological resources. It
+helps identify reusable ontologies, assess compatibility, and manage imports.
+
+Key Features:
+    - Research existing ontologies
+    - Evaluate ontology alignment and compatibility
+    - Assess interoperability benefits
+    - Manage external ontology imports
+    - Handle internal ontology reuse
+    - Convert non-ontological resources to ontologies
+    - Track reuse decisions and dependencies
+    - Known ontology catalog (FOAF, Dublin Core, Schema.org)
+
+Main Classes:
+    - ReuseManager: Manager for ontology reuse
+    - ReuseDecision: Dataclass representing a reuse decision
+
+Example Usage:
+    >>> from semantica.ontology import ReuseManager
+    >>> manager = ReuseManager()
+    >>> info = manager.research_ontology("http://xmlns.com/foaf/0.1/")
+    >>> alignment = manager.evaluate_alignment(source_uri, target_ontology)
+    >>> ontology = manager.import_external_ontology(source_uri, target_ontology)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional

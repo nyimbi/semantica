@@ -1,5 +1,5 @@
 """
-Ontology versioning for Semantica framework.
+Ontology Version Manager Module
 
 This module provides ontology versioning following best practices:
 - Single ontology IRI that resolves to specific version (includes version in IRI)
@@ -7,6 +7,31 @@ This module provides ontology versioning following best practices:
 - owl:versionInfo for tool compatibility
 - Version-less logical IRIs for latest stable release
 - Multiple versions can coexist in same graph database
+
+Key Features:
+    - Version-aware IRI generation (version in ontology IRI, not element IRIs)
+    - Version-less element IRIs for stability
+    - owl:versionInfo metadata support
+    - Logical version-less IRIs for latest releases
+    - Multi-version coexistence in graph database
+    - Import closure resolution under versioning
+    - Version comparison and diff generation
+    - Migration and upgrade utilities
+
+Main Classes:
+    - VersionManager: Manager for ontology versioning
+    - OntologyVersion: Dataclass representing an ontology version
+
+Example Usage:
+    >>> from semantica.ontology import VersionManager
+    >>> manager = VersionManager(base_uri="https://example.org/ontology/")
+    >>> version = manager.create_version("1.0", ontology, changes=["Added Person class"])
+    >>> element_iri = manager.generate_element_iri("Person", "class")
+    >>> comparison = manager.compare_versions("1.0", "2.0")
+    >>> migrated = manager.migrate_ontology("1.0", "2.0", ontology)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional
