@@ -1,8 +1,34 @@
 """
-Seed Data Manager for Semantica framework.
+Seed Data Manager Module
 
-Manages seed data for initial knowledge graph construction,
-enabling the AI to build on existing verified knowledge.
+This module provides comprehensive seed data management for initial knowledge
+graph construction, enabling the framework to build on existing verified
+knowledge from multiple sources.
+
+Key Features:
+    - Multi-source seed data loading (CSV, JSON, Database, API)
+    - Foundation graph creation from seed data
+    - Seed data quality validation
+    - Integration with extracted data using configurable merge strategies
+    - Version management for seed sources
+    - Export capabilities (JSON, CSV)
+    - Schema template validation
+
+Main Classes:
+    - SeedDataManager: Main coordinator for seed data operations
+    - SeedDataSource: Seed data source definition dataclass
+    - SeedData: Seed data container dataclass
+
+Example Usage:
+    >>> from semantica.seed import SeedDataManager
+    >>> manager = SeedDataManager()
+    >>> manager.register_source("entities", "json", "data/entities.json", entity_type="Person")
+    >>> records = manager.load_from_json("data/entities.json")
+    >>> foundation = manager.create_foundation_graph()
+    >>> validation = manager.validate_quality(foundation)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional, Union
@@ -20,7 +46,22 @@ from ..utils.types import EntityDict, RelationshipDict
 
 @dataclass
 class SeedDataSource:
-    """Seed data source definition."""
+    """
+    Seed data source definition.
+    
+    Represents a source of seed data with metadata about its format,
+    location, and verification status.
+    
+    Attributes:
+        name: Unique name for the source
+        format: Data format ('csv', 'json', 'database', 'api')
+        location: Source location (file path, DB connection string, API URL)
+        entity_type: Optional entity type for entities in this source
+        relationship_type: Optional relationship type for relationships in this source
+        verified: Whether the data is verified (default: True)
+        version: Source version string (default: "1.0")
+        metadata: Additional metadata dictionary
+    """
     name: str
     format: str  # csv, json, database, api
     location: Union[str, Path]
@@ -33,7 +74,17 @@ class SeedDataSource:
 
 @dataclass
 class SeedData:
-    """Seed data container."""
+    """
+    Seed data container.
+    
+    Holds entities, relationships, and metadata loaded from seed sources.
+    
+    Attributes:
+        entities: List of entity dictionaries
+        relationships: List of relationship dictionaries
+        properties: Additional properties dictionary
+        metadata: Metadata dictionary
+    """
     entities: List[EntityDict] = field(default_factory=list)
     relationships: List[RelationshipDict] = field(default_factory=list)
     properties: Dict[str, Any] = field(default_factory=dict)
@@ -44,11 +95,16 @@ class SeedDataManager:
     """
     Seed data manager for initial knowledge graph construction.
     
-    • Loads verified seed data from multiple sources
-    • Creates foundation graph from seed data
-    • Validates seed data quality
-    • Integrates seed data with extraction results
-    • Manages seed data versions
+    Manages loading, validation, and integration of seed data from multiple
+    sources to create a foundation knowledge graph. Supports CSV, JSON,
+    database, and API sources.
+    
+    Attributes:
+        logger: Logger instance for operations
+        config: Configuration dictionary
+        sources: Dictionary of registered seed data sources
+        seed_data: Current seed data container
+        versions: Version tracking for sources
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None, **kwargs):
@@ -56,8 +112,12 @@ class SeedDataManager:
         Initialize seed data manager.
         
         Args:
-            config: Configuration dictionary
-            **kwargs: Additional configuration options
+            config: Optional configuration dictionary
+            **kwargs: Additional configuration options merged into config
+            
+        Example:
+            >>> manager = SeedDataManager()
+            >>> manager = SeedDataManager(config={"auto_validate": True})
         """
         self.logger = get_logger("seed_manager")
         self.config = config or {}
@@ -80,17 +140,27 @@ class SeedDataManager:
         """
         Register a seed data source.
         
+        Registers a new source or updates an existing one. The source can be
+        loaded later using load_source().
+        
         Args:
-            name: Source name
+            name: Unique source name identifier
             format: Data format ('csv', 'json', 'database', 'api')
-            location: Source location (file path, DB connection, API URL)
-            entity_type: Entity type for entities in this source
-            relationship_type: Relationship type for relationships in this source
-            verified: Whether data is verified
-            **metadata: Additional metadata
+            location: Source location (file path, DB connection string, API URL)
+            entity_type: Optional entity type for entities in this source
+            relationship_type: Optional relationship type for relationships in this source
+            verified: Whether data is verified (default: True)
+            **metadata: Additional metadata to store with the source
             
         Returns:
             True if registration successful
+            
+        Raises:
+            ProcessingError: If source registration fails
+            
+        Example:
+            >>> manager.register_source("people", "json", "data/people.json", entity_type="Person")
+            >>> manager.register_source("companies", "csv", "data/companies.csv", entity_type="Organization")
         """
         if name in self.sources:
             self.logger.warning(f"Source '{name}' already registered, updating")
@@ -124,14 +194,24 @@ class SeedDataManager:
         """
         Load seed data from CSV file.
         
+        Reads a CSV file and converts rows to dictionaries. Automatically
+        adds entity_type, relationship_type, and source metadata if provided.
+        
         Args:
             file_path: Path to CSV file
-            entity_type: Entity type (if applicable)
-            relationship_type: Relationship type (if applicable)
-            source_name: Source name for tracking
+            entity_type: Optional entity type to add to all records
+            relationship_type: Optional relationship type to add to all records
+            source_name: Optional source name for tracking
             
         Returns:
-            List of loaded data records
+            List of loaded data records as dictionaries
+            
+        Raises:
+            ProcessingError: If file not found or CSV parsing fails
+            
+        Example:
+            >>> records = manager.load_from_csv("data/entities.csv", entity_type="Person")
+            >>> print(f"Loaded {len(records)} records")
         """
         file_path = Path(file_path)
         if not file_path.exists():
@@ -171,14 +251,25 @@ class SeedDataManager:
         """
         Load seed data from JSON file.
         
+        Reads a JSON file and handles various structures (list, dict with
+        'entities', 'data', 'records' keys, or single object). Automatically
+        adds entity_type, relationship_type, and source metadata if provided.
+        
         Args:
             file_path: Path to JSON file
-            entity_type: Entity type (if applicable)
-            relationship_type: Relationship type (if applicable)
-            source_name: Source name for tracking
+            entity_type: Optional entity type to add to all records
+            relationship_type: Optional relationship type to add to all records
+            source_name: Optional source name for tracking
             
         Returns:
-            List of loaded data records
+            List of loaded data records as dictionaries
+            
+        Raises:
+            ProcessingError: If file not found or JSON parsing fails
+            
+        Example:
+            >>> records = manager.load_from_json("data/entities.json", entity_type="Person")
+            >>> print(f"Loaded {len(records)} records")
         """
         file_path = Path(file_path)
         if not file_path.exists():
@@ -230,16 +321,31 @@ class SeedDataManager:
         """
         Load seed data from database.
         
+        Connects to a database and executes a query or exports a table.
+        Uses the DBIngestor module for database operations. Automatically
+        adds entity_type, relationship_type, and source metadata if provided.
+        
         Args:
             connection_string: Database connection string
-            query: Optional SQL query
-            table_name: Optional table name (if no query provided)
-            entity_type: Entity type (if applicable)
-            relationship_type: Relationship type (if applicable)
-            source_name: Source name for tracking
+            query: Optional SQL query to execute
+            table_name: Optional table name to export (if no query provided)
+            entity_type: Optional entity type to add to all records
+            relationship_type: Optional relationship type to add to all records
+            source_name: Optional source name for tracking
             
         Returns:
-            List of loaded data records
+            List of loaded data records as dictionaries
+            
+        Raises:
+            ProcessingError: If database connection fails, query fails, or
+                DBIngestor module is not available
+            
+        Example:
+            >>> records = manager.load_from_database(
+            ...     "postgresql://user:pass@localhost/db",
+            ...     query="SELECT * FROM entities",
+            ...     entity_type="Person"
+            ... )
         """
         try:
             from ..ingest.db_ingestor import DBIngestor
@@ -289,17 +395,34 @@ class SeedDataManager:
         """
         Load seed data from API.
         
+        Makes an HTTP GET request to an API endpoint and parses the JSON
+        response. Handles various response structures (list, dict with
+        'entities', 'data', 'results', 'items' keys). Automatically adds
+        entity_type, relationship_type, and source metadata if provided.
+        
         Args:
             api_url: Base API URL
-            endpoint: API endpoint path
-            entity_type: Entity type (if applicable)
-            relationship_type: Relationship type (if applicable)
-            source_name: Source name for tracking
-            api_key: Optional API key
-            headers: Optional request headers
+            endpoint: Optional API endpoint path (appended to api_url)
+            entity_type: Optional entity type to add to all records
+            relationship_type: Optional relationship type to add to all records
+            source_name: Optional source name for tracking
+            api_key: Optional API key (added as Bearer token in Authorization header)
+            headers: Optional request headers dictionary
             
         Returns:
-            List of loaded data records
+            List of loaded data records as dictionaries
+            
+        Raises:
+            ProcessingError: If API request fails, response parsing fails, or
+                requests library is not available
+            
+        Example:
+            >>> records = manager.load_from_api(
+            ...     "https://api.example.com",
+            ...     endpoint="entities",
+            ...     api_key="your-api-key",
+            ...     entity_type="Person"
+            ... )
         """
         try:
             import requests
@@ -363,11 +486,22 @@ class SeedDataManager:
         """
         Load data from registered source.
         
+        Loads data from a previously registered source using the source's
+        format and location. Automatically routes to the appropriate loader
+        method based on the source format.
+        
         Args:
-            source_name: Source name
+            source_name: Name of the registered source
             
         Returns:
-            List of loaded data records
+            List of loaded data records as dictionaries
+            
+        Raises:
+            ProcessingError: If source not registered or unsupported format
+            
+        Example:
+            >>> manager.register_source("entities", "json", "data/entities.json")
+            >>> records = manager.load_source("entities")
         """
         if source_name not in self.sources:
             raise ProcessingError(f"Source '{source_name}' not registered")
@@ -412,11 +546,24 @@ class SeedDataManager:
         """
         Create foundation graph from seed data.
         
+        Loads data from all registered sources and creates a foundation
+        knowledge graph with entities and relationships. Optionally validates
+        against a schema template.
+        
         Args:
             schema_template: Optional schema template for validation
             
         Returns:
-            Foundation graph dictionary with entities and relationships
+            Foundation graph dictionary with:
+                - entities: List of entity dictionaries
+                - relationships: List of relationship dictionaries
+                - metadata: Graph metadata including creation timestamp,
+                  source count, and verification status
+                    
+        Example:
+            >>> manager.register_source("people", "json", "data/people.json")
+            >>> foundation = manager.create_foundation_graph()
+            >>> print(f"Created graph with {len(foundation['entities'])} entities")
         """
         foundation = {
             "entities": [],
@@ -469,13 +616,28 @@ class SeedDataManager:
         """
         Integrate seed data with extracted data.
         
+        Merges seed data with extracted data using a configurable merge strategy.
+        Handles both entities and relationships, resolving conflicts based on
+        the selected strategy.
+        
         Args:
-            seed_data: Seed data dictionary
-            extracted_data: Extracted data dictionary
-            merge_strategy: Merge strategy ('seed_first', 'extracted_first', 'merge')
-            
+            seed_data: Seed data dictionary with 'entities' and 'relationships' keys
+            extracted_data: Extracted data dictionary with 'entities' and 'relationships' keys
+            merge_strategy: Merge strategy:
+                - 'seed_first': Seed data takes precedence, extracted data fills gaps
+                - 'extracted_first': Extracted data takes precedence, seed data fills gaps
+                - 'merge': Merge properties, seed takes precedence for conflicts
+                
         Returns:
-            Integrated data dictionary
+            Integrated data dictionary with:
+                - entities: Merged list of entities
+                - relationships: Merged list of relationships
+                - metadata: Merge metadata including timestamp, strategy, and counts
+                    
+        Example:
+            >>> integrated = manager.integrate_with_extracted(
+            ...     seed_data, extracted_data, merge_strategy="merge"
+            ... )
         """
         integrated = {
             "entities": [],
@@ -548,15 +710,28 @@ class SeedDataManager:
         """
         Validate seed data quality.
         
+        Performs comprehensive quality checks on seed data including required
+        fields, duplicate detection, and consistency validation.
+        
         Args:
-            seed_data: Seed data dictionary
+            seed_data: Seed data dictionary with 'entities' and 'relationships' keys
             **options: Validation options:
                 - check_required_fields: Check required fields (default: True)
                 - check_types: Validate data types (default: True)
                 - check_consistency: Check consistency (default: True)
                 
         Returns:
-            Validation result dictionary
+            Validation result dictionary with:
+                - valid: Boolean indicating if data is valid
+                - errors: List of error messages
+                - warnings: List of warning messages
+                - metrics: Dictionary with entity_count, relationship_count,
+                  unique_entity_ids, duplicate_entities
+                    
+        Example:
+            >>> validation = manager.validate_quality(foundation)
+            >>> if not validation["valid"]:
+            ...     print(f"Found {len(validation['errors'])} errors")
         """
         results = {
             "valid": True,
@@ -602,7 +777,18 @@ class SeedDataManager:
         return results
     
     def _record_to_entity(self, record: Dict[str, Any]) -> Optional[EntityDict]:
-        """Convert record to entity dictionary."""
+        """
+        Convert record to entity dictionary.
+        
+        Converts a data record to a standardized entity dictionary format.
+        Extracts id, text/name/label, type, confidence, and metadata.
+        
+        Args:
+            record: Source data record dictionary
+            
+        Returns:
+            Entity dictionary or None if record lacks required 'id' field
+        """
         if "id" not in record:
             return None
         
@@ -618,7 +804,18 @@ class SeedDataManager:
         return entity
     
     def _record_to_relationship(self, record: Dict[str, Any]) -> Optional[RelationshipDict]:
-        """Convert record to relationship dictionary."""
+        """
+        Convert record to relationship dictionary.
+        
+        Converts a data record to a standardized relationship dictionary format.
+        Extracts source_id, target_id, type, confidence, and metadata.
+        
+        Args:
+            record: Source data record dictionary
+            
+        Returns:
+            Relationship dictionary or None if record lacks required fields
+        """
         if "source_id" not in record or "target_id" not in record:
             return None
         
@@ -639,7 +836,19 @@ class SeedDataManager:
         foundation: Dict[str, Any],
         schema_template: Any
     ) -> Dict[str, Any]:
-        """Validate foundation against schema template."""
+        """
+        Validate foundation against schema template.
+        
+        Validates the foundation graph against a provided schema template.
+        Currently a placeholder for future schema validation functionality.
+        
+        Args:
+            foundation: Foundation graph dictionary
+            schema_template: Schema template object
+            
+        Returns:
+            Validated foundation graph dictionary
+        """
         # This would use schema template validation if available
         # For now, just return the foundation
         return foundation
@@ -652,9 +861,19 @@ class SeedDataManager:
         """
         Export seed data to file.
         
+        Exports the current seed data to a file in the specified format.
+        For CSV format, creates separate files for entities and relationships.
+        
         Args:
             file_path: Output file path
             format: Export format ('json', 'csv')
+            
+        Raises:
+            ProcessingError: If export fails
+            
+        Example:
+            >>> manager.export_seed_data("output/seed_data.json", format="json")
+            >>> manager.export_seed_data("output/seed_data", format="csv")
         """
         file_path = Path(file_path)
         
