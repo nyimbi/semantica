@@ -1,8 +1,24 @@
 """
-Audio embedder for Semantica framework.
+Audio Embedder Module
 
-This module provides audio embedding generation for
-speech and audio content analysis.
+This module provides comprehensive audio embedding generation capabilities for the
+Semantica framework, supporting librosa-based feature extraction and fallback methods.
+
+Key Features:
+    - Librosa integration for audio feature extraction (MFCC, chroma, etc.)
+    - Batch processing for multiple audio files
+    - Fallback audio embedding methods
+    - Configurable sample rate and normalization
+    - Support for various audio formats
+
+Example Usage:
+    >>> from semantica.embeddings import AudioEmbedder
+    >>> embedder = AudioEmbedder(sample_rate=16000)
+    >>> embedding = embedder.embed_audio("audio.wav")
+    >>> features = embedder.extract_features("audio.wav")
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from pathlib import Path
@@ -21,82 +37,173 @@ except ImportError:
 
 
 class AudioEmbedder:
-    """Audio embedding generator."""
+    """
+    Audio embedding generator for semantic audio representation.
     
-    def __init__(self, **config):
+    This class provides audio embedding generation using librosa for feature
+    extraction or fallback methods. Supports single audio files, batch processing,
+    and detailed feature extraction.
+    
+    Features:
+        - Librosa-based audio feature extraction (MFCC, chroma, spectral contrast)
+        - Batch processing for multiple audio files
+        - Fallback audio embedding methods
+        - Configurable sample rate and normalization
+        - Support for various audio formats (WAV, MP3, etc.)
+    
+    Example Usage:
+        >>> embedder = AudioEmbedder(
+        ...     sample_rate=16000,
+        ...     normalize=True
+        ... )
+        >>> embedding = embedder.embed_audio("audio.wav")
+        >>> features = embedder.extract_features("audio.wav")
+    """
+    
+    def __init__(
+        self,
+        sample_rate: int = 16000,
+        normalize: bool = True,
+        **config
+    ):
         """
         Initialize audio embedder.
         
+        Sets up the embedder with the specified audio processing configuration.
+        Uses librosa for feature extraction if available, falls back to simple
+        methods otherwise.
+        
         Args:
-            **config: Configuration options:
-                - sample_rate: Audio sample rate (default: 16000)
-                - normalize: Normalize embeddings (default: True)
+            sample_rate: Target sample rate for audio processing in Hz
+                        (default: 16000, standard for speech)
+            normalize: Whether to normalize embeddings to unit vectors (default: True)
+            **config: Additional configuration options
         """
         self.logger = get_logger("audio_embedder")
         self.config = config
         
-        self.sample_rate = config.get("sample_rate", 16000)
-        self.normalize = config.get("normalize", True)
+        # Audio processing configuration
+        self.sample_rate = sample_rate
+        self.normalize = normalize
+        
+        self.logger.debug(
+            f"Audio embedder initialized (sample_rate: {sample_rate} Hz)"
+        )
     
     def embed_audio(self, audio_path: Union[str, Path], **options) -> np.ndarray:
         """
-        Generate embedding for audio.
+        Generate embedding for a single audio file.
+        
+        This method creates a semantic embedding vector for the input audio using
+        librosa feature extraction or fallback methods. Returns a normalized vector
+        suitable for similarity calculations.
         
         Args:
-            audio_path: Path to audio file
-            **options: Embedding options
-            
+            audio_path: Path to audio file. Supports common formats (WAV, MP3, etc.)
+            **options: Additional embedding options (currently unused)
+        
         Returns:
-            np.ndarray: Audio embedding vector
+            np.ndarray: 1D embedding vector of shape (embedding_dim,).
+                       Dimension is typically 38 (MFCC + chroma + contrast + tonnetz)
+                       or 128 for fallback method.
+        
+        Raises:
+            ValidationError: If audio file doesn't exist
+            ProcessingError: If audio cannot be processed or embedded
+            
+        Example:
+            >>> embedder = AudioEmbedder()
+            >>> embedding = embedder.embed_audio("speech.wav")
+            >>> print(f"Embedding shape: {embedding.shape}")
         """
         audio_path = Path(audio_path)
         
+        # Validate audio file exists
         if not audio_path.exists():
-            raise ValidationError(f"Audio file not found: {audio_path}")
+            raise ValidationError(
+                f"Audio file not found: {audio_path}. "
+                "Please provide a valid audio file path."
+            )
         
+        if not audio_path.is_file():
+            raise ValidationError(f"Path is not a file: {audio_path}")
+        
+        self.logger.debug(f"Generating embedding for audio: {audio_path}")
+        
+        # Use librosa if available, otherwise fallback
         if LIBROSA_AVAILABLE:
             return self._embed_with_librosa(audio_path, **options)
         else:
             return self._embed_fallback(audio_path, **options)
     
     def _embed_with_librosa(self, audio_path: Path, **options) -> np.ndarray:
-        """Embed audio using librosa."""
+        """
+        Embed audio using librosa feature extraction.
+        
+        This method extracts multiple audio features (MFCC, chroma, spectral contrast,
+        tonnetz) and combines them into a single embedding vector. Features are
+        aggregated by taking the mean across time frames.
+        
+        Features Extracted:
+            - MFCC (13 coefficients): Mel-frequency cepstral coefficients
+            - Chroma (12 coefficients): Chroma features
+            - Spectral Contrast (7 coefficients): Spectral contrast features
+            - Tonnetz (6 coefficients): Tonal centroid features
+            - Total: 38-dimensional embedding
+        
+        Args:
+            audio_path: Path to audio file
+            **options: Unused (for compatibility)
+            
+        Returns:
+            np.ndarray: Combined audio feature embedding (38 dimensions)
+            
+        Raises:
+            ProcessingError: If audio processing or feature extraction fails
+        """
         try:
-            # Load audio
+            # Load audio file at specified sample rate
             y, sr = librosa.load(str(audio_path), sr=self.sample_rate)
             
-            # Extract features
-            # Mel-frequency cepstral coefficients (MFCCs)
+            self.logger.debug(
+                f"Loaded audio: duration={len(y)/sr:.2f}s, sample_rate={sr}Hz"
+            )
+            
+            # Extract multiple audio features
+            # Mel-frequency cepstral coefficients (MFCCs) - 13 coefficients
             mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
             
-            # Chroma features
+            # Chroma features - 12 coefficients
             chroma = librosa.feature.chroma_stft(y=y, sr=sr)
             
-            # Spectral contrast
+            # Spectral contrast - 7 coefficients
             contrast = librosa.feature.spectral_contrast(y=y, sr=sr)
             
-            # Tonnetz
+            # Tonnetz (tonal centroid) - 6 coefficients
             tonnetz = librosa.feature.tonnetz(y=y, sr=sr)
             
-            # Aggregate features (mean across time)
+            # Aggregate features by taking mean across time dimension
+            # This converts time-series features to fixed-size vectors
             features = np.concatenate([
-                np.mean(mfccs, axis=1),
-                np.mean(chroma, axis=1),
-                np.mean(contrast, axis=1),
-                np.mean(tonnetz, axis=1)
-            ])
+                np.mean(mfccs, axis=1),      # 13 dims
+                np.mean(chroma, axis=1),    # 12 dims
+                np.mean(contrast, axis=1),  # 7 dims
+                np.mean(tonnetz, axis=1)    # 6 dims
+            ])  # Total: 38 dimensions
             
-            # Normalize
+            # Normalize if requested
             if self.normalize:
                 norm = np.linalg.norm(features)
                 if norm > 0:
                     features = features / norm
             
+            self.logger.debug(f"Generated librosa embedding: shape {features.shape}")
             return features.astype(np.float32)
             
         except Exception as e:
-            self.logger.error(f"Failed to embed audio with librosa: {e}")
-            raise ProcessingError(f"Failed to embed audio: {e}")
+            error_msg = f"Failed to embed audio with librosa: {e}"
+            self.logger.error(error_msg)
+            raise ProcessingError(error_msg) from e
     
     def _embed_fallback(self, audio_path: Path, **options) -> np.ndarray:
         """Fallback audio embedding."""
@@ -141,25 +248,55 @@ class AudioEmbedder:
         
         return np.array(embeddings)
     
-    def extract_features(self, audio_path: Union[str, Path], **options) -> Dict[str, np.ndarray]:
+    def extract_features(
+        self,
+        audio_path: Union[str, Path],
+        **options
+    ) -> Dict[str, Union[np.ndarray, float]]:
         """
-        Extract audio features.
+        Extract detailed audio features from audio file.
+        
+        This method extracts comprehensive audio features including MFCC, chroma,
+        spectral contrast, tonnetz, tempo, and duration. Returns raw feature
+        matrices (not aggregated) for detailed analysis.
         
         Args:
             audio_path: Path to audio file
-            **options: Feature extraction options
-            
+            **options: Feature extraction options (currently unused)
+        
         Returns:
-            dict: Dictionary of audio features
+            Dictionary containing:
+                - mfcc: MFCC feature matrix (n_mfcc, n_frames)
+                - chroma: Chroma feature matrix (12, n_frames)
+                - spectral_contrast: Spectral contrast matrix (7, n_frames)
+                - tonnetz: Tonnetz feature matrix (6, n_frames)
+                - tempo: Estimated tempo in BPM (float)
+                - duration: Audio duration in seconds (float)
+            Returns empty dict if librosa not available or extraction fails
+        
+        Example:
+            >>> features = embedder.extract_features("audio.wav")
+            >>> print(f"Tempo: {features['tempo']} BPM")
+            >>> print(f"Duration: {features['duration']}s")
         """
         audio_path = Path(audio_path)
         
         if not LIBROSA_AVAILABLE:
+            self.logger.warning(
+                "librosa not available for feature extraction. "
+                "Install with: pip install librosa"
+            )
+            return {}
+        
+        if not audio_path.exists():
+            self.logger.warning(f"Audio file not found: {audio_path}")
             return {}
         
         try:
+            # Load audio
             y, sr = librosa.load(str(audio_path), sr=self.sample_rate)
             
+            # Extract comprehensive features
             features = {
                 "mfcc": librosa.feature.mfcc(y=y, sr=sr),
                 "chroma": librosa.feature.chroma_stft(y=y, sr=sr),
@@ -168,6 +305,11 @@ class AudioEmbedder:
                 "tempo": librosa.beat.tempo(y=y, sr=sr)[0],
                 "duration": len(y) / sr
             }
+            
+            self.logger.debug(
+                f"Extracted features from audio: "
+                f"duration={features['duration']:.2f}s, tempo={features['tempo']:.1f} BPM"
+            )
             
             return features
             

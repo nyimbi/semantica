@@ -1,20 +1,27 @@
 """
 Embedding Generation Module
 
-Handles generation of embeddings for text and other data types.
+This module provides comprehensive embedding generation capabilities for text,
+images, audio, and multi-modal content, with support for multiple embedding
+models and optimization strategies.
 
 Key Features:
-    - Text embedding generation
+    - Text embedding generation (multiple models: sentence-transformers, OpenAI, BGE, etc.)
+    - Image embedding generation
+    - Audio embedding generation
     - Multi-modal embedding support
-    - Embedding optimization and fine-tuning
-    - Batch embedding processing
-    - Embedding quality assessment
+    - Batch processing for efficiency
+    - Embedding optimization and compression
+    - Similarity comparison utilities
 
-Main Classes:
-    - EmbeddingGenerator: Main embedding generation class
-    - TextEmbedder: Text-specific embedding generator
-    - MultiModalEmbedder: Multi-modal embedding support
-    - EmbeddingOptimizer: Embedding optimization engine
+Example Usage:
+    >>> from semantica.embeddings import EmbeddingGenerator
+    >>> generator = EmbeddingGenerator()
+    >>> embeddings = generator.generate_embeddings("Hello world", data_type="text")
+    >>> similarity = generator.compare_embeddings(emb1, emb2, method="cosine")
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from pathlib import Path
@@ -33,48 +40,110 @@ from .embedding_optimizer import EmbeddingOptimizer
 
 class EmbeddingGenerator:
     """
-    Embedding generation handler.
+    Main embedding generation handler.
     
-    • Generates embeddings for text and data
-    • Supports multiple embedding models
-    • Handles batch embedding processing
-    • Optimizes embedding quality
-    • Manages embedding metadata
-    • Supports various embedding formats
+    This class provides a unified interface for generating embeddings from
+    various data types (text, images, audio) using multiple embedding models.
+    It handles batch processing, optimization, and similarity calculations.
+    
+    Supported Models:
+        - sentence-transformers: High-quality sentence embeddings
+        - openai: OpenAI text-embedding models
+        - bge: BAAI General Embedding models
+        - clip: CLIP for image-text embeddings
+    
+    Example Usage:
+        >>> generator = EmbeddingGenerator()
+        >>> # Single text embedding
+        >>> emb = generator.generate_embeddings("Hello world", data_type="text")
+        >>> # Batch processing
+        >>> embs = generator.process_batch(["text1", "text2", "text3"])
     """
     
-    def __init__(self, config=None, **kwargs):
-        """Initialize embedding generator."""
+    def __init__(self, config: Optional[Dict[str, Any]] = None, **kwargs):
+        """
+        Initialize embedding generator.
+        
+        Sets up embedders for different data types and the embedding optimizer.
+        Configuration can be provided via config dict or keyword arguments.
+        
+        Args:
+            config: Configuration dictionary with keys:
+                - text: Text embedder configuration
+                - image: Image embedder configuration
+                - audio: Audio embedder configuration
+                - multimodal: Multi-modal embedder configuration
+                - optimizer: Embedding optimizer configuration
+            **kwargs: Additional configuration (merged into config)
+        """
         self.logger = get_logger("embedding_generator")
+        
+        # Merge configuration
         self.config = config or {}
         self.config.update(kwargs)
         
-        # Initialize embedders
-        self.text_embedder = TextEmbedder(**self.config.get("text", {}))
-        self.image_embedder = ImageEmbedder(**self.config.get("image", {}))
-        self.audio_embedder = AudioEmbedder(**self.config.get("audio", {}))
-        self.multimodal_embedder = MultimodalEmbedder(**self.config.get("multimodal", {}))
-        self.embedding_optimizer = EmbeddingOptimizer(**self.config.get("optimizer", {}))
+        # Initialize embedders for different data types
+        # These are lazy-loaded and only initialized when needed
+        text_config = self.config.get("text", {})
+        image_config = self.config.get("image", {})
+        audio_config = self.config.get("audio", {})
+        multimodal_config = self.config.get("multimodal", {})
+        optimizer_config = self.config.get("optimizer", {})
         
-        # Supported models
+        self.text_embedder = TextEmbedder(**text_config)
+        self.image_embedder = ImageEmbedder(**image_config)
+        self.audio_embedder = AudioEmbedder(**audio_config)
+        self.multimodal_embedder = MultimodalEmbedder(**multimodal_config)
+        self.embedding_optimizer = EmbeddingOptimizer(**optimizer_config)
+        
+        # List of supported embedding models
         self.supported_models = ["sentence-transformers", "openai", "bge", "clip"]
+        
+        self.logger.info("Embedding generator initialized")
     
-    def generate_embeddings(self, data: Union[str, Path, List], data_type: Optional[str] = None, **options) -> np.ndarray:
+    def generate_embeddings(
+        self, 
+        data: Union[str, Path, List[Union[str, Path]]], 
+        data_type: Optional[str] = None, 
+        **options
+    ) -> np.ndarray:
         """
-        Generate embeddings for data.
+        Generate embeddings for input data.
+        
+        This method automatically detects the data type if not specified and
+        routes to the appropriate embedder. Supports both single items and batches.
         
         Args:
-            data: Input data (text, file path, or list)
-            data_type: Data type ("text", "image", "audio", auto-detected if None)
-            **options: Generation options
+            data: Input data to embed:
+                - str: Text string or file path
+                - Path: File path object
+                - List: Batch of texts or file paths
+            data_type: Explicit data type ("text", "image", "audio")
+                      If None, auto-detects from input
+            **options: Additional generation options passed to embedder
             
         Returns:
             np.ndarray: Generated embeddings
+                - For single input: 1D array
+                - For batch input: 2D array (batch_size, embedding_dim)
+                
+        Raises:
+            ProcessingError: If data type is unsupported or embedding fails
+            
+        Example:
+            >>> # Single text
+            >>> emb = generator.generate_embeddings("Hello world")
+            >>> # Batch of texts
+            >>> embs = generator.generate_embeddings(["text1", "text2"])
+            >>> # Image file
+            >>> emb = generator.generate_embeddings("image.jpg", data_type="image")
         """
-        # Auto-detect data type
+        # Auto-detect data type if not provided
         if data_type is None:
             data_type = self._detect_data_type(data)
+            self.logger.debug(f"Auto-detected data type: {data_type}")
         
+        # Route to appropriate embedder based on data type
         if data_type == "text":
             if isinstance(data, str):
                 return self.text_embedder.embed_text(data, **options)
@@ -91,28 +160,59 @@ class EmbeddingGenerator:
             elif isinstance(data, list):
                 return self.audio_embedder.embed_batch(data, **options)
         else:
-            raise ProcessingError(f"Unsupported data type: {data_type}")
+            error_msg = (
+                f"Unsupported data type: {data_type}. "
+                f"Supported types: text, image, audio"
+            )
+            raise ProcessingError(error_msg)
     
     def _detect_data_type(self, data: Union[str, Path, List]) -> str:
-        """Detect data type from input."""
+        """
+        Detect data type from input automatically.
+        
+        This method analyzes the input to determine whether it's text, image,
+        or audio data. For file paths, it uses file extensions. For strings,
+        it defaults to text.
+        
+        Args:
+            data: Input data to analyze
+            
+        Returns:
+            str: Detected data type ("text", "image", or "audio")
+        """
+        # Handle list inputs - check first item
         if isinstance(data, list):
             if not data:
+                # Empty list defaults to text
                 return "text"
-            # Check first item
+            # Recursively check first item
             return self._detect_data_type(data[0])
         
-        if isinstance(data, Path) or (isinstance(data, str) and Path(data).exists()):
-            file_path = Path(data)
+        # Check if input is a file path
+        file_path = None
+        if isinstance(data, Path):
+            file_path = data
+        elif isinstance(data, str):
+            # Check if string is a valid file path
+            potential_path = Path(data)
+            if potential_path.exists():
+                file_path = potential_path
+        
+        # If it's a file path, detect type by extension
+        if file_path:
             suffix = file_path.suffix.lower()
             
-            image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp']
-            audio_extensions = ['.mp3', '.wav', '.flac', '.aac', '.ogg']
+            # Common image file extensions
+            image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp', '.svg']
+            # Common audio file extensions
+            audio_extensions = ['.mp3', '.wav', '.flac', '.aac', '.ogg', '.m4a', '.wma']
             
             if suffix in image_extensions:
                 return "image"
             elif suffix in audio_extensions:
                 return "audio"
         
+        # Default to text for strings or unknown file types
         return "text"
     
     def optimize_embeddings(self, embeddings: np.ndarray, **options) -> np.ndarray:

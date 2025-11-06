@@ -1,8 +1,24 @@
 """
-Context manager for Semantica framework.
+Context Manager Module
 
-This module provides context window management for
-embedding generation and processing.
+This module provides comprehensive context window management for embedding generation
+and processing in the Semantica framework, enabling efficient handling of long texts.
+
+Key Features:
+    - Context window creation and management
+    - Text splitting with sentence boundary preservation
+    - Context merging and retrieval
+    - Configurable window size and overlap
+    - Context metadata tracking
+
+Example Usage:
+    >>> from semantica.embeddings import ContextManager
+    >>> manager = ContextManager(window_size=512, overlap=50)
+    >>> windows = manager.split_into_windows(long_text)
+    >>> merged = manager.merge_contexts([window1.context_id, window2.context_id])
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from dataclasses import dataclass, field
@@ -14,7 +30,29 @@ from ..utils.logging import get_logger
 
 @dataclass
 class ContextWindow:
-    """Context window representation."""
+    """
+    Context window representation for text processing.
+    
+    This dataclass represents a window of text with its position in the original
+    document and associated metadata. Used for managing text chunks in embedding
+    generation and processing.
+    
+    Attributes:
+        text: The text content of this context window
+        start_index: Starting character index in original text
+        end_index: Ending character index in original text
+        context_id: Unique identifier for this context window
+        metadata: Additional metadata dictionary (source, tags, etc.)
+    
+    Example:
+        >>> window = ContextWindow(
+        ...     text="This is a context window.",
+        ...     start_index=0,
+        ...     end_index=25,
+        ...     context_id="uuid-123",
+        ...     metadata={"source": "document.txt"}
+        ... )
+    """
     
     text: str
     start_index: int
@@ -24,45 +62,100 @@ class ContextWindow:
 
 
 class ContextManager:
-    """Context window manager for embeddings."""
+    """
+    Context window manager for embedding generation and text processing.
     
-    def __init__(self, **config):
+    This class manages context windows for processing long texts, enabling
+    efficient chunking, retrieval, and merging of text contexts.
+    
+    Features:
+        - Context window creation and storage
+        - Text splitting with sentence boundary preservation
+        - Context merging for combining windows
+        - Configurable window size and overlap
+        - Automatic context cleanup when limit reached
+    
+    Example Usage:
+        >>> manager = ContextManager(
+        ...     window_size=512,
+        ...     overlap=50,
+        ...     max_contexts=100
+        ... )
+        >>> windows = manager.split_into_windows(long_text)
+        >>> context = manager.get_context(windows[0].context_id)
+    """
+    
+    def __init__(
+        self,
+        window_size: int = 512,
+        overlap: int = 50,
+        max_contexts: int = 100,
+        **config
+    ):
         """
         Initialize context manager.
         
+        Sets up the manager with specified window size, overlap, and maximum
+        number of contexts to maintain in memory.
+        
         Args:
-            **config: Configuration options:
-                - window_size: Context window size in tokens/characters
-                - overlap: Overlap between windows
-                - max_contexts: Maximum number of contexts to keep
+            window_size: Size of context windows in characters (default: 512)
+            overlap: Overlap between consecutive windows in characters (default: 50)
+            max_contexts: Maximum number of contexts to keep in memory (default: 100)
+            **config: Additional configuration options
         """
         self.logger = get_logger("context_manager")
         self.config = config
         
-        self.window_size = config.get("window_size", 512)
-        self.overlap = config.get("overlap", 50)
-        self.max_contexts = config.get("max_contexts", 100)
+        # Window configuration
+        self.window_size = window_size
+        self.overlap = overlap
+        self.max_contexts = max_contexts
         
-        # Store contexts
+        # Store contexts (context_id -> ContextWindow)
         self.contexts: Dict[str, ContextWindow] = {}
+        
+        self.logger.debug(
+            f"Context manager initialized: window_size={window_size}, "
+            f"overlap={overlap}, max_contexts={max_contexts}"
+        )
     
-    def create_context_window(self, text: str, start_index: int = 0, **metadata) -> ContextWindow:
+    def create_context_window(
+        self,
+        text: str,
+        start_index: int = 0,
+        **metadata
+    ) -> ContextWindow:
         """
         Create a context window from text.
         
+        This method creates a new context window with a unique ID and stores it
+        for later retrieval. Automatically removes oldest context if limit reached.
+        
         Args:
-            text: Input text
-            start_index: Start index in original text
-            **metadata: Context metadata
-            
+            text: Input text content for the context window
+            start_index: Starting character index in original text (default: 0)
+            **metadata: Additional metadata to attach to context window
+                       (e.g., source, tags, document_id)
+        
         Returns:
-            ContextWindow: Created context window
+            ContextWindow: Created context window with unique ID
+        
+        Example:
+            >>> window = manager.create_context_window(
+            ...     text="This is a context window.",
+            ...     start_index=0,
+            ...     source="document.txt"
+            ... )
+            >>> print(window.context_id)
         """
         import uuid
         
+        # Generate unique context ID
         context_id = str(uuid.uuid4())
         end_index = start_index + len(text)
         
+        # Create context window
         window = ContextWindow(
             text=text,
             start_index=start_index,
@@ -71,108 +164,220 @@ class ContextManager:
             metadata=metadata
         )
         
-        # Store context
+        # Manage context storage (remove oldest if limit reached)
         if len(self.contexts) >= self.max_contexts:
-            # Remove oldest context
-            oldest_id = min(self.contexts.keys(), key=lambda k: self.contexts[k].start_index)
+            # Find and remove oldest context (by start_index)
+            oldest_id = min(
+                self.contexts.keys(),
+                key=lambda k: self.contexts[k].start_index
+            )
             del self.contexts[oldest_id]
+            self.logger.debug(
+                f"Removed oldest context {oldest_id} (limit reached: {self.max_contexts})"
+            )
         
+        # Store new context
         self.contexts[context_id] = window
+        
+        self.logger.debug(
+            f"Created context window: id={context_id}, "
+            f"start={start_index}, end={end_index}, "
+            f"text_length={len(text)}"
+        )
         
         return window
     
-    def split_into_windows(self, text: str, **options) -> List[ContextWindow]:
+    def split_into_windows(
+        self,
+        text: str,
+        preserve_sentences: bool = True,
+        **options
+    ) -> List[ContextWindow]:
         """
         Split text into context windows.
         
+        This method splits long text into overlapping context windows, optionally
+        preserving sentence boundaries to avoid cutting sentences in half.
+        
+        Splitting Strategy:
+            - Creates windows of size window_size
+            - Overlaps by overlap characters between windows
+            - Optionally preserves sentence boundaries (default: True)
+            - Ensures minimum window size (50% of window_size) when preserving sentences
+        
         Args:
-            text: Input text
-            **options: Splitting options:
-                - preserve_sentences: Preserve sentence boundaries
-                
+            text: Input text to split into windows
+            preserve_sentences: Whether to preserve sentence boundaries when splitting
+                              (default: True). If True, windows end at sentence boundaries.
+            **options: Additional options passed to create_context_window()
+        
         Returns:
-            list: List of context windows
+            List of ContextWindow: List of context windows covering the entire text
+        
+        Example:
+            >>> long_text = "Sentence one. Sentence two! Sentence three?"
+            >>> windows = manager.split_into_windows(long_text, preserve_sentences=True)
+            >>> print(f"Created {len(windows)} context windows")
         """
+        if not text:
+            self.logger.debug("Empty text provided, returning empty window list")
+            return []
+        
         windows = []
         text_length = len(text)
         start = 0
         
-        preserve_sentences = options.get("preserve_sentences", True)
+        self.logger.debug(
+            f"Splitting text into windows: length={text_length}, "
+            f"window_size={self.window_size}, overlap={self.overlap}, "
+            f"preserve_sentences={preserve_sentences}"
+        )
         
         while start < text_length:
+            # Calculate end position
             end = min(start + self.window_size, text_length)
             
+            # Try to preserve sentence boundaries if requested
             if preserve_sentences and end < text_length:
-                # Try to find sentence boundary
+                # Look for sentence boundaries (., !, ?, newline)
                 for boundary in ['.', '!', '?', '\n']:
                     last_boundary = text.rfind(boundary, start, end)
-                    if last_boundary > start + self.window_size * 0.5:  # At least 50% of window
+                    # Only use boundary if it's at least 50% into the window
+                    # (ensures minimum window size)
+                    if last_boundary > start + self.window_size * 0.5:
                         end = last_boundary + 1
                         break
             
+            # Extract window text
             window_text = text[start:end]
+            
+            # Create and store context window
             window = self.create_context_window(window_text, start, **options)
             windows.append(window)
             
-            # Move to next window with overlap
+            # Move to next window position with overlap
             start += (self.window_size - self.overlap)
+        
+        self.logger.info(
+            f"Split text into {len(windows)} context window(s)"
+        )
         
         return windows
     
     def get_context(self, context_id: str) -> Optional[ContextWindow]:
         """
-        Get context by ID.
+        Get context window by ID.
+        
+        Retrieves a previously created context window using its unique identifier.
         
         Args:
-            context_id: Context ID
-            
+            context_id: Unique context window identifier
+        
         Returns:
-            ContextWindow: Context window or None
+            ContextWindow if found, None otherwise
+        
+        Example:
+            >>> window = manager.get_context("uuid-123")
+            >>> if window:
+            ...     print(window.text)
         """
-        return self.contexts.get(context_id)
+        context = self.contexts.get(context_id)
+        if context:
+            self.logger.debug(f"Retrieved context: {context_id}")
+        else:
+            self.logger.debug(f"Context not found: {context_id}")
+        return context
     
-    def merge_contexts(self, context_ids: List[str], **options) -> Optional[ContextWindow]:
+    def merge_contexts(
+        self,
+        context_ids: List[str],
+        **options
+    ) -> Optional[ContextWindow]:
         """
-        Merge multiple contexts.
+        Merge multiple context windows into a single window.
+        
+        This method combines multiple context windows by concatenating their texts
+        and merging their metadata. Contexts are sorted by start_index before merging.
         
         Args:
-            context_ids: List of context IDs
-            **options: Merge options
-            
+            context_ids: List of context IDs to merge
+            **options: Additional options passed to create_context_window()
+        
         Returns:
-            ContextWindow: Merged context window
+            ContextWindow: Merged context window, or None if no valid contexts found.
+                         The merged window has:
+                         - Combined text from all contexts
+                         - Start index from first context
+                         - End index from last context
+                         - Merged metadata from all contexts
+        
+        Example:
+            >>> merged = manager.merge_contexts(
+            ...     [window1.context_id, window2.context_id, window3.context_id]
+            ... )
+            >>> print(f"Merged text length: {len(merged.text)}")
         """
-        contexts = [self.contexts.get(cid) for cid in context_ids if cid in self.contexts]
+        # Retrieve all valid contexts
+        contexts = [
+            self.contexts.get(cid)
+            for cid in context_ids
+            if cid in self.contexts
+        ]
         contexts = [c for c in contexts if c is not None]
         
         if not contexts:
+            self.logger.warning(
+                f"No valid contexts found for merging: {context_ids}"
+            )
             return None
         
-        # Sort by start index
+        # Sort contexts by start index to maintain order
         contexts.sort(key=lambda c: c.start_index)
         
-        # Merge texts
+        # Merge texts (join with space)
         merged_text = ' '.join(c.text for c in contexts)
         start_index = contexts[0].start_index
         end_index = contexts[-1].end_index
         
-        # Combine metadata
+        # Combine metadata from all contexts
         merged_metadata = {}
         for ctx in contexts:
             merged_metadata.update(ctx.metadata)
         
+        # Add merge information
+        merged_metadata['merged'] = True
+        merged_metadata['source_contexts'] = context_ids
+        merged_metadata['num_contexts'] = len(contexts)
+        
+        self.logger.debug(
+            f"Merged {len(contexts)} contexts: "
+            f"start={start_index}, end={end_index}, "
+            f"text_length={len(merged_text)}"
+        )
+        
         return self.create_context_window(
             merged_text,
             start_index,
-            merged=True,
-            source_contexts=context_ids,
-            **merged_metadata
+            **merged_metadata,
+            **options
         )
     
-    def clear_contexts(self):
-        """Clear all stored contexts."""
+    def clear_contexts(self) -> None:
+        """
+        Clear all stored contexts.
+        
+        Removes all context windows from memory. Useful for freeing memory
+        or resetting the context manager.
+        """
+        count = len(self.contexts)
         self.contexts.clear()
+        self.logger.debug(f"Cleared {count} context(s)")
     
     def get_context_count(self) -> int:
-        """Get number of stored contexts."""
+        """
+        Get number of stored contexts.
+        
+        Returns:
+            int: Number of context windows currently stored in memory
+        """
         return len(self.contexts)
