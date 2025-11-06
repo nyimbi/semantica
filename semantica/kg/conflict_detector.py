@@ -1,8 +1,28 @@
 """
-Conflict detector for Semantica framework.
+Conflict Detection Module
 
-This module provides conflict identification and resolution
-for knowledge graph inconsistencies.
+This module provides comprehensive conflict identification and resolution
+capabilities for the Semantica framework, enabling detection of inconsistencies
+in knowledge graphs.
+
+Key Features:
+    - Value conflict detection (conflicting property values for same entity)
+    - Relationship conflict detection (conflicting relationship properties)
+    - Conflict resolution with multiple strategies
+    - Source tracking for conflicts
+    - Conflict categorization and prioritization
+
+Main Classes:
+    - ConflictDetector: Main conflict detection and resolution engine
+
+Example Usage:
+    >>> from semantica.kg import ConflictDetector
+    >>> detector = ConflictDetector()
+    >>> conflicts = detector.detect_conflicts(knowledge_graph)
+    >>> resolution = detector.resolve_conflicts(conflicts)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional
@@ -14,29 +34,64 @@ from ..conflicts.conflict_resolver import ConflictResolver
 
 class ConflictDetector:
     """
-    Conflict detector.
+    Conflict detection and resolution engine.
     
-    Identifies conflicts and inconsistencies in knowledge graphs.
+    This class identifies conflicts and inconsistencies in knowledge graphs,
+    including value conflicts (same entity with different property values)
+    and relationship conflicts. Provides conflict resolution capabilities.
+    
+    Features:
+        - Entity property value conflict detection
+        - Relationship property conflict detection
+        - Conflict resolution with configurable strategies
+        - Source tracking for conflict origins
+    
+    Example Usage:
+        >>> detector = ConflictDetector()
+        >>> conflicts = detector.detect_conflicts(knowledge_graph)
+        >>> resolution = detector.resolve_conflicts(conflicts)
     """
     
     def __init__(self, **config):
-        """Initialize conflict detector."""
+        """
+        Initialize conflict detector.
+        
+        Sets up the detector with base conflict detection and resolution
+        components from the conflicts module.
+        
+        Args:
+            **config: Configuration options:
+                - detection: Configuration for conflict detection (optional)
+                - resolution: Configuration for conflict resolution (optional)
+        """
         self.logger = get_logger("conflict_detector")
         self.config = config
         
         # Initialize conflict detection components
         self.base_detector = BaseConflictDetector(**config.get("detection", {}))
         self.resolver = ConflictResolver(**config.get("resolution", {}))
+        
+        self.logger.debug("Conflict detector initialized")
     
     def detect_conflicts(self, knowledge_graph: Any) -> List[Dict[str, Any]]:
         """
         Detect conflicts in knowledge graph.
         
+        This method identifies conflicts in the knowledge graph, including:
+        - Value conflicts: Same entity with different values for the same property
+        - Relationship conflicts: Same relationship with conflicting properties
+        
         Args:
-            knowledge_graph: Knowledge graph instance
+            knowledge_graph: Knowledge graph instance (object with entities/relationships
+                           attributes, or dict with "entities" and "relationships" keys)
             
         Returns:
-            List of detected conflicts
+            list: List of conflict dictionaries, each containing:
+                - entity_id or relationship: Identifier of conflicted element
+                - property: Property name with conflict
+                - conflicting_values: List of conflicting values
+                - type: Conflict type ("value_conflict" or "relationship_conflict")
+                - sources: List of source identifiers for conflicting values
         """
         self.logger.info("Detecting conflicts in knowledge graph")
         
@@ -133,15 +188,29 @@ class ConflictDetector:
         self.logger.info(f"Detected {len(conflicts)} conflicts")
         return conflicts
     
-    def resolve_conflicts(self, conflicts: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def resolve_conflicts(
+        self,
+        conflicts: List[Dict[str, Any]],
+        strategy: str = "highest_confidence"
+    ) -> Dict[str, Any]:
         """
         Resolve detected conflicts.
         
+        This method attempts to resolve conflicts using the configured conflict
+        resolver with the specified strategy. Converts conflict dictionaries
+        to Conflict objects for resolution.
+        
         Args:
-            conflicts: List of conflicts
+            conflicts: List of conflict dictionaries from detect_conflicts()
+            strategy: Resolution strategy to use (default: "highest_confidence")
             
         Returns:
-            Resolution results
+            dict: Resolution results containing:
+                - resolved: List of successfully resolved conflicts with resolutions
+                - unresolved: List of conflicts that could not be resolved
+                - total: Total number of conflicts
+                - resolved_count: Number of resolved conflicts
+                - unresolved_count: Number of unresolved conflicts
         """
         self.logger.info(f"Resolving {len(conflicts)} conflicts")
         

@@ -1,17 +1,25 @@
 """
 Graph Analytics Module
 
-Handles comprehensive graph analytics including centrality measures, community detection, and connectivity analysis.
+This module provides comprehensive graph analytics capabilities for knowledge graphs,
+including centrality measures, community detection, connectivity analysis, and
+graph metrics calculation.
 
 Key Features:
-    - Centrality measures (degree, betweenness, closeness, eigenvector)
-    - Community detection algorithms
-    - Connectivity analysis
+    - Multiple centrality measures (degree, betweenness, closeness, eigenvector)
+    - Community detection algorithms (Louvain, Leiden, etc.)
+    - Connectivity analysis and path finding
     - Graph metrics and statistics
-    - Path analysis and shortest paths
+    - Temporal graph analysis (optional)
 
-Main Classes:
-    - GraphAnalyzer: Main graph analytics class
+Example Usage:
+    >>> from semantica.kg import GraphAnalyzer
+    >>> analyzer = GraphAnalyzer()
+    >>> analysis = analyzer.analyze_graph(graph)
+    >>> centrality = analyzer.calculate_centrality(graph, centrality_type="degree")
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from .centrality_calculator import CentralityCalculator
@@ -23,91 +31,118 @@ class GraphAnalyzer:
     """
     Comprehensive graph analytics handler.
     
-    • Performs graph analytics and metrics calculation
-    • Calculates centrality measures for nodes
-    • Detects communities and clusters in graphs
-    • Analyzes graph connectivity and structure
-    • Provides graph statistics and insights
-    • Supports various graph algorithms
+    This class provides a unified interface for performing various graph analytics
+    including centrality calculations, community detection, connectivity analysis,
+    and graph metrics computation. It coordinates multiple specialized analyzers.
     
-    Attributes:
-        • centrality_calculator: Centrality measures calculator
-        • community_detector: Community detection engine
-        • connectivity_analyzer: Connectivity analysis engine
-        • metrics_calculator: Graph metrics calculator
-        • supported_algorithms: List of supported algorithms
-        
-    Methods:
-        • analyze_graph(): Perform comprehensive graph analysis
-        • calculate_centrality(): Calculate centrality measures
-        • detect_communities(): Detect graph communities
-        • analyze_connectivity(): Analyze graph connectivity
+    Features:
+        - Centrality measures (degree, betweenness, closeness, eigenvector)
+        - Community detection (Louvain, Leiden, etc.)
+        - Connectivity analysis and path finding
+        - Graph metrics and statistics
+        - Temporal graph analysis (optional)
+    
+    Example Usage:
+        >>> analyzer = GraphAnalyzer()
+        >>> # Comprehensive analysis
+        >>> results = analyzer.analyze_graph(graph)
+        >>> # Specific analysis
+        >>> centrality = analyzer.calculate_centrality(graph, "betweenness")
+        >>> communities = analyzer.detect_communities(graph, algorithm="louvain")
     """
     
     def __init__(
         self,
-        config=None,
-        enable_temporal=False,
-        temporal_granularity="day",
+        config: Optional[Dict[str, Any]] = None,
+        enable_temporal: bool = False,
+        temporal_granularity: str = "day",
         **kwargs
     ):
         """
         Initialize graph analyzer.
         
-        • Setup graph analysis algorithms
-        • Configure centrality calculations
-        • Initialize community detection
-        • Setup connectivity analysis
-        • Configure metrics calculation
-        • Enable temporal analysis if requested
+        Sets up all analysis components including centrality calculator,
+        community detector, and connectivity analyzer.
         
         Args:
-            config: Configuration dictionary
-            enable_temporal: Enable temporal graph analysis
+            config: Configuration dictionary for analyzers
+            enable_temporal: Enable temporal graph analysis features (default: False)
             temporal_granularity: Time granularity for temporal analysis
-            **kwargs: Additional configuration options
+                                 ("second", "minute", "hour", "day", etc., default: "day")
+            **kwargs: Additional configuration options merged into config
         """
+        from ..utils.logging import get_logger
+        self.logger = get_logger("graph_analyzer")
+        
+        # Merge configuration
         self.config = config or {}
+        self.config.update(kwargs)
+        
+        # Temporal analysis settings
         self.enable_temporal = enable_temporal
         self.temporal_granularity = temporal_granularity
+        
+        # Initialize specialized analyzers
         self.centrality_calculator = CentralityCalculator(**self.config)
         self.community_detector = CommunityDetector(**self.config)
         self.connectivity_analyzer = ConnectivityAnalyzer(**self.config)
         
-        # Initialize graph analysis components
-        from ..utils.logging import get_logger
-        self.logger = get_logger("graph_analyzer")
+        self.logger.info(
+            f"Graph analyzer initialized (temporal: {enable_temporal})"
+        )
     
-    def analyze_graph(self, graph, **options):
+    def analyze_graph(self, graph: Dict[str, Any], **options) -> Dict[str, Any]:
         """
         Perform comprehensive graph analysis.
         
-        • Calculate graph metrics and statistics
-        • Analyze graph structure and properties
-        • Identify key nodes and relationships
-        • Detect patterns and anomalies
-        • Return comprehensive analysis results
+        This method runs all available graph analytics including centrality
+        measures, community detection, connectivity analysis, and metrics
+        computation. Returns a comprehensive analysis report.
+        
+        Args:
+            graph: Knowledge graph to analyze (dict with "entities" and "relationships")
+            **options: Analysis options passed to individual analyzers
+            
+        Returns:
+            Dictionary containing:
+                - centrality: Centrality measures for all nodes
+                - communities: Detected community structures
+                - connectivity: Connectivity analysis results
+                - metrics: Graph metrics and statistics
+                
+        Example:
+            >>> analysis = analyzer.analyze_graph(graph)
+            >>> top_nodes = analysis["centrality"]["rankings"][:10]
+            >>> num_communities = len(analysis["communities"])
         """
         self.logger.info("Performing comprehensive graph analysis")
         
-        # Calculate centrality
+        # Calculate centrality measures for all nodes
+        self.logger.debug("Calculating centrality measures")
         centrality = self.calculate_centrality(graph, **options)
         
-        # Detect communities
+        # Detect community structures
+        self.logger.debug("Detecting communities")
         communities = self.detect_communities(graph, **options)
         
-        # Analyze connectivity
+        # Analyze graph connectivity
+        self.logger.debug("Analyzing connectivity")
         connectivity = self.analyze_connectivity(graph, **options)
         
-        # Compute metrics
+        # Compute overall graph metrics
+        self.logger.debug("Computing graph metrics")
         metrics = self.compute_metrics(graph=graph, **options)
         
-        return {
+        # Compile comprehensive results
+        results = {
             "centrality": centrality,
             "communities": communities,
             "connectivity": connectivity,
             "metrics": metrics
         }
+        
+        self.logger.info("Graph analysis completed successfully")
+        return results
     
     def calculate_centrality(self, graph, centrality_type="degree", **options):
         """

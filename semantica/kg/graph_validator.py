@@ -1,8 +1,29 @@
 """
-Graph validator for Semantica framework.
+Graph Validation Module
 
-This module provides consistency validation and quality checking
-for knowledge graphs.
+This module provides comprehensive consistency validation and quality checking
+capabilities for the Semantica framework, enabling validation of knowledge
+graph structure and consistency.
+
+Key Features:
+    - Entity validation (required fields, unique IDs)
+    - Relationship validation (valid references, required fields)
+    - Consistency checking (type consistency, circular relationships)
+    - Orphaned entity detection
+    - Validation result reporting with errors and warnings
+
+Main Classes:
+    - GraphValidator: Main graph validation engine
+    - ValidationResult: Validation result dataclass
+
+Example Usage:
+    >>> from semantica.kg import GraphValidator
+    >>> validator = GraphValidator()
+    >>> result = validator.validate(knowledge_graph)
+    >>> is_consistent = validator.check_consistency(knowledge_graph)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional
@@ -13,7 +34,17 @@ from ..utils.logging import get_logger
 
 @dataclass
 class ValidationResult:
-    """Validation result."""
+    """
+    Validation result dataclass.
+    
+    This dataclass represents the result of graph validation, containing
+    validation status, errors, and warnings.
+    
+    Attributes:
+        valid: Whether the graph is valid (True if no errors)
+        errors: List of error messages (critical issues)
+        warnings: List of warning messages (non-critical issues)
+    """
     
     valid: bool
     errors: List[str]
@@ -22,25 +53,61 @@ class ValidationResult:
 
 class GraphValidator:
     """
-    Graph validator.
+    Graph validation engine.
     
-    Validates consistency and quality of knowledge graphs.
+    This class provides comprehensive validation capabilities for knowledge
+    graphs, checking for structural consistency, required fields, valid
+    references, and logical consistency.
+    
+    Features:
+        - Entity validation (IDs, types, required fields)
+        - Relationship validation (valid entity references)
+        - Consistency checking (type consistency, circular relationships)
+        - Orphaned entity detection
+        - Detailed error and warning reporting
+    
+    Example Usage:
+        >>> validator = GraphValidator()
+        >>> result = validator.validate(knowledge_graph)
+        >>> if not result.valid:
+        ...     print(f"Errors: {result.errors}")
+        >>> is_consistent = validator.check_consistency(knowledge_graph)
     """
     
     def __init__(self, **config):
-        """Initialize graph validator."""
+        """
+        Initialize graph validator.
+        
+        Sets up the validator with configuration options.
+        
+        Args:
+            **config: Configuration options (currently unused)
+        """
         self.logger = get_logger("graph_validator")
         self.config = config
+        
+        self.logger.debug("Graph validator initialized")
     
     def validate(self, knowledge_graph: Any) -> ValidationResult:
         """
         Validate knowledge graph.
         
+        This method performs comprehensive validation of the knowledge graph,
+        checking for:
+        - Entity validity (required ID field, unique IDs)
+        - Relationship validity (required source/target/type fields)
+        - Valid entity references in relationships
+        - Orphaned entities (entities with no relationships)
+        
         Args:
-            knowledge_graph: Knowledge graph instance
+            knowledge_graph: Knowledge graph instance (object with entities/relationships
+                           attributes, or dict with "entities" and "relationships" keys)
             
         Returns:
-            Validation result
+            ValidationResult: Validation result object containing:
+                - valid: True if no errors found, False otherwise
+                - errors: List of error messages (critical issues)
+                - warnings: List of warning messages (non-critical issues)
         """
         self.logger.info("Validating knowledge graph")
         
@@ -127,11 +194,16 @@ class GraphValidator:
         """
         Check graph consistency.
         
+        This method performs logical consistency checking, including:
+        - Type consistency (same entity should not have conflicting types)
+        - Circular relationship detection
+        - Basic validation checks
+        
         Args:
             knowledge_graph: Knowledge graph instance
             
         Returns:
-            True if consistent, False otherwise
+            bool: True if graph is consistent, False if inconsistencies found
         """
         self.logger.info("Checking graph consistency")
         

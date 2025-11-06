@@ -1,18 +1,31 @@
 """
 Connectivity Analyzer Module
 
-Handles connectivity analysis for knowledge graphs including
-connected components, shortest paths, and bridge identification.
+This module provides comprehensive connectivity analysis capabilities for the
+Semantica framework, enabling analysis of graph connectivity, path finding,
+and structural properties.
 
 Key Features:
-    - Graph connectivity analysis
-    - Connected components detection
-    - Shortest path calculation
-    - Bridge identification
-    - Connectivity metrics and statistics
+    - Graph connectivity analysis (connected/disconnected)
+    - Connected components detection (DFS-based)
+    - Shortest path calculation (BFS-based)
+    - Bridge edge identification (edges whose removal disconnects graph)
+    - Connectivity metrics (density, degree statistics)
+    - Graph structure classification
+    - NetworkX integration with fallback implementations
 
 Main Classes:
     - ConnectivityAnalyzer: Main connectivity analysis engine
+
+Example Usage:
+    >>> from semantica.kg import ConnectivityAnalyzer
+    >>> analyzer = ConnectivityAnalyzer()
+    >>> connectivity = analyzer.analyze_connectivity(graph)
+    >>> paths = analyzer.calculate_shortest_paths(graph, source="A", target="B")
+    >>> bridges = analyzer.identify_bridges(graph)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional, Set, Tuple
@@ -25,32 +38,36 @@ class ConnectivityAnalyzer:
     """
     Connectivity analysis engine.
     
-    • Analyzes graph connectivity
-    • Calculates connectivity metrics
-    • Identifies connected components
-    • Processes path analysis
+    This class provides comprehensive connectivity analysis for knowledge graphs,
+    including connected component detection, shortest path calculation, bridge
+    identification, and connectivity metrics. Uses NetworkX when available,
+    with fallback to basic implementations.
     
-    Attributes:
-        • connectivity_algorithms: Available connectivity algorithms
-        • analysis_config: Configuration for connectivity analysis
-        • component_detector: Connected components detection engine
-        • path_analyzer: Path analysis and calculation engine
-        
-    Methods:
-        • analyze_connectivity(): Analyze graph connectivity
-        • find_connected_components(): Find connected components
-        • calculate_shortest_paths(): Calculate shortest paths
-        • identify_bridges(): Identify bridge edges
+    Features:
+        - Connected component detection (DFS-based)
+        - Shortest path calculation (BFS-based)
+        - Bridge edge identification
+        - Connectivity metrics (density, degree statistics)
+        - Graph structure classification
+    
+    Example Usage:
+        >>> analyzer = ConnectivityAnalyzer()
+        >>> connectivity = analyzer.analyze_connectivity(graph)
+        >>> components = analyzer.find_connected_components(graph)
+        >>> path = analyzer.calculate_shortest_paths(graph, source="A", target="B")
     """
     
     def __init__(self, **config):
         """
         Initialize connectivity analyzer.
         
-        • Setup connectivity algorithms
-        • Configure component detection
-        • Initialize path analysis
-        • Setup metric calculation
+        Sets up the analyzer with configuration and checks for optional
+        dependencies (NetworkX). Falls back to basic implementations if
+        NetworkX is not available.
+        
+        Args:
+            **config: Configuration options:
+                - analysis_config: Analysis configuration (optional)
         """
         self.logger = get_logger("connectivity_analyzer")
         self.connectivity_algorithms = [
@@ -59,30 +76,42 @@ class ConnectivityAnalyzer:
         self.analysis_config = config.get("analysis_config", {})
         self.config = config
         
-        # Try to use networkx if available
+        # Try to use networkx if available (optional dependency)
         try:
             import networkx as nx
             self.nx = nx
             self.use_networkx = True
+            self.logger.debug("NetworkX available, using optimized implementations")
         except ImportError:
             self.nx = None
             self.use_networkx = False
             self.logger.warning("NetworkX not available, using basic implementations")
     
-    def analyze_connectivity(self, graph):
+    def analyze_connectivity(self, graph: Any) -> Dict[str, Any]:
         """
         Analyze graph connectivity.
         
-        • Calculate connectivity metrics
-        • Identify connected components
-        • Analyze graph structure
-        • Return connectivity analysis
+        This method performs comprehensive connectivity analysis, including
+        connected component detection and connectivity metrics calculation.
         
         Args:
-            graph: Input graph for connectivity analysis
+            graph: Input graph for connectivity analysis (dict, object with
+                  relationships, or NetworkX graph)
             
         Returns:
-            dict: Comprehensive connectivity analysis results
+            dict: Comprehensive connectivity analysis containing:
+                - components: List of connected component lists
+                - num_components: Number of connected components
+                - component_sizes: List of component sizes
+                - largest_component_size: Size of largest component
+                - smallest_component_size: Size of smallest component
+                - num_nodes: Total number of nodes
+                - num_edges: Total number of edges
+                - density: Graph density (0.0 to 1.0)
+                - avg_degree: Average node degree
+                - max_degree: Maximum node degree
+                - min_degree: Minimum node degree
+                - is_connected: Whether graph is fully connected (single component)
         """
         self.logger.info("Analyzing graph connectivity")
         
@@ -95,20 +124,23 @@ class ConnectivityAnalyzer:
             "is_connected": components_result.get("num_components", 0) == 1
         }
     
-    def find_connected_components(self, graph):
+    def find_connected_components(self, graph: Any) -> Dict[str, Any]:
         """
         Find connected components in graph.
         
-        • Identify disconnected subgraphs
-        • Calculate component sizes
-        • Analyze component structure
-        • Return component information
+        This method identifies all connected components (disconnected subgraphs)
+        in the graph using depth-first search (DFS).
         
         Args:
             graph: Input graph for component analysis
             
         Returns:
-            dict: Connected components analysis results
+            dict: Connected components analysis containing:
+                - components: List of component lists (each list contains node IDs)
+                - num_components: Total number of connected components
+                - component_sizes: List of sizes for each component
+                - largest_component_size: Size of largest component
+                - smallest_component_size: Size of smallest component
         """
         self.logger.info("Finding connected components")
         
@@ -146,22 +178,36 @@ class ConnectivityAnalyzer:
             "smallest_component_size": min(component_sizes) if component_sizes else 0
         }
     
-    def calculate_shortest_paths(self, graph, source=None, target=None):
+    def calculate_shortest_paths(
+        self,
+        graph: Any,
+        source: Optional[str] = None,
+        target: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
         Calculate shortest paths in graph.
         
-        • Find shortest paths between nodes
-        • Calculate path lengths
-        • Handle weighted and unweighted graphs
-        • Return path information
+        This method calculates shortest paths between nodes using breadth-first
+        search (BFS). If both source and target are provided, calculates single
+        pair shortest path. If omitted, calculates all pairs shortest paths.
         
         Args:
             graph: Input graph for path analysis
-            source: Source node for path calculation
-            target: Target node for path calculation
+            source: Source node ID for path calculation (optional)
+            target: Target node ID for path calculation (optional)
             
         Returns:
-            dict: Shortest path analysis results
+            dict: Shortest path results:
+                - If source and target provided:
+                    - source: Source node ID
+                    - target: Target node ID
+                    - path: List of node IDs forming shortest path (or None)
+                    - distance: Path length in edges (or -1 if no path)
+                    - exists: Whether path exists
+                - If source/target omitted:
+                    - distances: Dictionary of all-pairs distances
+                    - paths: Dictionary of all-pairs paths
+                    - avg_path_length: Average shortest path length
         """
         self.logger.info(f"Calculating shortest paths from {source} to {target}")
         
@@ -182,20 +228,24 @@ class ConnectivityAnalyzer:
             "exists": path is not None
         }
     
-    def identify_bridges(self, graph):
+    def identify_bridges(self, graph: Any) -> Dict[str, Any]:
         """
         Identify bridge edges in graph.
         
-        • Find edges whose removal disconnects graph
-        • Calculate bridge importance
-        • Analyze bridge impact
-        • Return bridge information
+        This method identifies bridge edges (edges whose removal would
+        disconnect the graph or increase the number of connected components).
+        Uses a simple approach: temporarily removes each edge and checks if
+        connectivity changes.
         
         Args:
             graph: Input graph for bridge analysis
             
         Returns:
-            dict: Bridge identification and analysis results
+            dict: Bridge identification results containing:
+                - bridges: List of bridge edge tuples (source, target)
+                - num_bridges: Total number of bridge edges
+                - bridge_edges: List of bridge edge dictionaries with
+                               "source" and "target" keys
         """
         self.logger.info("Identifying bridge edges")
         
@@ -230,20 +280,24 @@ class ConnectivityAnalyzer:
             "bridge_edges": [{"source": s, "target": t} for s, t in bridges]
         }
     
-    def calculate_connectivity_metrics(self, graph):
+    def calculate_connectivity_metrics(self, graph: Any) -> Dict[str, Any]:
         """
         Calculate comprehensive connectivity metrics.
         
-        • Calculate connectivity statistics
-        • Analyze graph structure metrics
-        • Compute connectivity indices
-        • Return connectivity metrics
+        This method calculates various connectivity and structural metrics
+        for the graph, including density, degree statistics, and edge counts.
         
         Args:
             graph: Input graph for metrics calculation
             
         Returns:
-            dict: Connectivity metrics and statistics
+            dict: Connectivity metrics containing:
+                - num_nodes: Total number of nodes
+                - num_edges: Total number of edges
+                - density: Graph density (edges / max_possible_edges, 0.0 to 1.0)
+                - avg_degree: Average node degree
+                - max_degree: Maximum node degree
+                - min_degree: Minimum node degree
         """
         self.logger.info("Calculating connectivity metrics")
         
@@ -271,20 +325,23 @@ class ConnectivityAnalyzer:
             "min_degree": min(degrees) if degrees else 0
         }
     
-    def analyze_graph_structure(self, graph):
+    def analyze_graph_structure(self, graph: Any) -> Dict[str, Any]:
         """
         Analyze overall graph structure and connectivity.
         
-        • Analyze graph topology
-        • Calculate structural metrics
-        • Identify structural patterns
-        • Return structure analysis
+        This method performs comprehensive graph structure analysis, combining
+        connectivity analysis, metrics calculation, and bridge identification,
+        and classifies the graph structure type.
         
         Args:
             graph: Input graph for structure analysis
             
         Returns:
-            dict: Graph structure analysis results
+            dict: Comprehensive structure analysis containing all metrics from
+                  analyze_connectivity(), calculate_connectivity_metrics(), and
+                  identify_bridges(), plus:
+                - structure_type: Classification ("disconnected", "sparse",
+                                 "moderate", or "dense")
         """
         self.logger.info("Analyzing graph structure")
         

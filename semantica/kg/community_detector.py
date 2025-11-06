@@ -1,18 +1,29 @@
 """
 Community Detection Module
 
-Handles community detection in knowledge graphs using various algorithms
-including Louvain, Leiden, and overlapping community detection.
+This module provides comprehensive community detection capabilities for the
+Semantica framework, enabling identification of communities (clusters) in
+knowledge graphs using various algorithms.
 
 Key Features:
-    - Louvain community detection
-    - Leiden community detection
-    - Overlapping community detection
-    - Community quality metrics
-    - Community analysis and statistics
+    - Louvain community detection algorithm
+    - Leiden community detection algorithm (with refinement)
+    - Overlapping community detection (k-clique communities)
+    - Community quality metrics (modularity, size distribution)
+    - Community structure analysis
+    - NetworkX integration with fallback implementations
 
 Main Classes:
     - CommunityDetector: Main community detection engine
+
+Example Usage:
+    >>> from semantica.kg import CommunityDetector
+    >>> detector = CommunityDetector()
+    >>> communities = detector.detect_communities(graph, algorithm="louvain")
+    >>> metrics = detector.calculate_community_metrics(graph, communities)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional
@@ -25,32 +36,36 @@ class CommunityDetector:
     """
     Community detection engine.
     
-    • Detects communities in graphs
-    • Handles different detection algorithms
-    • Manages community quality metrics
-    • Processes overlapping communities
+    This class provides community detection capabilities for knowledge graphs,
+    supporting multiple algorithms including Louvain, Leiden, and overlapping
+    community detection. Uses NetworkX when available, with fallback to basic
+    implementations.
     
-    Attributes:
-        • supported_algorithms: List of supported detection algorithms
-        • detection_config: Configuration for community detection
-        • quality_metrics: Community quality assessment tools
-        • overlapping_detector: Overlapping community detection engine
-        
-    Methods:
-        • detect_communities_louvain(): Detect communities using Louvain
-        • detect_communities_leiden(): Detect communities using Leiden
-        • detect_overlapping_communities(): Detect overlapping communities
-        • calculate_community_metrics(): Calculate community quality metrics
+    Features:
+        - Louvain algorithm for modularity optimization
+        - Leiden algorithm with refinement step
+        - Overlapping community detection (k-clique)
+        - Community quality metrics calculation
+        - Community structure analysis
+    
+    Example Usage:
+        >>> detector = CommunityDetector()
+        >>> communities = detector.detect_communities(graph, algorithm="louvain")
+        >>> metrics = detector.calculate_community_metrics(graph, communities)
+        >>> structure = detector.analyze_community_structure(graph, communities)
     """
     
     def __init__(self, **config):
         """
         Initialize community detector.
         
-        • Setup detection algorithms
-        • Configure quality metrics
-        • Initialize overlapping detection
-        • Setup community analysis
+        Sets up the detector with configuration and checks for optional
+        dependencies (NetworkX). Falls back to basic implementations if
+        NetworkX is not available.
+        
+        Args:
+            **config: Configuration options:
+                - detection_config: Detection algorithm configuration (optional)
         """
         self.logger = get_logger("community_detector")
         self.supported_algorithms = [
@@ -59,31 +74,46 @@ class CommunityDetector:
         self.detection_config = config.get("detection_config", {})
         self.config = config
         
-        # Try to use networkx/igraph if available
+        # Try to use networkx if available (optional dependency)
         try:
             import networkx as nx
             self.nx = nx
             self.use_networkx = True
+            self.logger.debug("NetworkX available, using optimized implementations")
         except ImportError:
             self.nx = None
             self.use_networkx = False
             self.logger.warning("NetworkX not available, using basic implementations")
     
-    def detect_communities_louvain(self, graph, **options):
+    def detect_communities_louvain(
+        self,
+        graph: Any,
+        resolution: float = 1.0,
+        max_iter: int = 10,
+        **options
+    ) -> Dict[str, Any]:
         """
         Detect communities using Louvain algorithm.
         
-        • Apply Louvain community detection
-        • Optimize modularity
-        • Handle resolution parameters
-        • Return community assignments
+        This method applies the Louvain algorithm for community detection,
+        which optimizes modularity through iterative greedy optimization.
+        Uses NetworkX implementation when available, with fallback to basic
+        greedy modularity approach.
         
         Args:
-            graph: Input graph for community detection
-            **options: Additional detection options
+            graph: Input graph for community detection (dict, object with
+                  relationships, or NetworkX graph)
+            resolution: Resolution parameter for modularity optimization
+                       (default: 1.0, higher values favor smaller communities)
+            max_iter: Maximum iterations for basic implementation (default: 10)
+            **options: Additional detection options (unused)
             
         Returns:
-            dict: Community detection results and assignments
+            dict: Community detection results containing:
+                - communities: List of community lists (each list contains node IDs)
+                - node_assignments: Dictionary mapping node IDs to community IDs
+                - modularity: Calculated modularity score
+                - algorithm: Algorithm name ("louvain")
         """
         self.logger.info("Detecting communities using Louvain algorithm")
         
@@ -117,43 +147,66 @@ class CommunityDetector:
         adjacency = self._build_adjacency(graph)
         return self._basic_community_detection(adjacency, algorithm="louvain", **options)
     
-    def detect_communities_leiden(self, graph, **options):
+    def detect_communities_leiden(
+        self,
+        graph: Any,
+        resolution: float = 1.0,
+        max_iter: int = 10,
+        **options
+    ) -> Dict[str, Any]:
         """
         Detect communities using Leiden algorithm.
         
-        • Apply Leiden community detection
-        • Optimize modularity with refinement
-        • Handle resolution parameters
-        • Return community assignments
+        This method applies the Leiden algorithm for community detection,
+        which is similar to Louvain but includes a refinement step for better
+        quality. Currently uses Louvain implementation as Leiden refinement
+        requires additional libraries.
         
         Args:
             graph: Input graph for community detection
+            resolution: Resolution parameter for modularity optimization
+                       (default: 1.0)
+            max_iter: Maximum iterations (default: 10)
             **options: Additional detection options
             
         Returns:
-            dict: Community detection results and assignments
+            dict: Community detection results (same format as Louvain)
         """
         self.logger.info("Detecting communities using Leiden algorithm")
         
         # Leiden is similar to Louvain but with refinement
-        # For now, use Louvain-like approach
-        return self.detect_communities_louvain(graph, **options)
+        # For now, use Louvain-like approach (full Leiden requires igraph)
+        result = self.detect_communities_louvain(graph, resolution=resolution, max_iter=max_iter, **options)
+        result["algorithm"] = "leiden"
+        return result
     
-    def detect_overlapping_communities(self, graph, **options):
+    def detect_overlapping_communities(
+        self,
+        graph: Any,
+        k: int = 3,
+        min_size: int = 3,
+        **options
+    ) -> Dict[str, Any]:
         """
         Detect overlapping communities.
         
-        • Apply overlapping detection algorithms
-        • Handle node membership in multiple communities
-        • Calculate overlapping metrics
-        • Return overlapping community structure
+        This method detects communities where nodes can belong to multiple
+        communities simultaneously. Uses k-clique communities when NetworkX
+        is available, with fallback to basic dense subgraph detection.
         
         Args:
             graph: Input graph for community detection
+            k: Minimum clique size for k-clique communities (default: 3)
+            min_size: Minimum community size for basic detection (default: 3)
             **options: Additional detection options
             
         Returns:
-            dict: Overlapping community detection results
+            dict: Overlapping community detection results containing:
+                - communities: List of community lists
+                - node_assignments: Dictionary mapping node IDs to list of
+                                  community IDs (nodes can belong to multiple)
+                - algorithm: Algorithm name ("overlapping")
+                - overlap_count: Number of nodes belonging to multiple communities
         """
         self.logger.info("Detecting overlapping communities")
         
@@ -185,21 +238,30 @@ class CommunityDetector:
         adjacency = self._build_adjacency(graph)
         return self._basic_overlapping_detection(adjacency, **options)
     
-    def calculate_community_metrics(self, graph, communities):
+    def calculate_community_metrics(
+        self,
+        graph: Any,
+        communities: Any
+    ) -> Dict[str, Any]:
         """
         Calculate community quality metrics.
         
-        • Calculate modularity
-        • Compute community statistics
-        • Assess community quality
-        • Return community metrics
+        This method calculates various quality metrics for detected communities,
+        including modularity, community size distribution, and basic statistics.
         
         Args:
             graph: Input graph for community analysis
-            communities: Community assignments to analyze
+            communities: Community assignments (can be dict with "node_assignments",
+                        dict mapping nodes to community IDs, or list of community lists)
             
         Returns:
-            dict: Community quality metrics and statistics
+            dict: Community quality metrics containing:
+                - num_communities: Total number of communities
+                - community_sizes: Dictionary mapping community ID to size
+                - avg_community_size: Average community size
+                - max_community_size: Largest community size
+                - min_community_size: Smallest community size
+                - modularity: Calculated modularity score
         """
         self.logger.info("Calculating community quality metrics")
         
@@ -238,21 +300,28 @@ class CommunityDetector:
             "modularity": modularity
         }
     
-    def analyze_community_structure(self, graph, communities):
+    def analyze_community_structure(
+        self,
+        graph: Any,
+        communities: Any
+    ) -> Dict[str, Any]:
         """
         Analyze community structure and properties.
         
-        • Analyze community size distribution
-        • Calculate community connectivity
-        • Assess community stability
-        • Return community structure analysis
+        This method performs comprehensive analysis of community structure,
+        including connectivity metrics (intra-community vs inter-community edges)
+        and community quality metrics.
         
         Args:
             graph: Input graph for community analysis
             communities: Community assignments to analyze
             
         Returns:
-            dict: Community structure analysis results
+            dict: Community structure analysis containing all metrics from
+                  calculate_community_metrics plus:
+                - intra_community_edges: Number of edges within communities
+                - inter_community_edges: Number of edges between communities
+                - edge_ratio: Ratio of intra- to inter-community edges
         """
         self.logger.info("Analyzing community structure")
         
@@ -290,22 +359,29 @@ class CommunityDetector:
             "edge_ratio": intra_community_edges / (inter_community_edges + 1)
         }
     
-    def detect_communities(self, graph, algorithm="louvain", **options):
+    def detect_communities(
+        self,
+        graph: Any,
+        algorithm: str = "louvain",
+        **options
+    ) -> Dict[str, Any]:
         """
         Detect communities using specified algorithm.
         
-        • Apply specified community detection algorithm
-        • Handle different algorithm parameters
-        • Return community detection results
-        • Provide algorithm-specific analysis
+        This is a convenience method that routes to the appropriate algorithm
+        based on the specified algorithm name.
         
         Args:
             graph: Input graph for community detection
             algorithm: Community detection algorithm to use
-            **options: Additional detection options
+                      (supported: "louvain", "leiden", "overlapping")
+            **options: Additional detection options (passed to algorithm-specific method)
             
         Returns:
             dict: Community detection results and analysis
+            
+        Raises:
+            ValueError: If algorithm is not supported
         """
         self.logger.info(f"Detecting communities using {algorithm} algorithm")
         

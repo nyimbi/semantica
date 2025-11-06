@@ -1,10 +1,29 @@
 """
-Knowledge graph builder for Semantica framework.
+Knowledge Graph Builder Module
 
-This module provides knowledge graph construction capabilities
-from extracted entities and relationships, with support for
-temporal knowledge graphs.
+This module provides comprehensive knowledge graph construction capabilities
+from extracted entities and relationships, with full support for temporal
+knowledge graphs and advanced graph operations.
+
+Key Features:
+    - Build knowledge graphs from entities and relationships
+    - Temporal knowledge graph support with time-aware edges
+    - Entity resolution and deduplication
+    - Conflict detection and resolution
+    - Temporal snapshots and versioning
+    - Neo4j integration for graph storage
+
+Example Usage:
+    >>> from semantica.kg import GraphBuilder
+    >>> builder = GraphBuilder(merge_entities=True, resolve_conflicts=True)
+    >>> graph = builder.build(sources=[{"entities": [...], "relationships": [...]}])
+
+Author: Semantica Contributors
+License: MIT
 """
+
+from typing import Any, Dict, List, Optional, Union
+from datetime import datetime
 
 
 class GraphBuilder:
@@ -66,97 +85,161 @@ class GraphBuilder:
         self.track_history = track_history
         self.version_snapshots = version_snapshots
         
-        # Initialize graph building components
+        # Initialize logging
         from ..utils.logging import get_logger
         self.logger = get_logger("graph_builder")
-        config = kwargs
         
-        # Initialize entity resolver if needed
+        # Initialize entity resolver if entity merging is enabled
+        # This helps deduplicate and merge similar entities
         if self.merge_entities:
             from .entity_resolver import EntityResolver
+            entity_resolution_config = kwargs.get("entity_resolution", {})
             self.entity_resolver = EntityResolver(
                 strategy=self.entity_resolution_strategy,
-                **kwargs.get("entity_resolution", {})
+                **entity_resolution_config
             )
+            self.logger.debug(f"Entity resolver initialized with strategy: {self.entity_resolution_strategy}")
         else:
             self.entity_resolver = None
+            self.logger.debug("Entity merging disabled, skipping entity resolver")
         
-        # Initialize conflict detector if needed
+        # Initialize conflict detector if conflict resolution is enabled
+        # This helps detect and resolve conflicting information in the graph
         if self.resolve_conflicts:
             from .conflict_detector import ConflictDetector
-            self.conflict_detector = ConflictDetector(**kwargs.get("conflict_detection", {}))
+            conflict_detection_config = kwargs.get("conflict_detection", {})
+            self.conflict_detector = ConflictDetector(**conflict_detection_config)
+            self.logger.debug("Conflict detector initialized")
         else:
             self.conflict_detector = None
+            self.logger.debug("Conflict resolution disabled")
     
-    def build(self, sources, entity_resolver=None, **options):
+    def build(
+        self, 
+        sources: Union[List[Any], Any], 
+        entity_resolver: Optional[Any] = None, 
+        **options
+    ) -> Dict[str, Any]:
         """
         Build knowledge graph from sources.
         
+        This method processes various source formats and extracts entities and
+        relationships to construct a knowledge graph. It handles entity resolution
+        and conflict detection if enabled.
+        
         Args:
-            sources: List of sources (documents, entities, relationships)
-            entity_resolver: Optional entity resolver
+            sources: List of sources in various formats:
+                - Dict with "entities" and/or "relationships" keys
+                - Dict with entity-like structure (has "id" or "entity_id")
+                - Dict with relationship structure (has "source" and "target")
+                - List of entity/relationship dicts
+            entity_resolver: Optional custom entity resolver (overrides default)
             **options: Additional build options
             
         Returns:
-            Knowledge graph object
+            Dictionary containing:
+                - entities: List of resolved entities
+                - relationships: List of relationships
+                - metadata: Graph metadata including counts and timestamps
+                
+        Example:
+            >>> sources = [
+            ...     {"entities": [{"id": "1", "name": "Alice"}], 
+            ...      "relationships": [{"source": "1", "target": "2", "type": "knows"}]}
+            ... ]
+            >>> graph = builder.build(sources)
         """
-        self.logger.info(f"Building knowledge graph from {len(sources)} sources")
+        # Normalize sources to list
+        if not isinstance(sources, list):
+            sources = [sources]
         
-        # Use provided resolver or default
-        resolver = entity_resolver or self.entity_resolver
+        self.logger.info(f"Building knowledge graph from {len(sources)} source(s)")
         
-        # Extract entities and relationships
-        entities = []
-        relationships = []
+        # Use provided resolver or default instance resolver
+        resolver_to_use = entity_resolver or self.entity_resolver
+        
+        # Extract entities and relationships from all sources
+        all_entities = []
+        all_relationships = []
         
         for source in sources:
             if isinstance(source, dict):
-                # Extract entities and relationships from source
+                # Source is a dictionary - extract entities and relationships
                 if "entities" in source:
-                    entities.extend(source["entities"])
+                    # Explicit entities list
+                    all_entities.extend(source["entities"])
                 elif "id" in source or "entity_id" in source:
-                    entities.append(source)
+                    # Single entity object
+                    all_entities.append(source)
                 
                 if "relationships" in source:
-                    relationships.extend(source["relationships"])
+                    # Explicit relationships list
+                    all_relationships.extend(source["relationships"])
                 elif "source" in source and "target" in source:
-                    relationships.append(source)
+                    # Single relationship object
+                    all_relationships.append(source)
+                    
             elif isinstance(source, list):
-                # Assume list of entities or relationships
+                # Source is a list - process each item
                 for item in source:
                     if isinstance(item, dict):
+                        # Determine if item is a relationship or entity
                         if "source" in item and "target" in item:
-                            relationships.append(item)
+                            all_relationships.append(item)
                         else:
-                            entities.append(item)
+                            all_entities.append(item)
         
-        # Resolve entities if needed
-        if resolver and entities:
-            self.logger.info(f"Resolving {len(entities)} entities")
-            entities = resolver.resolve_entities(entities)
-            self.logger.info(f"Resolved to {len(entities)} unique entities")
+        self.logger.debug(
+            f"Extracted {len(all_entities)} entities and "
+            f"{len(all_relationships)} relationships from sources"
+        )
+        
+        # Resolve entities (deduplicate and merge) if resolver is available
+        resolved_entities = all_entities
+        if resolver_to_use and all_entities:
+            self.logger.info(f"Resolving {len(all_entities)} entities using {self.entity_resolution_strategy} strategy")
+            resolved_entities = resolver_to_use.resolve_entities(all_entities)
+            self.logger.info(
+                f"Entity resolution complete: {len(all_entities)} -> {len(resolved_entities)} unique entities"
+            )
         
         # Build graph structure
         graph = {
-            "entities": entities,
-            "relationships": relationships,
+            "entities": resolved_entities,
+            "relationships": all_relationships,
             "metadata": {
-                "num_entities": len(entities),
-                "num_relationships": len(relationships),
+                "num_entities": len(resolved_entities),
+                "num_relationships": len(all_relationships),
                 "temporal_enabled": self.enable_temporal,
-                "timestamp": self._get_timestamp()
+                "timestamp": self._get_timestamp(),
+                "entity_resolution_applied": resolver_to_use is not None
             }
         }
         
-        # Detect and resolve conflicts if needed
+        # Detect and resolve conflicts if conflict detector is available
         if self.conflict_detector:
-            conflicts = self.conflict_detector.detect_conflicts(graph)
-            if conflicts:
-                self.logger.warning(f"Detected {len(conflicts)} conflicts")
-                resolution = self.conflict_detector.resolve_conflicts(conflicts)
-                self.logger.info(f"Resolved {resolution.get('resolved_count', 0)} conflicts")
+            self.logger.debug("Detecting conflicts in graph")
+            detected_conflicts = self.conflict_detector.detect_conflicts(graph)
+            
+            if detected_conflicts:
+                conflict_count = len(detected_conflicts)
+                self.logger.warning(f"Detected {conflict_count} conflict(s) in graph")
+                
+                # Attempt to resolve conflicts
+                resolution_result = self.conflict_detector.resolve_conflicts(detected_conflicts)
+                resolved_count = resolution_result.get('resolved_count', 0)
+                
+                if resolved_count > 0:
+                    self.logger.info(f"Successfully resolved {resolved_count} out of {conflict_count} conflict(s)")
+                else:
+                    self.logger.warning("No conflicts were automatically resolved")
         
-        self.logger.info(f"Built graph with {len(entities)} entities and {len(relationships)} relationships")
+        # Log final graph statistics
+        self.logger.info(
+            f"Knowledge graph built successfully: "
+            f"{len(resolved_entities)} entities, {len(all_relationships)} relationships"
+        )
+        
         return graph
     
     def add_temporal_edge(
@@ -399,30 +482,69 @@ class GraphBuilder:
             self.logger.error(f"Error loading from Neo4j: {e}")
             raise
     
-    def _get_timestamp(self):
-        """Get current timestamp."""
-        from datetime import datetime
+    def _get_timestamp(self) -> str:
+        """
+        Get current timestamp in ISO format.
+        
+        Returns:
+            ISO format timestamp string (e.g., "2024-01-15T10:30:00")
+        """
         return datetime.now().isoformat()
     
-    def _parse_time(self, time_value):
-        """Parse time value to ISO string."""
-        from datetime import datetime
+    def _parse_time(self, time_value: Optional[Union[str, datetime, Any]]) -> Optional[str]:
+        """
+        Parse time value to ISO format string.
         
+        This method handles various time input formats and converts them
+        to a standardized ISO format string for temporal operations.
+        
+        Args:
+            time_value: Time value in various formats:
+                - None: Returns None
+                - str: ISO format string (returned as-is)
+                - datetime: Converted to ISO string
+                - Other: Converted to string
+        
+        Returns:
+            ISO format timestamp string or None
+        """
         if time_value is None:
             return None
         
+        # Already a string - assume it's in correct format
         if isinstance(time_value, str):
             return time_value
         
+        # datetime object - convert to ISO string
         if isinstance(time_value, datetime):
             return time_value.isoformat()
         
+        # Other types - convert to string
         return str(time_value)
     
-    def _compare_times(self, time1, time2):
-        """Compare two time strings."""
+    def _compare_times(self, time1: Optional[str], time2: Optional[str]) -> int:
+        """
+        Compare two time strings.
+        
+        This method performs lexicographic comparison of ISO format time strings.
+        Returns -1 if time1 < time2, 0 if equal, 1 if time1 > time2.
+        
+        Args:
+            time1: First time string (ISO format)
+            time2: Second time string (ISO format)
+            
+        Returns:
+            Comparison result: -1, 0, or 1
+        """
+        # Handle None values
         if time1 is None or time2 is None:
             return 0
         
-        # Simple string comparison for ISO format
-        return (time1 > time2) - (time1 < time2)
+        # Simple lexicographic comparison works for ISO format strings
+        # ISO format: YYYY-MM-DDTHH:MM:SS ensures correct string comparison
+        if time1 < time2:
+            return -1
+        elif time1 > time2:
+            return 1
+        else:
+            return 0

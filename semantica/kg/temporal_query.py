@@ -1,7 +1,31 @@
 """
-Temporal Query Module for Knowledge Graphs
+Temporal Query Module
 
-Provides time-aware querying capabilities for temporal knowledge graphs.
+This module provides comprehensive time-aware querying capabilities for the
+Semantica framework, enabling temporal queries and analysis on knowledge
+graphs with temporal information.
+
+Key Features:
+    - Time-point queries (query graph at specific time)
+    - Time-range queries (query within time intervals)
+    - Temporal pattern detection (sequences, cycles, trends)
+    - Graph evolution analysis
+    - Temporal path finding
+    - Temporal version management
+
+Main Classes:
+    - TemporalGraphQuery: Main temporal query engine
+    - TemporalPatternDetector: Temporal pattern detection engine
+    - TemporalVersionManager: Temporal version/snapshot management
+
+Example Usage:
+    >>> from semantica.kg import TemporalGraphQuery
+    >>> query_engine = TemporalGraphQuery()
+    >>> result = query_engine.query_at_time(graph, query, at_time="2024-01-01")
+    >>> evolution = query_engine.analyze_evolution(graph, start_time="2024-01-01")
+
+Author: Semantica Contributors
+License: MIT
 """
 
 
@@ -9,42 +33,46 @@ class TemporalGraphQuery:
     """
     Temporal knowledge graph query engine.
     
-    • Executes time-aware queries on knowledge graphs
-    • Supports queries at specific time points
-    • Handles temporal range queries
-    • Manages temporal window queries
-    • Processes temporal pattern queries
-    • Supports temporal evolution analysis
+    This class provides time-aware querying capabilities for knowledge graphs
+    with temporal information, enabling queries at specific time points, within
+    time ranges, and temporal pattern detection.
     
-    Attributes:
-        • supported_query_languages: Supported query languages
-        • temporal_reasoner: Temporal reasoning engine
-        • pattern_detector: Temporal pattern detector
-        • evolution_analyzer: Graph evolution analyzer
-        
-    Methods:
-        • query_at_time(): Query graph at specific time
-        • query_time_range(): Query within time range
-        • query_temporal_pattern(): Query temporal patterns
-        • analyze_evolution(): Analyze graph evolution
-        • find_temporal_paths(): Find paths in temporal context
+    Features:
+        - Time-point queries (filter relationships valid at specific time)
+        - Time-range queries (filter relationships valid within range)
+        - Temporal pattern detection (sequences, cycles, trends)
+        - Graph evolution analysis
+        - Temporal path finding (paths considering temporal validity)
+    
+    Example Usage:
+        >>> query_engine = TemporalGraphQuery()
+        >>> result = query_engine.query_at_time(graph, query, at_time="2024-01-01")
+        >>> range_result = query_engine.query_time_range(graph, query, start_time, end_time)
+        >>> evolution = query_engine.analyze_evolution(graph)
     """
     
     def __init__(
         self,
-        enable_temporal_reasoning=True,
-        temporal_granularity="day",
-        max_temporal_depth=None,
+        enable_temporal_reasoning: bool = True,
+        temporal_granularity: str = "day",
+        max_temporal_depth: Optional[int] = None,
         **kwargs
     ):
         """
         Initialize temporal query engine.
         
+        Sets up the query engine with temporal reasoning configuration and
+        pattern detector.
+        
         Args:
-            enable_temporal_reasoning: Enable temporal reasoning
+            enable_temporal_reasoning: Enable temporal reasoning capabilities
+                                    (default: True)
             temporal_granularity: Time granularity for queries
-            max_temporal_depth: Maximum depth for temporal queries
-            **kwargs: Additional configuration
+                                (default: "day", options: "second", "minute",
+                                "hour", "day", "week", "month", "year")
+            max_temporal_depth: Maximum depth for temporal queries (optional)
+            **kwargs: Additional configuration options:
+                - pattern_detection: Configuration for pattern detector (optional)
         """
         self.enable_temporal_reasoning = enable_temporal_reasoning
         self.temporal_granularity = temporal_granularity
@@ -59,26 +87,37 @@ class TemporalGraphQuery:
     
     def query_at_time(
         self,
-        graph,
-        query,
-        at_time,
-        include_history=False,
-        temporal_precision=None,
+        graph: Any,
+        query: str,
+        at_time: Any,
+        include_history: bool = False,
+        temporal_precision: Optional[str] = None,
         **options
-    ):
+    ) -> Dict[str, Any]:
         """
         Query graph at specific time point.
         
+        This method filters the knowledge graph to only include relationships
+        that are valid at the specified time point, based on valid_from and
+        valid_until fields in relationships.
+        
         Args:
-            graph: Knowledge graph to query
-            query: Query string (Cypher, SPARQL, or natural language)
-            at_time: Time point (datetime, timestamp, or ISO string)
-            include_history: Include historical context
-            temporal_precision: Precision for time matching
-            **options: Additional query options
+            graph: Knowledge graph to query (dict with "entities" and "relationships")
+            query: Query string (currently unused, reserved for future query parsing)
+            at_time: Time point (datetime object, timestamp, or ISO format string)
+            include_history: Whether to include all relationships with temporal
+                           information (default: False, only valid relationships)
+            temporal_precision: Precision for time matching (optional, unused)
+            **options: Additional query options (unused)
             
         Returns:
-            Query results valid at specified time
+            dict: Query results containing:
+                - query: Original query string
+                - at_time: Parsed time point
+                - entities: All entities (not filtered by time)
+                - relationships: Relationships valid at specified time
+                - num_entities: Number of entities
+                - num_relationships: Number of valid relationships
         """
         self.logger.info(f"Querying graph at time: {at_time}")
         
@@ -119,28 +158,40 @@ class TemporalGraphQuery:
     
     def query_time_range(
         self,
-        graph,
-        query,
-        start_time,
-        end_time,
-        temporal_aggregation="union",
-        include_intervals=True,
+        graph: Any,
+        query: str,
+        start_time: Any,
+        end_time: Any,
+        temporal_aggregation: str = "union",
+        include_intervals: bool = True,
         **options
-    ):
+    ) -> Dict[str, Any]:
         """
         Query graph within time range.
         
+        This method filters relationships that are valid within the specified
+        time range, with different aggregation strategies.
+        
         Args:
             graph: Knowledge graph to query
-            query: Query string
-            start_time: Start of time range
-            end_time: End of time range
-            temporal_aggregation: How to aggregate results ("union", "intersection", "evolution")
-            include_intervals: Include partial matches within range
-            **options: Additional query options
+            query: Query string (currently unused, reserved for future)
+            start_time: Start of time range (datetime, timestamp, or ISO string)
+            end_time: End of time range (datetime, timestamp, or ISO string)
+            temporal_aggregation: Aggregation strategy:
+                - "union": Include all relationships overlapping with range (default)
+                - "intersection": Only relationships valid throughout entire range
+                - "evolution": Group relationships by time periods
+            include_intervals: Include partial matches within range (default: True)
+            **options: Additional query options (unused)
             
         Returns:
-            Query results within time range
+            dict: Query results containing:
+                - query: Original query string
+                - start_time: Parsed start time
+                - end_time: Parsed end time
+                - relationships: Filtered relationships
+                - num_relationships: Number of relationships
+                - aggregation: Aggregation strategy used
         """
         self.logger.info(f"Querying graph in time range: {start_time} to {end_time}")
         
@@ -186,24 +237,30 @@ class TemporalGraphQuery:
     
     def query_temporal_pattern(
         self,
-        graph,
-        pattern,
-        time_window=None,
-        min_support=1,
+        graph: Any,
+        pattern: str,
+        time_window: Optional[Any] = None,
+        min_support: int = 1,
         **options
-    ):
+    ) -> Dict[str, Any]:
         """
         Query for temporal patterns in graph.
         
+        This method detects temporal patterns (sequences, cycles, trends) in
+        the knowledge graph using the temporal pattern detector.
+        
         Args:
             graph: Knowledge graph to query
-            pattern: Pattern to search for
-            time_window: Time window for pattern matching
-            min_support: Minimum support for pattern
+            pattern: Pattern type to search for ("sequence", "cycle", "trend", "anomaly")
+            time_window: Time window for pattern matching (optional)
+            min_support: Minimum frequency/support for pattern (default: 1)
             **options: Additional pattern query options
             
         Returns:
-            Matching temporal patterns
+            dict: Pattern query results containing:
+                - pattern: Pattern type searched
+                - patterns: List of detected patterns
+                - num_patterns: Number of patterns found
         """
         self.logger.info(f"Querying temporal patterns: {pattern}")
         
@@ -224,28 +281,41 @@ class TemporalGraphQuery:
     
     def analyze_evolution(
         self,
-        graph,
-        entity=None,
-        relationship=None,
-        start_time=None,
-        end_time=None,
-        metrics=["count", "diversity", "stability"],
+        graph: Any,
+        entity: Optional[str] = None,
+        relationship: Optional[str] = None,
+        start_time: Optional[Any] = None,
+        end_time: Optional[Any] = None,
+        metrics: List[str] = None,
         **options
-    ):
+    ) -> Dict[str, Any]:
         """
         Analyze graph evolution over time.
         
+        This method analyzes how the knowledge graph (or specific entities/relationships)
+        evolves over a time period, calculating various evolution metrics.
+        
         Args:
             graph: Knowledge graph to analyze
-            entity: Specific entity to track (None for entire graph)
-            relationship: Specific relationship type to track (None for all)
-            start_time: Start of analysis period
-            end_time: End of analysis period
-            metrics: Metrics to calculate
-            **options: Additional analysis options
+            entity: Specific entity ID to track (optional, None for entire graph)
+            relationship: Specific relationship type to track (optional, None for all)
+            start_time: Start of analysis period (optional)
+            end_time: End of analysis period (optional)
+            metrics: List of metrics to calculate (default: ["count", "diversity", "stability"])
+                    - "count": Number of relationships
+                    - "diversity": Number of unique relationship types
+                    - "stability": Relationship duration/stability measure
+            **options: Additional analysis options (unused)
             
         Returns:
-            Evolution analysis results
+            dict: Evolution analysis results containing:
+                - entity: Entity ID tracked (if specified)
+                - relationship: Relationship type tracked (if specified)
+                - time_range: Dictionary with start and end times
+                - num_relationships: Number of relationships in period
+                - count: Relationship count (if "count" in metrics)
+                - diversity: Relationship type diversity (if "diversity" in metrics)
+                - stability: Stability measure (if "stability" in metrics)
         """
         self.logger.info("Analyzing graph evolution")
         
@@ -312,30 +382,41 @@ class TemporalGraphQuery:
     
     def find_temporal_paths(
         self,
-        graph,
-        source,
-        target,
-        start_time=None,
-        end_time=None,
-        max_path_length=None,
-        temporal_constraints=None,
+        graph: Any,
+        source: str,
+        target: str,
+        start_time: Optional[Any] = None,
+        end_time: Optional[Any] = None,
+        max_path_length: Optional[int] = None,
+        temporal_constraints: Optional[Dict[str, Any]] = None,
         **options
-    ):
+    ) -> Dict[str, Any]:
         """
         Find paths between entities considering temporal validity.
         
+        This method finds paths between source and target entities, considering
+        only relationships that are temporally valid within the specified
+        time range. Uses BFS for path finding.
+        
         Args:
             graph: Knowledge graph to search
-            source: Source entity
-            target: Target entity
-            start_time: Start time for path validity
-            end_time: End time for path validity
-            max_path_length: Maximum path length
-            temporal_constraints: Additional temporal constraints
-            **options: Additional path finding options
+            source: Source entity ID
+            target: Target entity ID
+            start_time: Start time for path validity (optional)
+            end_time: End time for path validity (optional)
+            max_path_length: Maximum path length in edges (optional)
+            temporal_constraints: Additional temporal constraints (optional, unused)
+            **options: Additional path finding options (unused)
             
         Returns:
-            Temporal paths between entities
+            dict: Temporal path results containing:
+                - source: Source entity ID
+                - target: Target entity ID
+                - paths: List of path dictionaries, each containing:
+                    - path: List of node IDs forming the path
+                    - edges: List of relationship dictionaries
+                    - length: Path length in edges
+                - num_paths: Total number of paths found
         """
         self.logger.info(f"Finding temporal paths from {source} to {target}")
         
@@ -423,41 +504,67 @@ class TemporalGraphQuery:
 
 class TemporalPatternDetector:
     """
-    Temporal pattern detection in knowledge graphs.
+    Temporal pattern detection engine.
     
-    • Detects recurring temporal patterns
-    • Identifies temporal sequences
-    • Finds temporal anomalies
-    • Discovers temporal trends
-    • Analyzes temporal correlations
+    This class provides temporal pattern detection capabilities for knowledge
+    graphs, identifying recurring patterns, sequences, cycles, and trends in
+    temporal data.
+    
+    Features:
+        - Sequence pattern detection
+        - Cycle pattern detection
+        - Trend analysis
+        - Anomaly detection (planned)
+    
+    Example Usage:
+        >>> detector = TemporalPatternDetector()
+        >>> patterns = detector.detect_temporal_patterns(
+        ...     graph, pattern_type="sequence", min_frequency=2
+        ... )
     """
     
     def __init__(self, **config):
-        """Initialize temporal pattern detector."""
+        """
+        Initialize temporal pattern detector.
+        
+        Sets up the detector with configuration options.
+        
+        Args:
+            **config: Configuration options (currently unused)
+        """
         from ..utils.logging import get_logger
         self.logger = get_logger("temporal_pattern_detector")
         self.config = config
+        
+        self.logger.debug("Temporal pattern detector initialized")
     
     def detect_temporal_patterns(
         self,
-        graph,
-        pattern_type="sequence",
-        min_frequency=2,
-        time_window=None,
+        graph: Any,
+        pattern_type: str = "sequence",
+        min_frequency: int = 2,
+        time_window: Optional[Any] = None,
         **options
-    ):
+    ) -> List[Dict[str, Any]]:
         """
         Detect temporal patterns in graph.
         
+        This method detects various types of temporal patterns in the knowledge
+        graph, including sequences and cycles.
+        
         Args:
             graph: Knowledge graph to analyze
-            pattern_type: Type of pattern ("sequence", "cycle", "trend", "anomaly")
-            min_frequency: Minimum frequency for pattern
-            time_window: Time window for pattern detection
-            **options: Additional detection options
+            pattern_type: Type of pattern to detect:
+                - "sequence": Sequential relationship patterns
+                - "cycle": Cyclic relationship patterns
+                - "trend": Trend patterns (planned)
+                - "anomaly": Anomaly patterns (planned)
+            min_frequency: Minimum frequency/support for pattern (default: 2)
+            time_window: Time window for pattern detection (optional)
+            **options: Additional detection options (unused)
             
         Returns:
-            Detected temporal patterns
+            list: List of detected pattern dictionaries
         """
         self.logger.info(f"Detecting temporal patterns: {pattern_type}")
         
@@ -490,30 +597,47 @@ class TemporalPatternDetector:
 
 class TemporalVersionManager:
     """
-    Temporal version management for knowledge graphs.
+    Temporal version management engine.
     
-    • Creates temporal versions/snapshots
-    • Manages version history
-    • Handles version comparison
-    • Supports version rollback
-    • Tracks version metadata
+    This class provides version/snapshot management capabilities for knowledge
+    graphs, enabling creation of temporal versions, version comparison, and
+    version history tracking.
+    
+    Features:
+        - Version snapshot creation
+        - Version comparison
+        - Version history tracking
+        - Automatic snapshotting (planned)
+        - Version rollback (planned)
+    
+    Example Usage:
+        >>> manager = TemporalVersionManager()
+        >>> version = manager.create_version(graph, version_label="v1.0")
+        >>> comparison = manager.compare_versions(version1, version2)
     """
     
     def __init__(
         self,
-        snapshot_interval=None,
-        auto_snapshot=False,
-        version_strategy="timestamp",
+        snapshot_interval: Optional[int] = None,
+        auto_snapshot: bool = False,
+        version_strategy: str = "timestamp",
         **config
     ):
         """
         Initialize temporal version manager.
         
+        Sets up the version manager with snapshot configuration and versioning
+        strategy.
+        
         Args:
-            snapshot_interval: Interval for automatic snapshots
-            auto_snapshot: Enable automatic snapshots
-            version_strategy: Versioning strategy ("timestamp", "incremental", "semantic")
-            **config: Additional configuration
+            snapshot_interval: Interval for automatic snapshots in seconds
+                             (optional, auto_snapshot must be True)
+            auto_snapshot: Enable automatic snapshots (default: False)
+            version_strategy: Versioning strategy:
+                - "timestamp": Use timestamps for version labels (default)
+                - "incremental": Use incremental version numbers (planned)
+                - "semantic": Use semantic versioning (planned)
+            **config: Additional configuration options (unused)
         """
         self.snapshot_interval = snapshot_interval
         self.auto_snapshot = auto_snapshot
@@ -521,24 +645,32 @@ class TemporalVersionManager:
     
     def create_version(
         self,
-        graph,
-        version_label=None,
-        timestamp=None,
-        metadata=None,
+        graph: Any,
+        version_label: Optional[str] = None,
+        timestamp: Optional[Any] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **options
-    ):
+    ) -> Dict[str, Any]:
         """
         Create version snapshot of graph.
         
+        This method creates a snapshot/version of the knowledge graph at a
+        specific point in time, copying entities and relationships.
+        
         Args:
-            graph: Knowledge graph to version
-            version_label: Optional version label
-            timestamp: Timestamp for version (None for current)
-            metadata: Additional version metadata
-            **options: Additional version options
+            graph: Knowledge graph to version (dict with "entities" and "relationships")
+            version_label: Optional version label (defaults to "version_{timestamp}")
+            timestamp: Timestamp for version (defaults to current time)
+            metadata: Additional version metadata dictionary (optional)
+            **options: Additional version options (unused)
             
         Returns:
-            Version snapshot object
+            dict: Version snapshot containing:
+                - label: Version label
+                - timestamp: ISO format timestamp
+                - entities: Copy of entities list
+                - relationships: Copy of relationships list
+                - metadata: Version metadata dictionary
         """
         from datetime import datetime
         
@@ -554,18 +686,31 @@ class TemporalVersionManager:
         
         return version
     
-    def compare_versions(self, version1, version2, comparison_metrics=None, **options):
+    def compare_versions(
+        self,
+        version1: Dict[str, Any],
+        version2: Dict[str, Any],
+        comparison_metrics: Optional[List[str]] = None,
+        **options
+    ) -> Dict[str, Any]:
         """
         Compare two graph versions.
         
+        This method compares two version snapshots and calculates differences
+        in entities and relationships.
+        
         Args:
-            version1: First version
-            version2: Second version
-            comparison_metrics: Metrics for comparison
-            **options: Additional comparison options
+            version1: First version snapshot dictionary
+            version2: Second version snapshot dictionary
+            comparison_metrics: List of metrics to calculate (optional, unused)
+            **options: Additional comparison options (unused)
             
         Returns:
-            Version comparison results
+            dict: Version comparison results containing:
+                - version1: Label of first version
+                - version2: Label of second version
+                - entities_added: Change in entity count (version2 - version1)
+                - relationships_added: Change in relationship count (version2 - version1)
         """
         comparison = {
             "version1": version1.get("label", "unknown"),

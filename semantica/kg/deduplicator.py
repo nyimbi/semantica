@@ -1,8 +1,28 @@
 """
-Deduplicator for Semantica framework.
+Deduplication Module
 
-This module provides duplicate detection and merging
-for knowledge graph entities and relationships.
+This module provides comprehensive duplicate detection and merging capabilities
+for the Semantica framework, enabling identification and resolution of duplicate
+entities and relationships in knowledge graphs.
+
+Key Features:
+    - Duplicate entity detection using similarity metrics
+    - Duplicate group identification
+    - Entity merging with configurable strategies
+    - Relationship deduplication
+    - Provenance tracking for merged entities
+
+Main Classes:
+    - Deduplicator: Main deduplication engine
+
+Example Usage:
+    >>> from semantica.kg import Deduplicator
+    >>> deduplicator = Deduplicator()
+    >>> duplicate_groups = deduplicator.find_duplicates(entities)
+    >>> merged_entities = deduplicator.merge_duplicates(duplicate_groups)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional
@@ -14,29 +34,62 @@ from ..deduplication.entity_merger import EntityMerger
 
 class Deduplicator:
     """
-    Deduplicator.
+    Deduplication engine.
     
-    Detects and merges duplicate entities and relationships in knowledge graphs.
+    This class provides duplicate detection and merging capabilities for
+    knowledge graphs, using the deduplication module's duplicate detector
+    and entity merger components.
+    
+    Features:
+        - Duplicate entity detection with similarity metrics
+        - Duplicate group identification
+        - Entity merging with configurable strategies
+        - Provenance tracking for merged entities
+    
+    Example Usage:
+        >>> deduplicator = Deduplicator()
+        >>> duplicate_groups = deduplicator.find_duplicates(entities)
+        >>> merged_entities = deduplicator.merge_duplicates(duplicate_groups)
     """
     
     def __init__(self, **config):
-        """Initialize deduplicator."""
+        """
+        Initialize deduplicator.
+        
+        Sets up the deduplicator with duplicate detector and entity merger
+        components from the deduplication module.
+        
+        Args:
+            **config: Configuration options:
+                - detection: Configuration for duplicate detection (optional)
+                - merger: Configuration for entity merging (optional)
+        """
         self.logger = get_logger("deduplicator")
         self.config = config
         
         # Initialize deduplication components
         self.duplicate_detector = DuplicateDetector(**config.get("detection", {}))
         self.entity_merger = EntityMerger(**config.get("merger", {}))
+        
+        self.logger.debug("Deduplicator initialized")
     
-    def find_duplicates(self, entities: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
+    def find_duplicates(
+        self,
+        entities: List[Dict[str, Any]]
+    ) -> List[List[Dict[str, Any]]]:
         """
         Find duplicate entities.
         
+        This method detects duplicate entities using similarity metrics and
+        groups them into duplicate groups. Uses the duplicate detector from
+        the deduplication module.
+        
         Args:
-            entities: List of entities
+            entities: List of entity dictionaries to check for duplicates
             
         Returns:
-            List of duplicate groups
+            list: List of duplicate groups, where each group is a list of
+                  duplicate entity dictionaries (groups with 2+ entities)
         """
         self.logger.info(f"Finding duplicates in {len(entities)} entities")
         
@@ -62,11 +115,16 @@ class Deduplicator:
         """
         Merge duplicate entities.
         
+        This method merges groups of duplicate entities using the entity merger
+        from the deduplication module. Each group is merged into a single entity
+        with merged properties and provenance tracking.
+        
         Args:
-            duplicate_groups: Groups of duplicate entities
+            duplicate_groups: List of duplicate groups (each group is a list
+                            of duplicate entity dictionaries)
             
         Returns:
-            Merged entities
+            list: List of merged entity dictionaries (one per duplicate group)
         """
         self.logger.info(f"Merging {len(duplicate_groups)} duplicate groups")
         

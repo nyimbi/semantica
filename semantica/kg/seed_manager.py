@@ -1,8 +1,29 @@
 """
-Seed manager for Semantica framework.
+Seed Management Module
 
-This module provides initial data loading and seeding
-for knowledge graph construction.
+This module provides comprehensive initial data loading and seeding capabilities
+for the Semantica framework, enabling bootstrap data loading for knowledge
+graph construction.
+
+Key Features:
+    - Seed data loading from various sources
+    - File-based seed data loading (JSON)
+    - Data normalization and validation
+    - Source tracking for seed data
+    - Seed data management (clear, retrieve)
+
+Main Classes:
+    - SeedManager: Main seed data management engine
+
+Example Usage:
+    >>> from semantica.kg import SeedManager
+    >>> manager = SeedManager()
+    >>> manager.load_seed_data("source_1", entities)
+    >>> manager.load_from_file("seed_data.json", source="file_source")
+    >>> seed_data = manager.get_seed_data()
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional
@@ -13,24 +34,53 @@ from ..utils.logging import get_logger
 
 class SeedManager:
     """
-    Seed manager.
+    Seed data management engine.
     
-    Manages initial data loading and seeding for knowledge graph construction.
+    This class provides seed data loading and management capabilities for
+    knowledge graph construction, enabling bootstrap data loading from various
+    sources with normalization and validation.
+    
+    Features:
+        - Seed data loading from dictionaries and lists
+        - File-based seed data loading (JSON)
+        - Data normalization and ID generation
+        - Source tracking and metadata
+        - Seed data retrieval and management
+    
+    Example Usage:
+        >>> manager = SeedManager()
+        >>> manager.load_seed_data("source_1", entities)
+        >>> manager.load_from_file("seed_data.json")
+        >>> seed_data = manager.get_seed_data()
     """
     
     def __init__(self, **config):
-        """Initialize seed manager."""
+        """
+        Initialize seed manager.
+        
+        Sets up the manager with configuration and initializes seed data storage.
+        
+        Args:
+            **config: Configuration options (currently unused)
+        """
         self.logger = get_logger("seed_manager")
         self.config = config
         self.seed_data: List[Dict[str, Any]] = []
+        
+        self.logger.debug("Seed manager initialized")
     
     def load_seed_data(self, source: str, data: Any) -> None:
         """
         Load seed data.
         
+        This method loads seed data from various formats (list of entities,
+        dict with "entities" key, or single entity dict), normalizes the data,
+        ensures required fields (ID, source), and stores it with metadata.
+        
         Args:
-            source: Source identifier
-            data: Seed data to load
+            source: Source identifier (e.g., "initial_data", "bootstrap")
+            data: Seed data to load (list of entities, dict with "entities" key,
+                 or single entity dict)
         """
         self.logger.info(f"Loading seed data from source: {source}")
         
@@ -69,13 +119,24 @@ class SeedManager:
         
         self.logger.info(f"Loaded {len(processed_entities)} entities from {source}")
     
-    def load_from_file(self, file_path: str, source: Optional[str] = None) -> None:
+    def load_from_file(
+        self,
+        file_path: str,
+        source: Optional[str] = None
+    ) -> None:
         """
         Load seed data from file.
         
+        This method loads seed data from a JSON file. The source identifier
+        defaults to the file stem (filename without extension) if not provided.
+        
         Args:
-            file_path: Path to seed data file
-            source: Optional source identifier
+            file_path: Path to seed data file (must be JSON format)
+            source: Optional source identifier (defaults to file stem)
+            
+        Raises:
+            FileNotFoundError: If file does not exist
+            ValueError: If file format is unsupported
         """
         import json
         from pathlib import Path
@@ -103,11 +164,23 @@ class SeedManager:
         """
         Get loaded seed data.
         
+        This method retrieves all loaded seed data with their metadata.
+        
         Returns:
-            List of seed data entries
+            list: List of seed data entry dictionaries, each containing:
+                - source: Source identifier
+                - entities: List of entity dictionaries
+                - count: Number of entities
+                - timestamp: ISO timestamp when data was loaded
         """
         return self.seed_data
     
     def clear_seed_data(self) -> None:
-        """Clear all seed data."""
+        """
+        Clear all seed data.
+        
+        This method removes all loaded seed data from the manager. Useful
+        for resetting state or freeing memory.
+        """
         self.seed_data = []
+        self.logger.debug("Cleared all seed data")

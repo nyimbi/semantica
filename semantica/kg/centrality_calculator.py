@@ -1,18 +1,24 @@
 """
 Centrality Calculator Module
 
-Handles centrality measures calculation for knowledge graphs including
-degree, betweenness, closeness, and eigenvector centrality.
+This module provides comprehensive centrality measure calculations for knowledge
+graphs, helping identify the most important or influential nodes in the graph.
 
 Key Features:
-    - Degree centrality calculation
-    - Betweenness centrality calculation
-    - Closeness centrality calculation
-    - Eigenvector centrality calculation
+    - Degree centrality: Measures node connectivity
+    - Betweenness centrality: Measures node importance as a bridge
+    - Closeness centrality: Measures average distance to all other nodes
+    - Eigenvector centrality: Measures influence based on connections to important nodes
     - Centrality ranking and statistics
 
-Main Classes:
-    - CentralityCalculator: Main centrality calculation engine
+Example Usage:
+    >>> from semantica.kg import CentralityCalculator
+    >>> calculator = CentralityCalculator()
+    >>> centrality = calculator.calculate_degree_centrality(graph)
+    >>> all_centrality = calculator.calculate_all_centrality(graph)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional
@@ -25,71 +31,125 @@ class CentralityCalculator:
     """
     Centrality measures calculation engine.
     
-    • Calculates various centrality measures
-    • Handles different centrality types
-    • Manages centrality rankings
-    • Processes centrality statistics
+    This class calculates various centrality measures to identify important
+    nodes in knowledge graphs. It supports multiple centrality types and
+    can use NetworkX for optimized calculations when available.
     
-    Attributes:
-        • supported_centrality_types: List of supported centrality types
-        • calculation_config: Configuration for centrality calculations
-        • ranking_tools: Tools for ranking nodes by centrality
-        • statistics_processor: Processor for centrality statistics
-        
-    Methods:
-        • calculate_degree_centrality(): Calculate degree centrality
-        • calculate_betweenness_centrality(): Calculate betweenness centrality
-        • calculate_closeness_centrality(): Calculate closeness centrality
-        • calculate_eigenvector_centrality(): Calculate eigenvector centrality
+    Supported Centrality Types:
+        - degree: Number of connections (simplest, fastest)
+        - betweenness: Importance as a bridge between nodes
+        - closeness: Average distance to all other nodes
+        - eigenvector: Influence based on connections to important nodes
+    
+    Example Usage:
+        >>> calculator = CentralityCalculator()
+        >>> # Calculate single type
+        >>> degree = calculator.calculate_degree_centrality(graph)
+        >>> # Calculate all types
+        >>> all_centrality = calculator.calculate_all_centrality(graph)
     """
     
     def __init__(self, **config):
         """
         Initialize centrality calculator.
         
-        • Setup centrality algorithms
-        • Configure calculation methods
-        • Initialize ranking tools
-        • Setup statistics processing
+        Sets up the calculator with configuration and attempts to use NetworkX
+        for optimized calculations if available, otherwise falls back to
+        basic implementations.
+        
+        Args:
+            **config: Configuration options:
+                - calculation_config: Additional calculation configuration
         """
         self.logger = get_logger("centrality_calculator")
-        self.supported_centrality_types = [
-            "degree", "betweenness", "closeness", "eigenvector"
-        ]
-        self.calculation_config = config.get("calculation_config", {})
         self.config = config
         
-        # Try to use networkx if available
+        # Supported centrality types
+        self.supported_centrality_types = [
+            "degree",
+            "betweenness",
+            "closeness",
+            "eigenvector"
+        ]
+        
+        self.calculation_config = config.get("calculation_config", {})
+        
+        # Try to use NetworkX for optimized calculations (optional dependency)
         try:
             import networkx as nx
             self.nx = nx
             self.use_networkx = True
+            self.logger.debug("NetworkX available, using optimized implementations")
         except ImportError:
             self.nx = None
             self.use_networkx = False
-            self.logger.warning("NetworkX not available, using basic implementations")
-    
-    def calculate_degree_centrality(self, graph):
-        """
-        Calculate degree centrality for all nodes.
+            self.logger.debug(
+                "NetworkX not available, using basic implementations. "
+                "Install with: pip install networkx"
+            )
         
-        • Count node degrees
-        • Normalize by maximum degree
-        • Rank nodes by degree
-        • Return degree centrality scores
+        self.logger.info("Centrality calculator initialized")
+    
+    def calculate_degree_centrality(self, graph: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Calculate degree centrality for all nodes in the graph.
+        
+        Degree centrality measures the number of direct connections a node has.
+        It's the simplest centrality measure and is normalized by the maximum
+        possible degree (n-1 for n nodes).
         
         Args:
-            graph: Input graph for centrality calculation
+            graph: Input graph (dict with "entities" and "relationships" or NetworkX graph)
             
         Returns:
-            dict: Node centrality scores and rankings
+            Dictionary containing:
+                - centrality: Dict mapping node IDs to centrality scores (0.0 to 1.0)
+                - rankings: List of nodes ranked by centrality (highest first)
+                - max_degree: Maximum degree in the graph
+                - total_nodes: Total number of nodes
+                
+        Example:
+            >>> result = calculator.calculate_degree_centrality(graph)
+            >>> top_node = result["rankings"][0]["node"]
+            >>> top_score = result["rankings"][0]["score"]
         """
         self.logger.info("Calculating degree centrality")
         
-        # Build adjacency structure
+        # Use NetworkX if available for faster calculation
+        if self.use_networkx:
+            try:
+                nx_graph = self._to_networkx(graph)
+                centrality_dict = self.nx.degree_centrality(nx_graph)
+                
+                # Convert to rankings
+                ranked = sorted(
+                    centrality_dict.items(),
+                    key=lambda x: x[1],
+                    reverse=True
+                )
+                
+                max_degree = max(
+                    dict(nx_graph.degree()).values()
+                ) if nx_graph.number_of_nodes() > 0 else 0
+                
+                return {
+                    "centrality": centrality_dict,
+                    "rankings": [
+                        {"node": node, "score": score}
+                        for node, score in ranked
+                    ],
+                    "max_degree": max_degree,
+                    "total_nodes": nx_graph.number_of_nodes()
+                }
+            except Exception as e:
+                self.logger.warning(
+                    f"NetworkX calculation failed: {e}, using basic implementation"
+                )
+        
+        # Basic implementation using adjacency list
         adjacency = self._build_adjacency(graph)
         
-        # Calculate degrees
+        # Calculate raw degrees (number of connections per node)
         degrees = {}
         max_degree = 0
         
@@ -98,22 +158,33 @@ class CentralityCalculator:
             degrees[node] = degree
             max_degree = max(max_degree, degree)
         
-        # Calculate normalized centrality
+        # Calculate normalized centrality scores
+        # Normalization: degree / (n - 1) where n is number of nodes
         centrality = {}
-        n = len(adjacency)
-        normalization = n - 1 if n > 1 else 1
+        num_nodes = len(adjacency)
+        normalization = num_nodes - 1 if num_nodes > 1 else 1
         
         for node, degree in degrees.items():
-            centrality[node] = degree / normalization if normalization > 0 else 0.0
+            centrality[node] = (
+                degree / normalization if normalization > 0 else 0.0
+            )
         
-        # Rank nodes
+        # Rank nodes by centrality (highest first)
         ranked = sorted(centrality.items(), key=lambda x: x[1], reverse=True)
+        
+        self.logger.debug(
+            f"Degree centrality calculated: {num_nodes} nodes, "
+            f"max degree: {max_degree}"
+        )
         
         return {
             "centrality": centrality,
-            "rankings": [{"node": node, "score": score} for node, score in ranked],
+            "rankings": [
+                {"node": node, "score": score}
+                for node, score in ranked
+            ],
             "max_degree": max_degree,
-            "total_nodes": n
+            "total_nodes": num_nodes
         }
     
     def calculate_betweenness_centrality(self, graph):
