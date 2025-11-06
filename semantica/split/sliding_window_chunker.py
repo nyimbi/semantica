@@ -1,8 +1,28 @@
 """
-Sliding window chunker for Semantica framework.
+Sliding Window Chunker Module
 
-This module provides fixed-size chunking with overlap capabilities
-for document processing and analysis.
+This module provides fixed-size chunking with overlap capabilities using
+a sliding window approach, with optional boundary preservation for better
+text coherence.
+
+Key Features:
+    - Fixed-size sliding window chunking
+    - Configurable overlap and stride
+    - Boundary preservation (word/sentence)
+    - Fixed-size or boundary-aware modes
+    - Chunk metadata tracking
+
+Main Classes:
+    - SlidingWindowChunker: Main sliding window chunking coordinator
+
+Example Usage:
+    >>> from semantica.split import SlidingWindowChunker
+    >>> chunker = SlidingWindowChunker(chunk_size=1000, overlap=200)
+    >>> chunks = chunker.chunk(text, preserve_boundaries=True)
+    >>> overlap_chunks = chunker.chunk_with_overlap(text, overlap_size=300)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from dataclasses import dataclass, field

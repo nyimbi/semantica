@@ -1,8 +1,30 @@
 """
-Semantic chunker for Semantica framework.
+Semantic Chunker Module
 
-This module provides meaning-based document splitting
-using spaCy and other NLP libraries for optimal semantic boundaries.
+This module provides meaning-based document splitting using spaCy and other
+NLP libraries for optimal semantic boundaries, preserving sentence and
+paragraph coherence.
+
+Key Features:
+    - Semantic boundary detection using NLP
+    - Sentence-aware chunking
+    - Paragraph preservation
+    - Configurable chunk size and overlap
+    - spaCy integration with fallback
+    - Metadata tracking (sentence count, token count)
+
+Main Classes:
+    - SemanticChunker: Main semantic chunking coordinator
+    - Chunk: Chunk representation dataclass
+
+Example Usage:
+    >>> from semantica.split import SemanticChunker
+    >>> chunker = SemanticChunker(chunk_size=1000, chunk_overlap=200)
+    >>> chunks = chunker.chunk(text)
+    >>> sentence_chunks = chunker.chunk_by_sentences(text, max_sentences=5)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 import re

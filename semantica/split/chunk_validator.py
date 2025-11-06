@@ -1,8 +1,31 @@
 """
-Chunk validator for Semantica framework.
+Chunk Validator Module
 
-This module provides quality validation for document chunks
-to ensure proper splitting and data integrity.
+This module provides comprehensive quality validation for document chunks,
+ensuring proper splitting, data integrity, and semantic coherence.
+
+Key Features:
+    - Size validation (min/max chunk size)
+    - Content validation (empty/whitespace detection)
+    - Semantic coherence checking
+    - Structure quality assessment
+    - Batch validation
+    - Confidence-based filtering
+
+Main Classes:
+    - ChunkValidator: Main validation coordinator
+    - ValidationResult: Validation result representation dataclass
+
+Example Usage:
+    >>> from semantica.split import ChunkValidator
+    >>> validator = ChunkValidator(min_size=10, max_size=10000)
+    >>> result = validator.validate(chunk)
+    >>> if result.valid:
+    ...     print(f"Quality score: {result.score}")
+    >>> valid_chunks = validator.filter_valid_chunks(chunks)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from dataclasses import dataclass, field

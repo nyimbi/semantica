@@ -1,8 +1,30 @@
 """
-Provenance tracker for Semantica framework.
+Provenance Tracker Module
 
-This module provides source tracking for document chunks
-to maintain data lineage and traceability.
+This module provides comprehensive source tracking for document chunks,
+maintaining data lineage and traceability throughout the chunking process.
+
+Key Features:
+    - Chunk source tracking
+    - Document lineage management
+    - Parent-child chunk relationships
+    - Chunk linking and relationships
+    - Provenance export
+    - Version tracking support
+
+Main Classes:
+    - ProvenanceTracker: Main provenance tracking coordinator
+    - ProvenanceInfo: Provenance information representation dataclass
+
+Example Usage:
+    >>> from semantica.split import ProvenanceTracker
+    >>> tracker = ProvenanceTracker()
+    >>> prov_id = tracker.track_chunk(chunk, source_document="doc1", source_path="path/to/doc1.txt")
+    >>> provenance = tracker.get_provenance(chunk_id)
+    >>> lineage = tracker.get_chunk_lineage(chunk_id)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from dataclasses import dataclass, field

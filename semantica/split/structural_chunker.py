@@ -1,8 +1,29 @@
 """
-Structural chunker for Semantica framework.
+Structural Chunker Module
 
-This module provides document-aware splitting based on
-document structure and formatting.
+This module provides document-aware splitting based on document structure
+and formatting, preserving headings, paragraphs, lists, and code blocks.
+
+Key Features:
+    - Structure-aware chunking (headings, paragraphs, lists, code blocks)
+    - Heading hierarchy preservation
+    - Section boundary respect
+    - Markdown structure detection
+    - Configurable max chunk size
+    - Element grouping and metadata
+
+Main Classes:
+    - StructuralChunker: Main structural chunking coordinator
+    - StructuralElement: Structural element representation dataclass
+
+Example Usage:
+    >>> from semantica.split import StructuralChunker
+    >>> chunker = StructuralChunker(respect_headers=True, max_chunk_size=2000)
+    >>> chunks = chunker.chunk(structured_document)
+    >>> elements = chunker._extract_structure(document)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 import re

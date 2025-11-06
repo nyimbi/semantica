@@ -1,8 +1,30 @@
 """
-Table-aware chunker for Semantica framework.
+Table Chunker Module
 
-This module provides specialized chunking for tabular data
-while preserving table structure and relationships.
+This module provides specialized chunking for tabular data while preserving
+table structure and relationships, supporting both row-based and column-based chunking.
+
+Key Features:
+    - Row-based table chunking
+    - Column-based table chunking
+    - Header preservation
+    - Table schema extraction
+    - Text conversion for table chunks
+    - Column type inference
+
+Main Classes:
+    - TableChunker: Main table chunking coordinator
+    - TableChunk: Table chunk representation dataclass
+
+Example Usage:
+    >>> from semantica.split import TableChunker
+    >>> chunker = TableChunker(max_rows=100, preserve_headers=True)
+    >>> table_chunks = chunker.chunk_table(table_data)
+    >>> text_chunks = chunker.chunk_to_text_chunks(table_data)
+    >>> schema = chunker.extract_table_schema(table_data)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from dataclasses import dataclass, field
