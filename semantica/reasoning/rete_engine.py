@@ -1,8 +1,36 @@
 """
-Rete algorithm implementation for Semantica framework.
+Rete Algorithm Engine Module
 
-This module provides Rete algorithm implementation
-for efficient rule-based reasoning.
+This module provides Rete algorithm implementation for efficient rule-based
+reasoning, using a network of alpha and beta nodes for pattern matching.
+
+Key Features:
+    - Rete algorithm implementation for efficient rule matching
+    - Alpha node pattern matching
+    - Beta node join operations
+    - Terminal node activation
+    - Incremental fact processing
+    - Performance optimization for large rule sets
+
+Main Classes:
+    - ReteEngine: Rete algorithm implementation
+    - ReteNode: Base Rete network node
+    - AlphaNode: Alpha node for single condition matching
+    - BetaNode: Beta node for join operations
+    - TerminalNode: Terminal node for rule activation
+    - Fact: Dataclass for fact representation
+    - Match: Dataclass for pattern matches
+
+Example Usage:
+    >>> from semantica.reasoning import ReteEngine, Fact
+    >>> engine = ReteEngine()
+    >>> engine.add_rule(rule)
+    >>> fact = Fact("f1", "Person", ["John"])
+    >>> engine.add_fact(fact)
+    >>> matches = engine.get_matches()
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional, Set, Tuple

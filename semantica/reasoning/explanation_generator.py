@@ -1,8 +1,33 @@
 """
-Explanation generator for Semantica framework.
+Explanation Generator Module
 
-This module provides explanation generation for
-reasoning results and inference chains.
+This module provides explanation generation for reasoning results and inference
+chains, creating human-readable justifications and reasoning paths.
+
+Key Features:
+    - Explanation generation for reasoning results
+    - Reasoning path visualization
+    - Justification creation
+    - Step-by-step reasoning breakdown
+    - Human-readable explanations
+    - Evidence tracking
+
+Main Classes:
+    - ExplanationGenerator: Explanation generation engine
+    - Explanation: Dataclass for explanations
+    - ReasoningStep: Dataclass for single reasoning steps
+    - ReasoningPath: Dataclass for reasoning path visualization
+    - Justification: Dataclass for justifications
+
+Example Usage:
+    >>> from semantica.reasoning import ExplanationGenerator
+    >>> generator = ExplanationGenerator()
+    >>> explanation = generator.generate_explanation(inference_result)
+    >>> path = generator.generate_reasoning_path(inference_result)
+    >>> justification = generator.create_justification(conclusion, path)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional

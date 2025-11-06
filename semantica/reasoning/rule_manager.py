@@ -1,8 +1,33 @@
 """
-Rule manager for Semantica framework.
+Rule Manager Module
 
-This module provides rule management and execution
-for reasoning and inference operations.
+This module provides rule management and execution for reasoning and inference
+operations, supporting rule registration, validation, execution tracking, and
+rule type management.
+
+Key Features:
+    - Rule management and execution
+    - Rule registration and validation
+    - Rule execution tracking
+    - Multiple rule types (implication, equivalence, constraint, transformation)
+    - Rule priority management
+    - Execution history
+
+Main Classes:
+    - RuleManager: Rule management system
+    - Rule: Dataclass for rule definition
+    - RuleExecution: Dataclass for rule execution records
+    - RuleType: Enum for rule types
+
+Example Usage:
+    >>> from semantica.reasoning import RuleManager, Rule, RuleType
+    >>> manager = RuleManager()
+    >>> rule = Rule("r1", "If A then B", conditions=["A"], conclusion="B", rule_type=RuleType.IMPLICATION)
+    >>> manager.add_rule(rule)
+    >>> execution = manager.execute_rule(rule, facts)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional, Callable

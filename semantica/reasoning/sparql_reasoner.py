@@ -1,8 +1,32 @@
 """
-SPARQL reasoner for Semantica framework.
+SPARQL Reasoner Module
 
-This module provides SPARQL-based reasoning capabilities
-for knowledge graph query answering.
+This module provides SPARQL-based reasoning capabilities for knowledge graph
+query answering, including query expansion, inference rule integration, and
+query optimization.
+
+Key Features:
+    - SPARQL query reasoning and execution
+    - Inference rule integration
+    - Query optimization and caching
+    - Query expansion
+    - Performance optimization
+    - Error handling and recovery
+    - Triple store integration
+
+Main Classes:
+    - SPARQLReasoner: SPARQL-based reasoning engine
+    - SPARQLQueryResult: Dataclass for SPARQL query results
+
+Example Usage:
+    >>> from semantica.reasoning import SPARQLReasoner
+    >>> reasoner = SPARQLReasoner()
+    >>> query = "SELECT ?s ?p ?o WHERE { ?s ?p ?o }"
+    >>> result = reasoner.query(query)
+    >>> expanded = reasoner.expand_query(query, rules)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional, Set

@@ -1,8 +1,32 @@
 """
-Inference engine for Semantica framework.
+Inference Engine Module
 
-This module provides rule-based inference capabilities
-for knowledge graph reasoning and analysis.
+This module provides rule-based inference capabilities for knowledge graph
+reasoning and analysis, supporting forward chaining, backward chaining, and
+bidirectional inference strategies.
+
+Key Features:
+    - Rule-based inference and reasoning
+    - Forward and backward chaining
+    - Bidirectional inference
+    - Rule management and execution
+    - Performance optimization
+    - Error handling and recovery
+    - Custom rule support
+
+Main Classes:
+    - InferenceEngine: Rule-based inference engine
+    - InferenceResult: Dataclass for inference results
+    - InferenceStrategy: Enum for inference strategies (forward, backward, bidirectional)
+
+Example Usage:
+    >>> from semantica.reasoning import InferenceEngine, InferenceStrategy
+    >>> engine = InferenceEngine()
+    >>> result = engine.infer(facts, rules, strategy=InferenceStrategy.FORWARD)
+    >>> conclusions = engine.forward_chain(facts, rules)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional, Callable, Set

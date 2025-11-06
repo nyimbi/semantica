@@ -1,8 +1,34 @@
 """
-Abductive reasoner for Semantica framework.
+Abductive Reasoner Module
 
-This module provides abductive reasoning capabilities
-for hypothesis generation and explanation.
+This module provides abductive reasoning capabilities for hypothesis generation
+and explanation, finding the best explanations for observations using various
+ranking strategies.
+
+Key Features:
+    - Abductive reasoning for hypothesis generation
+    - Hypothesis ranking (simplicity, plausibility, consistency, coverage)
+    - Observation explanation
+    - Hypothesis evaluation and scoring
+    - Best explanation selection
+    - Confidence calculation
+
+Main Classes:
+    - AbductiveReasoner: Abductive reasoning engine
+    - Observation: Dataclass for observations to explain
+    - Hypothesis: Dataclass for abductive hypotheses
+    - Explanation: Dataclass for abductive explanations
+    - HypothesisRanking: Enum for hypothesis ranking strategies
+
+Example Usage:
+    >>> from semantica.reasoning import AbductiveReasoner, Observation
+    >>> reasoner = AbductiveReasoner()
+    >>> observation = Observation("obs1", "Person X is in location Y")
+    >>> hypotheses = reasoner.generate_hypotheses(observation, facts)
+    >>> best = reasoner.rank_hypotheses(hypotheses, HypothesisRanking.SIMPLICITY)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional

@@ -1,10 +1,21 @@
 """
-Reasoning module for Semantica framework.
+Reasoning Module
 
-This module provides reasoning and inference capabilities
-for knowledge graph analysis and query answering.
+This module provides reasoning and inference capabilities for knowledge graph
+analysis and query answering, supporting multiple reasoning strategies including
+rule-based inference, SPARQL reasoning, abductive and deductive reasoning.
 
-Exports:
+Key Features:
+    - Rule-based inference with forward/backward chaining
+    - SPARQL-based reasoning and query expansion
+    - Rete algorithm implementation for efficient rule matching
+    - Abductive reasoning for hypothesis generation
+    - Deductive reasoning for logical inference
+    - Rule management and execution tracking
+    - Explanation generation for reasoning results
+    - Proof generation and validation
+
+Main Classes:
     - InferenceEngine: Rule-based inference with forward/backward chaining
     - SPARQLReasoner: SPARQL-based reasoning and query expansion
     - ReteEngine: Rete algorithm implementation for efficient rule matching
@@ -12,6 +23,16 @@ Exports:
     - DeductiveReasoner: Deductive reasoning for logical inference
     - RuleManager: Rule management and execution tracking
     - ExplanationGenerator: Explanation generation for reasoning results
+
+Example Usage:
+    >>> from semantica.reasoning import InferenceEngine, SPARQLReasoner
+    >>> engine = InferenceEngine()
+    >>> result = engine.infer(facts, rules)
+    >>> reasoner = SPARQLReasoner()
+    >>> query_result = reasoner.query("SELECT ?s ?p ?o WHERE { ?s ?p ?o }")
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from .inference_engine import (

@@ -1,8 +1,33 @@
 """
-Deductive reasoner for Semantica framework.
+Deductive Reasoner Module
 
-This module provides deductive reasoning capabilities
-for logical inference and proof generation.
+This module provides deductive reasoning capabilities for logical inference
+and proof generation, supporting formal logic and theorem proving.
+
+Key Features:
+    - Deductive reasoning for logical inference
+    - Proof generation and validation
+    - Premise and conclusion management
+    - Logical argument construction
+    - Theorem proving
+    - Confidence calculation
+
+Main Classes:
+    - DeductiveReasoner: Deductive reasoning engine
+    - Premise: Dataclass for logical premises
+    - Conclusion: Dataclass for logical conclusions
+    - Proof: Dataclass for logical proofs
+    - Argument: Dataclass for logical arguments
+
+Example Usage:
+    >>> from semantica.reasoning import DeductiveReasoner, Premise
+    >>> reasoner = DeductiveReasoner()
+    >>> premises = [Premise("p1", "All humans are mortal"), Premise("p2", "Socrates is human")]
+    >>> conclusion = reasoner.deduce(premises, rules)
+    >>> proof = reasoner.generate_proof(premises, conclusion)
+
+Author: Semantica Contributors
+License: MIT
 """
 
 from typing import Any, Dict, List, Optional, Set
