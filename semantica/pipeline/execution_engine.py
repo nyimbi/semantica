@@ -273,30 +273,48 @@ class ExecutionEngine:
     
     def _topological_sort(self, steps: List[PipelineStep]) -> List[PipelineStep]:
         """Sort steps by dependencies (topological sort)."""
-        # Build dependency graph
-        step_map = {step.name: step for step in steps}
-        in_degree = {step.name: len(step.dependencies) for step in steps}
+        tracking_id = self.progress_tracker.start_tracking(
+            module="pipeline",
+            submodule="ExecutionEngine",
+            message=f"Sorting {len(steps)} steps by dependencies"
+        )
         
-        # Find steps with no dependencies
-        queue = [step for step in steps if in_degree[step.name] == 0]
-        sorted_steps = []
-        
-        while queue:
-            step = queue.pop(0)
-            sorted_steps.append(step)
+        try:
+            # Build dependency graph
+            self.progress_tracker.update_tracking(tracking_id, message="Building dependency graph...")
+            step_map = {step.name: step for step in steps}
+            in_degree = {step.name: len(step.dependencies) for step in steps}
             
-            # Update in-degrees of dependent steps
-            for other_step in steps:
-                if step.name in other_step.dependencies:
-                    in_degree[other_step.name] -= 1
-                    if in_degree[other_step.name] == 0:
-                        queue.append(other_step)
-        
-        # Check for cycles
-        if len(sorted_steps) != len(steps):
-            raise ValidationError("Circular dependency detected in pipeline")
-        
-        return sorted_steps
+            # Find steps with no dependencies
+            self.progress_tracker.update_tracking(tracking_id, message="Finding entry points...")
+            queue = [step for step in steps if in_degree[step.name] == 0]
+            sorted_steps = []
+            
+            # Perform topological sort
+            self.progress_tracker.update_tracking(tracking_id, message="Performing topological sort...")
+            while queue:
+                step = queue.pop(0)
+                sorted_steps.append(step)
+                
+                # Update in-degrees of dependent steps
+                for other_step in steps:
+                    if step.name in other_step.dependencies:
+                        in_degree[other_step.name] -= 1
+                        if in_degree[other_step.name] == 0:
+                            queue.append(other_step)
+            
+            # Check for cycles
+            self.progress_tracker.update_tracking(tracking_id, message="Checking for circular dependencies...")
+            if len(sorted_steps) != len(steps):
+                raise ValidationError("Circular dependency detected in pipeline")
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Sorted {len(steps)} steps by dependencies")
+            return sorted_steps
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def pause_pipeline(self, pipeline_id: str) -> None:
         """Pause pipeline execution."""

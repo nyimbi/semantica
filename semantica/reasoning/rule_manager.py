@@ -38,6 +38,7 @@ import re
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 
 
 class RuleType(Enum):
@@ -98,6 +99,9 @@ class RuleManager:
         self.config = config or {}
         self.config.update(kwargs)
         
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
+        
         self.rules: Dict[str, Rule] = {}
         self.execution_history: List[RuleExecution] = []
         self.rule_counter = 0
@@ -117,29 +121,45 @@ class RuleManager:
         Returns:
             Created rule
         """
-        # Parse rule definition
-        parsed = self._parse_rule_definition(rule_definition)
-        
-        # Create rule
-        self.rule_counter += 1
-        rule = Rule(
-            rule_id=f"rule_{self.rule_counter}",
-            name=options.get("name", f"Rule {self.rule_counter}"),
-            conditions=parsed["conditions"],
-            conclusion=parsed["conclusion"],
-            rule_type=RuleType(parsed.get("type", "implication")),
-            confidence=options.get("confidence", 1.0),
-            priority=options.get("priority", 0),
-            handler=options.get("handler"),
-            metadata=options.get("metadata", {})
+        tracking_id = self.progress_tracker.start_tracking(
+            module="reasoning",
+            submodule="RuleManager",
+            message="Defining new inference rule"
         )
         
-        # Validate rule
-        validation = self.validate_rule(rule)
-        if not validation["valid"]:
-            raise ValidationError(f"Rule validation failed: {validation['errors']}")
-        
-        return rule
+        try:
+            # Parse rule definition
+            self.progress_tracker.update_tracking(tracking_id, message="Parsing rule definition...")
+            parsed = self._parse_rule_definition(rule_definition)
+            
+            # Create rule
+            self.progress_tracker.update_tracking(tracking_id, message="Creating rule object...")
+            self.rule_counter += 1
+            rule = Rule(
+                rule_id=f"rule_{self.rule_counter}",
+                name=options.get("name", f"Rule {self.rule_counter}"),
+                conditions=parsed["conditions"],
+                conclusion=parsed["conclusion"],
+                rule_type=RuleType(parsed.get("type", "implication")),
+                confidence=options.get("confidence", 1.0),
+                priority=options.get("priority", 0),
+                handler=options.get("handler"),
+                metadata=options.get("metadata", {})
+            )
+            
+            # Validate rule
+            self.progress_tracker.update_tracking(tracking_id, message="Validating rule...")
+            validation = self.validate_rule(rule)
+            if not validation["valid"]:
+                raise ValidationError(f"Rule validation failed: {validation['errors']}")
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Defined rule: {rule.name}")
+            return rule
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def _parse_rule_definition(self, definition: str) -> Dict[str, Any]:
         """Parse rule definition string."""
@@ -267,14 +287,23 @@ class RuleManager:
         import time
         start_time = time.time()
         
+        tracking_id = self.progress_tracker.start_tracking(
+            module="reasoning",
+            submodule="RuleManager",
+            message=f"Executing rule: {rule.name}"
+        )
+        
         try:
             # Check if conditions are met
+            self.progress_tracker.update_tracking(tracking_id, message="Checking if rule conditions are met...")
             conditions_met = all(condition in facts for condition in rule.conditions)
             
             if not conditions_met:
+                self.progress_tracker.stop_tracking(tracking_id, status="completed", message="Rule conditions not met")
                 return None
             
             # Execute rule
+            self.progress_tracker.update_tracking(tracking_id, message="Executing rule...")
             if rule.handler:
                 result = rule.handler(facts, **options)
             else:
@@ -283,6 +312,7 @@ class RuleManager:
             execution_time = time.time() - start_time
             
             # Record execution
+            self.progress_tracker.update_tracking(tracking_id, message="Recording execution...")
             execution = RuleExecution(
                 rule_id=rule.rule_id,
                 executed_at=datetime.now().isoformat(),
@@ -293,6 +323,8 @@ class RuleManager:
             )
             self.execution_history.append(execution)
             
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Rule executed successfully: {rule.name}")
             return result
             
         except Exception as e:
@@ -309,6 +341,7 @@ class RuleManager:
             self.execution_history.append(execution)
             
             self.logger.error(f"Rule execution failed: {e}")
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
             return None
     
     def track_execution(self, rule: Rule) -> List[RuleExecution]:

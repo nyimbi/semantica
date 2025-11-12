@@ -35,6 +35,7 @@ from datetime import datetime
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from .competency_questions import CompetencyQuestionsManager, CompetencyQuestion
 
 
@@ -74,6 +75,9 @@ class RequirementsSpecManager:
         self.logger = get_logger("requirements_spec_manager")
         self.config = config or {}
         self.config.update(kwargs)
+        
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
         
         self.competency_questions_manager = CompetencyQuestionsManager(**self.config)
         self.specs: Dict[str, RequirementsSpec] = {}
@@ -199,29 +203,47 @@ class RequirementsSpecManager:
         Returns:
             Traceability mapping
         """
-        if spec_name not in self.specs:
-            raise ValidationError(f"Specification not found: {spec_name}")
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="RequirementsSpecManager",
+            message=f"Tracing requirements for specification: {spec_name}"
+        )
         
-        spec = self.specs[spec_name]
-        
-        # Validate ontology against competency questions
-        validation = self.competency_questions_manager.validate_ontology(ontology)
-        
-        # Trace each question
-        traces = {}
-        for question in spec.competency_questions:
-            elements = self.competency_questions_manager.trace_to_elements(question, ontology)
-            traces[question.question] = {
-                "elements": elements,
-                "answerable": question.answerable
+        try:
+            if spec_name not in self.specs:
+                raise ValidationError(f"Specification not found: {spec_name}")
+            
+            spec = self.specs[spec_name]
+            
+            # Validate ontology against competency questions
+            self.progress_tracker.update_tracking(tracking_id, message="Validating ontology against competency questions...")
+            validation = self.competency_questions_manager.validate_ontology(ontology)
+            
+            # Trace each question
+            self.progress_tracker.update_tracking(tracking_id, message=f"Tracing {len(spec.competency_questions)} competency questions...")
+            traces = {}
+            for question in spec.competency_questions:
+                elements = self.competency_questions_manager.trace_to_elements(question, ontology)
+                traces[question.question] = {
+                    "elements": elements,
+                    "answerable": question.answerable
+                }
+            
+            coverage = validation["answerable"] / validation["total_questions"] if validation["total_questions"] > 0 else 0.0
+            result = {
+                "specification": spec_name,
+                "validation": validation,
+                "traces": traces,
+                "coverage": coverage
             }
-        
-        return {
-            "specification": spec_name,
-            "validation": validation,
-            "traces": traces,
-            "coverage": validation["answerable"] / validation["total_questions"] if validation["total_questions"] > 0 else 0.0
-        }
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Traced requirements: coverage={coverage:.2f}")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def get_spec(self, spec_name: str) -> Optional[RequirementsSpec]:
         """Get requirements specification by name."""

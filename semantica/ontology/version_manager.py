@@ -41,6 +41,7 @@ import re
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from .namespace_manager import NamespaceManager
 
 
@@ -83,6 +84,9 @@ class VersionManager:
         self.config = config or {}
         self.config.update(kwargs)
         
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
+        
         self.namespace_manager = self.config.get("namespace_manager") or NamespaceManager(**self.config)
         self.versions: Dict[str, OntologyVersion] = {}
         self.latest_version: Optional[str] = None
@@ -106,31 +110,45 @@ class VersionManager:
         Returns:
             Created version record
         """
-        # Generate versioned ontology IRI
-        base_uri = ontology.get("uri") or self.namespace_manager.get_base_uri()
-        versioned_iri = self._generate_versioned_iri(base_uri, version)
-        
-        # Create version record
-        version_record = OntologyVersion(
-            version=version,
-            ontology_iri=versioned_iri,
-            version_info=f"{version}",
-            created_at=datetime.now().isoformat(),
-            changes=options.get("changes", []),
-            metadata=options.get("metadata", {})
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="VersionManager",
+            message=f"Creating ontology version {version}"
         )
         
-        self.versions[version] = version_record
-        self.latest_version = version
-        
-        # Update ontology with version info
-        ontology["version"] = version
-        ontology["uri"] = versioned_iri
-        ontology["versionInfo"] = version_record.version_info
-        
-        self.logger.info(f"Created ontology version: {version}")
-        
-        return version_record
+        try:
+            # Generate versioned ontology IRI
+            self.progress_tracker.update_tracking(tracking_id, message="Generating versioned IRI...")
+            base_uri = ontology.get("uri") or self.namespace_manager.get_base_uri()
+            versioned_iri = self._generate_versioned_iri(base_uri, version)
+            
+            # Create version record
+            self.progress_tracker.update_tracking(tracking_id, message="Creating version record...")
+            version_record = OntologyVersion(
+                version=version,
+                ontology_iri=versioned_iri,
+                version_info=f"{version}",
+                created_at=datetime.now().isoformat(),
+                changes=options.get("changes", []),
+                metadata=options.get("metadata", {})
+            )
+            
+            self.versions[version] = version_record
+            self.latest_version = version
+            
+            # Update ontology with version info
+            ontology["version"] = version
+            ontology["uri"] = versioned_iri
+            ontology["versionInfo"] = version_record.version_info
+            
+            self.logger.info(f"Created ontology version: {version}")
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Created ontology version {version}")
+            return version_record
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def _generate_versioned_iri(self, base_uri: str, version: str) -> str:
         """Generate versioned ontology IRI."""

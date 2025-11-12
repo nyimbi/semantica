@@ -35,6 +35,7 @@ from dataclasses import dataclass, field
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from .inference_engine import InferenceResult
 from .rule_manager import Rule
 from .abductive_reasoner import Explanation as AbductiveExplanation
@@ -114,6 +115,9 @@ class ExplanationGenerator:
         self.config = config or {}
         self.config.update(kwargs)
         
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
+        
         self.generate_nl = self.config.get("generate_nl", True)
         self.detail_level = self.config.get("detail_level", "detailed")
     
@@ -132,14 +136,34 @@ class ExplanationGenerator:
         Returns:
             Generated explanation
         """
-        if isinstance(reasoning, InferenceResult):
-            return self._explain_inference_result(reasoning, **options)
-        elif isinstance(reasoning, Proof):
-            return self._explain_proof(reasoning, **options)
-        elif isinstance(reasoning, AbductiveExplanation):
-            return self._explain_abductive(reasoning, **options)
-        else:
-            return self._explain_generic(reasoning, **options)
+        tracking_id = self.progress_tracker.start_tracking(
+            module="reasoning",
+            submodule="ExplanationGenerator",
+            message="Generating explanation for reasoning result"
+        )
+        
+        try:
+            self.progress_tracker.update_tracking(tracking_id, message="Identifying reasoning type...")
+            if isinstance(reasoning, InferenceResult):
+                self.progress_tracker.update_tracking(tracking_id, message="Generating explanation for inference result...")
+                result = self._explain_inference_result(reasoning, **options)
+            elif isinstance(reasoning, Proof):
+                self.progress_tracker.update_tracking(tracking_id, message="Generating explanation for proof...")
+                result = self._explain_proof(reasoning, **options)
+            elif isinstance(reasoning, AbductiveExplanation):
+                self.progress_tracker.update_tracking(tracking_id, message="Generating explanation for abductive explanation...")
+                result = self._explain_abductive(reasoning, **options)
+            else:
+                self.progress_tracker.update_tracking(tracking_id, message="Generating generic explanation...")
+                result = self._explain_generic(reasoning, **options)
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Generated explanation: {result.explanation_type}")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def _explain_inference_result(
         self,
@@ -314,26 +338,44 @@ class ExplanationGenerator:
         Returns:
             Justification
         """
-        # Collect supporting evidence
-        supporting_evidence = []
-        for step in reasoning_path.steps:
-            supporting_evidence.extend(step.input_facts)
-        
-        # Calculate confidence
-        confidence = reasoning_path.total_confidence
-        
-        # Generate explanation text
-        explanation_text = self._generate_justification_text(conclusion, reasoning_path) if self.generate_nl else ""
-        
-        return Justification(
-            justification_id=f"just_{conclusion}",
-            conclusion=conclusion,
-            reasoning_path=reasoning_path,
-            supporting_evidence=supporting_evidence,
-            confidence=confidence,
-            explanation_text=explanation_text,
-            metadata={}
+        tracking_id = self.progress_tracker.start_tracking(
+            module="reasoning",
+            submodule="ExplanationGenerator",
+            message=f"Justifying conclusion: {conclusion}"
         )
+        
+        try:
+            # Collect supporting evidence
+            self.progress_tracker.update_tracking(tracking_id, message="Collecting supporting evidence...")
+            supporting_evidence = []
+            for step in reasoning_path.steps:
+                supporting_evidence.extend(step.input_facts)
+            
+            # Calculate confidence
+            self.progress_tracker.update_tracking(tracking_id, message="Calculating confidence...")
+            confidence = reasoning_path.total_confidence
+            
+            # Generate explanation text
+            self.progress_tracker.update_tracking(tracking_id, message="Generating explanation text...")
+            explanation_text = self._generate_justification_text(conclusion, reasoning_path) if self.generate_nl else ""
+            
+            result = Justification(
+                justification_id=f"just_{conclusion}",
+                conclusion=conclusion,
+                reasoning_path=reasoning_path,
+                supporting_evidence=supporting_evidence,
+                confidence=confidence,
+                explanation_text=explanation_text,
+                metadata={}
+            )
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Justified conclusion with {len(supporting_evidence)} pieces of evidence")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def _generate_natural_language(
         self,

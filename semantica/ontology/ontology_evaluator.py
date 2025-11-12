@@ -34,6 +34,7 @@ from dataclasses import dataclass, field
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from .competency_questions import CompetencyQuestionsManager
 
 
@@ -71,6 +72,9 @@ class OntologyEvaluator:
         self.config = config or {}
         self.config.update(kwargs)
         
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
+        
         self.competency_questions_manager = CompetencyQuestionsManager(**self.config)
     
     def evaluate_ontology(
@@ -90,37 +94,59 @@ class OntologyEvaluator:
         Returns:
             Evaluation result
         """
-        # Validate against competency questions
-        if competency_questions:
-            for question in competency_questions:
-                self.competency_questions_manager.add_question(question)
-        
-        validation = self.competency_questions_manager.validate_ontology(ontology)
-        
-        # Calculate coverage
-        total_questions = validation.get("total_questions", 0)
-        answerable = validation.get("answerable", 0)
-        coverage_score = answerable / total_questions if total_questions > 0 else 0.0
-        
-        # Calculate completeness
-        completeness_score = self._calculate_completeness(ontology)
-        
-        # Identify gaps
-        gaps = self._identify_gaps(ontology, validation)
-        
-        # Generate suggestions
-        suggestions = self._generate_suggestions(ontology, gaps)
-        
-        # Calculate metrics
-        metrics = self._calculate_evaluation_metrics(ontology, validation)
-        
-        return EvaluationResult(
-            coverage_score=coverage_score,
-            completeness_score=completeness_score,
-            gaps=gaps,
-            suggestions=suggestions,
-            metrics=metrics
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="OntologyEvaluator",
+            message="Evaluating ontology against competency questions"
         )
+        
+        try:
+            # Validate against competency questions
+            if competency_questions:
+                self.progress_tracker.update_tracking(tracking_id, message="Adding competency questions...")
+                for question in competency_questions:
+                    self.competency_questions_manager.add_question(question)
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Validating against competency questions...")
+            validation = self.competency_questions_manager.validate_ontology(ontology)
+            
+            # Calculate coverage
+            self.progress_tracker.update_tracking(tracking_id, message="Calculating coverage score...")
+            total_questions = validation.get("total_questions", 0)
+            answerable = validation.get("answerable", 0)
+            coverage_score = answerable / total_questions if total_questions > 0 else 0.0
+            
+            # Calculate completeness
+            self.progress_tracker.update_tracking(tracking_id, message="Calculating completeness score...")
+            completeness_score = self._calculate_completeness(ontology)
+            
+            # Identify gaps
+            self.progress_tracker.update_tracking(tracking_id, message="Identifying gaps...")
+            gaps = self._identify_gaps(ontology, validation)
+            
+            # Generate suggestions
+            self.progress_tracker.update_tracking(tracking_id, message="Generating suggestions...")
+            suggestions = self._generate_suggestions(ontology, gaps)
+            
+            # Calculate metrics
+            self.progress_tracker.update_tracking(tracking_id, message="Calculating evaluation metrics...")
+            metrics = self._calculate_evaluation_metrics(ontology, validation)
+            
+            result = EvaluationResult(
+                coverage_score=coverage_score,
+                completeness_score=completeness_score,
+                gaps=gaps,
+                suggestions=suggestions,
+                metrics=metrics
+            )
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Evaluation complete: coverage={coverage_score:.2f}, completeness={completeness_score:.2f}")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def _calculate_completeness(self, ontology: Dict[str, Any]) -> float:
         """Calculate ontology completeness score."""

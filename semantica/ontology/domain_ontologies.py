@@ -32,6 +32,7 @@ from typing import Any, Dict, List, Optional
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from .ontology_generator import OntologyGenerator
 
 
@@ -58,6 +59,9 @@ class DomainOntologies:
         self.logger = get_logger("domain_ontologies")
         self.config = config or {}
         self.config.update(kwargs)
+        
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
         
         self.ontology_generator = OntologyGenerator(**self.config)
         self.domain_templates: Dict[str, Dict[str, Any]] = {}
@@ -124,25 +128,40 @@ class DomainOntologies:
         Returns:
             Generated ontology
         """
-        template = self.get_domain_template(domain)
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="DomainOntologies",
+            message=f"Creating domain ontology: {domain}"
+        )
         
-        if not template:
-            raise ValidationError(f"Domain template not found: {domain}")
-        
-        # Generate ontology from template
-        ontology = {
-            "name": f"{domain.capitalize()}Ontology",
-            "uri": options.get("uri", f"https://semantica.dev/ontology/{domain}/"),
-            "version": options.get("version", "1.0"),
-            "classes": template["classes"],
-            "properties": template["properties"],
-            "metadata": {
-                "domain": domain,
-                "generated_at": __import__("datetime").datetime.now().isoformat()
+        try:
+            self.progress_tracker.update_tracking(tracking_id, message="Getting domain template...")
+            template = self.get_domain_template(domain)
+            
+            if not template:
+                raise ValidationError(f"Domain template not found: {domain}")
+            
+            # Generate ontology from template
+            self.progress_tracker.update_tracking(tracking_id, message="Generating ontology from template...")
+            ontology = {
+                "name": f"{domain.capitalize()}Ontology",
+                "uri": options.get("uri", f"https://semantica.dev/ontology/{domain}/"),
+                "version": options.get("version", "1.0"),
+                "classes": template["classes"],
+                "properties": template["properties"],
+                "metadata": {
+                    "domain": domain,
+                    "generated_at": __import__("datetime").datetime.now().isoformat()
+                }
             }
-        }
-        
-        return ontology
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Created domain ontology: {domain} with {len(template['classes'])} classes, {len(template['properties'])} properties")
+            return ontology
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def register_domain_template(
         self,

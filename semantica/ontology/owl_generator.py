@@ -32,6 +32,7 @@ from pathlib import Path
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from ..utils.helpers import ensure_directory
 from .namespace_manager import NamespaceManager
 
@@ -74,6 +75,9 @@ class OWLGenerator:
         self.config = config or {}
         self.config.update(kwargs)
         
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
+        
         self.namespace_manager = self.config.get("namespace_manager") or NamespaceManager(**self.config)
         self.default_format = self.config.get("format", "turtle")
         
@@ -112,12 +116,29 @@ class OWLGenerator:
             graph = generator.generate_owl(ontology)  # Returns Graph if rdflib available
             ```
         """
-        output_format = format or self.default_format
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="OWLGenerator",
+            message=f"Generating OWL in {format or self.default_format} format"
+        )
         
-        if HAS_RDFLIB:
-            return self._generate_with_rdflib(ontology, format=output_format, **options)
-        else:
-            return self._generate_basic(ontology, format=output_format, **options)
+        try:
+            output_format = format or self.default_format
+            
+            if HAS_RDFLIB:
+                self.progress_tracker.update_tracking(tracking_id, message="Generating OWL with rdflib...")
+                result = self._generate_with_rdflib(ontology, format=output_format, **options)
+            else:
+                self.progress_tracker.update_tracking(tracking_id, message="Generating OWL with basic formatting...")
+                result = self._generate_basic(ontology, format=output_format, **options)
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Generated OWL with {len(ontology.get('classes', []))} classes, {len(ontology.get('properties', []))} properties")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def _generate_with_rdflib(
         self,
@@ -310,17 +331,32 @@ class OWLGenerator:
             format: Output format
             **options: Additional options
         """
-        file_path = Path(file_path)
-        ensure_directory(file_path.parent)
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="OWLGenerator",
+            message=f"Exporting OWL to {file_path}"
+        )
         
-        owl_content = self.generate_owl(ontology, format=format, **options)
-        
-        if isinstance(owl_content, str):
-            with open(file_path, "w", encoding="utf-8") as f:
-                f.write(owl_content)
-        else:
-            # Graph object
-            output_format = format or self.default_format
-            owl_content.serialize(destination=str(file_path), format=output_format)
-        
-        self.logger.info(f"Exported OWL to: {file_path}")
+        try:
+            file_path = Path(file_path)
+            ensure_directory(file_path.parent)
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Generating OWL content...")
+            owl_content = self.generate_owl(ontology, format=format, **options)
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Writing to file...")
+            if isinstance(owl_content, str):
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(owl_content)
+            else:
+                # Graph object
+                output_format = format or self.default_format
+                owl_content.serialize(destination=str(file_path), format=output_format)
+            
+            self.logger.info(f"Exported OWL to: {file_path}")
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Exported OWL to {file_path}")
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise

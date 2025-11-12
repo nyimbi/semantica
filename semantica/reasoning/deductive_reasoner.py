@@ -35,6 +35,7 @@ from dataclasses import dataclass, field
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from .rule_manager import RuleManager, Rule
 
 
@@ -103,6 +104,9 @@ class DeductiveReasoner:
         self.config = config or {}
         self.config.update(kwargs)
         
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
+        
         self.rule_manager = RuleManager(**self.config)
         self.known_facts: Set[Any] = set()
     
@@ -121,24 +125,39 @@ class DeductiveReasoner:
         Returns:
             List of conclusions
         """
-        conclusions = []
+        tracking_id = self.progress_tracker.start_tracking(
+            module="reasoning",
+            submodule="DeductiveReasoner",
+            message=f"Applying logic to {len(premises)} premises"
+        )
         
-        # Add premises to known facts
-        for premise in premises:
-            self.known_facts.add(premise.statement)
-        
-        # Apply inference rules
-        rules = self.rule_manager.get_all_rules()
-        
-        for rule in rules:
-            # Check if rule can be applied
-            if self._can_apply_rule(rule, premises):
-                conclusion = self._apply_rule_to_premises(rule, premises)
-                if conclusion:
-                    conclusions.append(conclusion)
-                    self.known_facts.add(conclusion.statement)
-        
-        return conclusions
+        try:
+            conclusions = []
+            
+            # Add premises to known facts
+            self.progress_tracker.update_tracking(tracking_id, message="Adding premises to knowledge base...")
+            for premise in premises:
+                self.known_facts.add(premise.statement)
+            
+            # Apply inference rules
+            self.progress_tracker.update_tracking(tracking_id, message="Applying inference rules...")
+            rules = self.rule_manager.get_all_rules()
+            
+            for rule in rules:
+                # Check if rule can be applied
+                if self._can_apply_rule(rule, premises):
+                    conclusion = self._apply_rule_to_premises(rule, premises)
+                    if conclusion:
+                        conclusions.append(conclusion)
+                        self.known_facts.add(conclusion.statement)
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Applied logic: {len(conclusions)} conclusions from {len(premises)} premises")
+            return conclusions
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def _can_apply_rule(
         self,
@@ -194,23 +213,41 @@ class DeductiveReasoner:
         Returns:
             Proof or None
         """
-        # Start with empty proof
-        proof = Proof(
-            proof_id=f"proof_{theorem}",
-            theorem=theorem,
-            premises=[],
-            steps=[],
-            valid=False
+        tracking_id = self.progress_tracker.start_tracking(
+            module="reasoning",
+            submodule="DeductiveReasoner",
+            message=f"Proving theorem: {theorem}"
         )
         
-        # Try to prove using backward chaining
-        conclusion = self._prove_backward(theorem, proof, **options)
-        
-        if conclusion:
-            proof.steps.append(conclusion)
-            proof.valid = True
-        
-        return proof
+        try:
+            # Start with empty proof
+            self.progress_tracker.update_tracking(tracking_id, message="Initializing proof...")
+            proof = Proof(
+                proof_id=f"proof_{theorem}",
+                theorem=theorem,
+                premises=[],
+                steps=[],
+                valid=False
+            )
+            
+            # Try to prove using backward chaining
+            self.progress_tracker.update_tracking(tracking_id, message="Attempting backward chaining proof...")
+            conclusion = self._prove_backward(theorem, proof, **options)
+            
+            if conclusion:
+                proof.steps.append(conclusion)
+                proof.valid = True
+                self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                                   message=f"Successfully proved theorem: {theorem}")
+            else:
+                self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                                   message=f"Could not prove theorem: {theorem}")
+            
+            return proof
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def _prove_backward(
         self,
@@ -279,32 +316,50 @@ class DeductiveReasoner:
         Returns:
             Validation result
         """
-        errors = []
-        warnings = []
+        tracking_id = self.progress_tracker.start_tracking(
+            module="reasoning",
+            submodule="DeductiveReasoner",
+            message=f"Validating argument: {argument.argument_id}"
+        )
         
-        # Check if premises are valid
-        for premise in argument.premises:
-            if premise.statement not in self.known_facts:
-                warnings.append(f"Premise '{premise.statement}' not in knowledge base")
-        
-        # Try to prove conclusion from premises
-        conclusions = self.apply_logic(argument.premises, **options)
-        
-        valid = False
-        if argument.conclusion:
-            # Check if conclusion follows from premises
-            for conclusion in conclusions:
-                if conclusion.statement == argument.conclusion.statement:
-                    valid = True
-                    break
-        
-        return {
-            "valid": valid,
-            "errors": errors,
-            "warnings": warnings,
-            "conclusions": conclusions,
-            "argument_id": argument.argument_id
-        }
+        try:
+            errors = []
+            warnings = []
+            
+            # Check if premises are valid
+            self.progress_tracker.update_tracking(tracking_id, message="Validating premises...")
+            for premise in argument.premises:
+                if premise.statement not in self.known_facts:
+                    warnings.append(f"Premise '{premise.statement}' not in knowledge base")
+            
+            # Try to prove conclusion from premises
+            self.progress_tracker.update_tracking(tracking_id, message="Applying logic to premises...")
+            conclusions = self.apply_logic(argument.premises, **options)
+            
+            valid = False
+            if argument.conclusion:
+                # Check if conclusion follows from premises
+                self.progress_tracker.update_tracking(tracking_id, message="Checking if conclusion follows from premises...")
+                for conclusion in conclusions:
+                    if conclusion.statement == argument.conclusion.statement:
+                        valid = True
+                        break
+            
+            result = {
+                "valid": valid,
+                "errors": errors,
+                "warnings": warnings,
+                "conclusions": conclusions,
+                "argument_id": argument.argument_id
+            }
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Argument validation complete: {'Valid' if valid else 'Invalid'} ({len(warnings)} warnings)")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def add_fact(self, fact: Any) -> None:
         """Add fact to knowledge base."""

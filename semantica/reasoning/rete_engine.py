@@ -39,6 +39,7 @@ from collections import defaultdict
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from .rule_manager import Rule
 
 
@@ -144,6 +145,9 @@ class ReteEngine:
         self.config = config or {}
         self.config.update(kwargs)
         
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
+        
         self.network: Dict[str, ReteNode] = {}
         self.facts: List[Fact] = []
         self.fact_counter = 0
@@ -156,12 +160,26 @@ class ReteEngine:
         Args:
             rules: List of rules
         """
-        self.network.clear()
+        tracking_id = self.progress_tracker.start_tracking(
+            module="reasoning",
+            submodule="ReteEngine",
+            message=f"Building Rete network from {len(rules)} rules"
+        )
         
-        for rule in rules:
-            self._add_rule_to_network(rule)
-        
-        self.logger.info(f"Built Rete network with {len(self.network)} nodes for {len(rules)} rules")
+        try:
+            self.network.clear()
+            
+            self.progress_tracker.update_tracking(tracking_id, message=f"Adding {len(rules)} rules to network...")
+            for rule in rules:
+                self._add_rule_to_network(rule)
+            
+            self.logger.info(f"Built Rete network with {len(self.network)} nodes for {len(rules)} rules")
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Built Rete network with {len(self.network)} nodes for {len(rules)} rules")
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def _add_rule_to_network(self, rule: Rule) -> None:
         """Add rule to Rete network."""
@@ -254,18 +272,33 @@ class ReteEngine:
         Returns:
             List of matches
         """
-        if facts:
-            # Add facts to working memory
-            for fact in facts:
-                self.add_fact(fact)
+        tracking_id = self.progress_tracker.start_tracking(
+            module="reasoning",
+            submodule="ReteEngine",
+            message=f"Matching patterns using Rete algorithm"
+        )
         
-        # Collect all activations
-        matches = []
-        for node_id, node in self.network.items():
-            if isinstance(node, TerminalNode):
-                matches.extend(node.activations)
-        
-        return matches
+        try:
+            if facts:
+                # Add facts to working memory
+                self.progress_tracker.update_tracking(tracking_id, message=f"Adding {len(facts)} facts to working memory...")
+                for fact in facts:
+                    self.add_fact(fact)
+            
+            # Collect all activations
+            self.progress_tracker.update_tracking(tracking_id, message="Collecting pattern matches...")
+            matches = []
+            for node_id, node in self.network.items():
+                if isinstance(node, TerminalNode):
+                    matches.extend(node.activations)
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Found {len(matches)} pattern matches")
+            return matches
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def execute_matches(
         self,
@@ -280,19 +313,34 @@ class ReteEngine:
         Returns:
             List of inference results
         """
-        if matches is None:
-            matches = self.match_patterns()
+        tracking_id = self.progress_tracker.start_tracking(
+            module="reasoning",
+            submodule="ReteEngine",
+            message="Executing matched rules"
+        )
         
-        results = []
-        for match in matches:
-            try:
-                # Execute rule
-                result = match.rule.conclusion
-                results.append(result)
-            except Exception as e:
-                self.logger.error(f"Error executing match: {e}")
-        
-        return results
+        try:
+            if matches is None:
+                self.progress_tracker.update_tracking(tracking_id, message="Matching patterns...")
+                matches = self.match_patterns()
+            
+            self.progress_tracker.update_tracking(tracking_id, message=f"Executing {len(matches)} matched rules...")
+            results = []
+            for match in matches:
+                try:
+                    # Execute rule
+                    result = match.rule.conclusion
+                    results.append(result)
+                except Exception as e:
+                    self.logger.error(f"Error executing match: {e}")
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Executed {len(matches)} matches: {len(results)} results")
+            return results
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def reset(self) -> None:
         """Reset Rete engine."""

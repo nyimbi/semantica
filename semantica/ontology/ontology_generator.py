@@ -35,6 +35,7 @@ from datetime import datetime
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from .class_inferrer import ClassInferrer
 from .property_generator import PropertyGenerator
 from .namespace_manager import NamespaceManager
@@ -86,6 +87,9 @@ class OntologyGenerator:
         self.logger = get_logger("ontology_generator")
         self.config = config or {}
         self.config.update(kwargs)
+        
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
         
         # Initialize components
         self.namespace_manager = self.config.get("namespace_manager") or NamespaceManager(**self.config)
@@ -139,23 +143,41 @@ class OntologyGenerator:
             })
             ```
         """
-        # Stage 1: Semantic Network Parsing
-        semantic_network = self._stage1_parse_semantic_network(data, **options)
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="OntologyGenerator",
+            message="Generating ontology using 6-stage pipeline"
+        )
         
-        # Stage 2: YAML-to-Definition
-        definitions = self._stage2_yaml_to_definition(semantic_network, **options)
-        
-        # Stage 3: Definition-to-Types
-        typed_definitions = self._stage3_definition_to_types(definitions, **options)
-        
-        # Stage 4: Hierarchy Generation
-        ontology = self._stage4_hierarchy_generation(typed_definitions, **options)
-        
-        # Stage 5: TTL Generation (handled by OWLGenerator)
-        
-        # Stage 6: Symbolic Validation (handled by OntologyValidator)
-        
-        return ontology
+        try:
+            self.logger.info("Starting ontology generation pipeline")
+            
+            # Stage 1: Semantic Network Parsing
+            self.progress_tracker.update_tracking(tracking_id, message="Stage 1: Parsing semantic network...")
+            semantic_network = self._stage1_parse_semantic_network(data, **options)
+            
+            # Stage 2: YAML-to-Definition
+            self.progress_tracker.update_tracking(tracking_id, message="Stage 2: Converting to class definitions...")
+            definitions = self._stage2_yaml_to_definition(semantic_network, **options)
+            
+            # Stage 3: Definition-to-Types
+            self.progress_tracker.update_tracking(tracking_id, message="Stage 3: Mapping to OWL types...")
+            typed_definitions = self._stage3_definition_to_types(definitions, **options)
+            
+            # Stage 4: Hierarchy Generation
+            self.progress_tracker.update_tracking(tracking_id, message="Stage 4: Building class hierarchy...")
+            ontology = self._stage4_hierarchy_generation(typed_definitions, **options)
+            
+            # Stage 5: TTL Generation (handled by OWLGenerator)
+            # Stage 6: Symbolic Validation (handled by OntologyValidator)
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Generated ontology with {len(ontology.get('classes', []))} classes, {len(ontology.get('properties', []))} properties")
+            return ontology
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def _stage1_parse_semantic_network(
         self,

@@ -32,6 +32,7 @@ from collections import Counter, defaultdict
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from .naming_conventions import NamingConventions
 
 
@@ -59,6 +60,9 @@ class PropertyGenerator:
         self.config = config or {}
         self.config.update(kwargs)
         
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
+        
         self.naming_conventions = NamingConventions(**self.config)
     
     def infer_properties(
@@ -80,17 +84,32 @@ class PropertyGenerator:
         Returns:
             List of inferred property definitions
         """
-        properties = []
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="PropertyGenerator",
+            message=f"Inferring properties from {len(entities)} entities and {len(relationships)} relationships"
+        )
         
-        # Infer object properties from relationships
-        object_properties = self._infer_object_properties(relationships, classes, **options)
-        properties.extend(object_properties)
-        
-        # Infer data properties from entity attributes
-        data_properties = self._infer_data_properties(entities, classes, **options)
-        properties.extend(data_properties)
-        
-        return properties
+        try:
+            properties = []
+            
+            # Infer object properties from relationships
+            self.progress_tracker.update_tracking(tracking_id, message="Inferring object properties from relationships...")
+            object_properties = self._infer_object_properties(relationships, classes, **options)
+            properties.extend(object_properties)
+            
+            # Infer data properties from entity attributes
+            self.progress_tracker.update_tracking(tracking_id, message="Inferring data properties from entities...")
+            data_properties = self._infer_data_properties(entities, classes, **options)
+            properties.extend(data_properties)
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Inferred {len(properties)} properties ({len(object_properties)} object, {len(data_properties)} data)")
+            return properties
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def _infer_object_properties(
         self,

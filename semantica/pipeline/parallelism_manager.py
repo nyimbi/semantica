@@ -38,6 +38,7 @@ import time
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from .pipeline_builder import Pipeline, PipelineStep
 
 
@@ -87,6 +88,9 @@ class ParallelismManager:
         self.config = config or {}
         self.config.update(kwargs)
         
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
+        
         self.max_workers = self.config.get("max_workers", 4)
         self.use_processes = self.config.get("use_processes", False)
         
@@ -109,17 +113,36 @@ class ParallelismManager:
         Returns:
             List of execution results
         """
-        if not tasks:
-            return []
+        tracking_id = self.progress_tracker.start_tracking(
+            module="pipeline",
+            submodule="ParallelismManager",
+            message=f"Executing {len(tasks)} tasks in parallel"
+        )
         
-        # Sort by priority
-        sorted_tasks = sorted(tasks, key=lambda t: t.priority, reverse=True)
-        
-        # Execute tasks
-        if self.use_processes:
-            return self._execute_with_processes(sorted_tasks, **options)
-        else:
-            return self._execute_with_threads(sorted_tasks, **options)
+        try:
+            if not tasks:
+                self.progress_tracker.stop_tracking(tracking_id, status="completed", message="No tasks to execute")
+                return []
+            
+            # Sort by priority
+            self.progress_tracker.update_tracking(tracking_id, message="Sorting tasks by priority...")
+            sorted_tasks = sorted(tasks, key=lambda t: t.priority, reverse=True)
+            
+            # Execute tasks
+            self.progress_tracker.update_tracking(tracking_id, message=f"Executing tasks using {'processes' if self.use_processes else 'threads'}...")
+            if self.use_processes:
+                results = self._execute_with_processes(sorted_tasks, **options)
+            else:
+                results = self._execute_with_threads(sorted_tasks, **options)
+            
+            success_count = sum(1 for r in results if r.success)
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Executed {len(tasks)} tasks: {success_count} succeeded, {len(tasks) - success_count} failed")
+            return results
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def _execute_with_threads(
         self,
@@ -220,33 +243,49 @@ class ParallelismManager:
         Returns:
             List of step results
         """
-        # Create tasks from steps
-        tasks = [
-            Task(
-                task_id=step.name,
-                handler=step.handler or (lambda d, **kwargs: d),
-                args=(data,),
-                kwargs=step.config,
-                priority=0
-            )
-            for step in steps
-        ]
+        tracking_id = self.progress_tracker.start_tracking(
+            module="pipeline",
+            submodule="ParallelismManager",
+            message=f"Executing {len(steps)} pipeline steps in parallel"
+        )
         
-        # Execute tasks
-        results = self.execute_parallel(tasks, **options)
-        
-        # Map results back to steps
-        result_map = {r.task_id: r for r in results}
-        step_results = []
-        
-        for step in steps:
-            result = result_map.get(step.name)
-            if result and result.success:
-                step_results.append(result.result)
-            else:
-                raise ProcessingError(f"Step {step.name} failed: {result.error if result else 'Unknown error'}")
-        
-        return step_results
+        try:
+            # Create tasks from steps
+            self.progress_tracker.update_tracking(tracking_id, message="Creating tasks from steps...")
+            tasks = [
+                Task(
+                    task_id=step.name,
+                    handler=step.handler or (lambda d, **kwargs: d),
+                    args=(data,),
+                    kwargs=step.config,
+                    priority=0
+                )
+                for step in steps
+            ]
+            
+            # Execute tasks
+            self.progress_tracker.update_tracking(tracking_id, message="Executing tasks in parallel...")
+            results = self.execute_parallel(tasks, **options)
+            
+            # Map results back to steps
+            self.progress_tracker.update_tracking(tracking_id, message="Mapping results to steps...")
+            result_map = {r.task_id: r for r in results}
+            step_results = []
+            
+            for step in steps:
+                result = result_map.get(step.name)
+                if result and result.success:
+                    step_results.append(result.result)
+                else:
+                    raise ProcessingError(f"Step {step.name} failed: {result.error if result else 'Unknown error'}")
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Executed {len(steps)} steps in parallel")
+            return step_results
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def identify_parallelizable_steps(
         self,
@@ -261,37 +300,53 @@ class ParallelismManager:
         Returns:
             List of step groups that can run in parallel
         """
-        # Group steps by dependency level
-        step_map = {step.name: step for step in pipeline.steps}
-        dependency_levels = {}
+        tracking_id = self.progress_tracker.start_tracking(
+            module="pipeline",
+            submodule="ParallelismManager",
+            message=f"Identifying parallelizable steps for pipeline: {pipeline.name}"
+        )
         
-        def get_level(step_name: str) -> int:
-            if step_name in dependency_levels:
-                return dependency_levels[step_name]
+        try:
+            # Group steps by dependency level
+            self.progress_tracker.update_tracking(tracking_id, message="Analyzing step dependencies...")
+            step_map = {step.name: step for step in pipeline.steps}
+            dependency_levels = {}
             
-            step = step_map[step_name]
-            if not step.dependencies:
-                level = 0
-            else:
-                level = max(get_level(dep) for dep in step.dependencies) + 1
+            def get_level(step_name: str) -> int:
+                if step_name in dependency_levels:
+                    return dependency_levels[step_name]
+                
+                step = step_map[step_name]
+                if not step.dependencies:
+                    level = 0
+                else:
+                    level = max(get_level(dep) for dep in step.dependencies) + 1
+                
+                dependency_levels[step_name] = level
+                return level
             
-            dependency_levels[step_name] = level
-            return level
-        
-        # Calculate levels for all steps
-        for step in pipeline.steps:
-            get_level(step.name)
-        
-        # Group by level
-        level_groups = {}
-        for step in pipeline.steps:
-            level = dependency_levels[step.name]
-            if level not in level_groups:
-                level_groups[level] = []
-            level_groups[level].append(step)
-        
-        # Return groups sorted by level
-        return [level_groups[level] for level in sorted(level_groups.keys())]
+            # Calculate levels for all steps
+            for step in pipeline.steps:
+                get_level(step.name)
+            
+            # Group by level
+            self.progress_tracker.update_tracking(tracking_id, message="Grouping steps by dependency level...")
+            level_groups = {}
+            for step in pipeline.steps:
+                level = dependency_levels[step.name]
+                if level not in level_groups:
+                    level_groups[level] = []
+                level_groups[level].append(step)
+            
+            # Return groups sorted by level
+            result = [level_groups[level] for level in sorted(level_groups.keys())]
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Identified {len(result)} parallelizable step groups")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def optimize_parallel_execution(
         self,
@@ -308,23 +363,40 @@ class ParallelismManager:
         Returns:
             Optimization plan
         """
-        parallel_groups = self.identify_parallelizable_steps(pipeline)
+        tracking_id = self.progress_tracker.start_tracking(
+            module="pipeline",
+            submodule="ParallelismManager",
+            message=f"Optimizing parallel execution for pipeline: {pipeline.name}"
+        )
         
-        # Calculate execution plan
-        execution_plan = []
-        for group in parallel_groups:
-            execution_plan.append({
-                "steps": [s.name for s in group],
-                "parallel": len(group) > 1,
-                "worker_count": min(len(group), available_workers)
-            })
-        
-        return {
-            "execution_plan": execution_plan,
-            "total_groups": len(parallel_groups),
-            "max_parallelism": max(len(group) for group in parallel_groups) if parallel_groups else 1,
-            "estimated_workers": sum(plan["worker_count"] for plan in execution_plan)
-        }
+        try:
+            self.progress_tracker.update_tracking(tracking_id, message="Identifying parallelizable steps...")
+            parallel_groups = self.identify_parallelizable_steps(pipeline)
+            
+            # Calculate execution plan
+            self.progress_tracker.update_tracking(tracking_id, message="Calculating execution plan...")
+            execution_plan = []
+            for group in parallel_groups:
+                execution_plan.append({
+                    "steps": [s.name for s in group],
+                    "parallel": len(group) > 1,
+                    "worker_count": min(len(group), available_workers)
+                })
+            
+            result = {
+                "execution_plan": execution_plan,
+                "total_groups": len(parallel_groups),
+                "max_parallelism": max(len(group) for group in parallel_groups) if parallel_groups else 1,
+                "estimated_workers": sum(plan["worker_count"] for plan in execution_plan)
+            }
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Optimization complete: {len(parallel_groups)} groups, max parallelism: {result['max_parallelism']}")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
 
 
 class ParallelExecutor:

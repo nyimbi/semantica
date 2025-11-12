@@ -34,6 +34,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 
 
 class NamingConventions:
@@ -60,6 +61,9 @@ class NamingConventions:
         self.logger = get_logger("naming_conventions")
         self.config = config or {}
         self.config.update(kwargs)
+        
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
     
     def validate_class_name(self, name: str) -> Tuple[bool, Optional[str]]:
         """
@@ -71,25 +75,41 @@ class NamingConventions:
         Returns:
             Tuple of (is_valid, suggestion)
         """
-        errors = []
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="NamingConventions",
+            message=f"Validating class name: {name}"
+        )
         
-        # Check if PascalCase
-        if not self._is_pascal_case(name):
-            errors.append("Class names should be PascalCase")
-        
-        # Check if singular
-        if not self._is_singular(name):
-            errors.append("Class names should be singular")
-        
-        # Check if noun/noun phrase
-        if not self._is_noun_phrase(name):
-            errors.append("Class names should be nouns or noun phrases")
-        
-        if errors:
-            suggestion = self.suggest_class_name(name)
-            return (False, suggestion)
-        
-        return (True, None)
+        try:
+            errors = []
+            
+            # Check if PascalCase
+            self.progress_tracker.update_tracking(tracking_id, message="Checking naming conventions...")
+            if not self._is_pascal_case(name):
+                errors.append("Class names should be PascalCase")
+            
+            # Check if singular
+            if not self._is_singular(name):
+                errors.append("Class names should be singular")
+            
+            # Check if noun/noun phrase
+            if not self._is_noun_phrase(name):
+                errors.append("Class names should be nouns or noun phrases")
+            
+            if errors:
+                suggestion = self.suggest_class_name(name)
+                self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                                   message=f"Validation complete: Invalid, suggested: {suggestion}")
+                return (False, suggestion)
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message="Validation complete: Valid")
+            return (True, None)
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def validate_property_name(self, name: str, property_type: str = "object") -> Tuple[bool, Optional[str]]:
         """
@@ -102,24 +122,40 @@ class NamingConventions:
         Returns:
             Tuple of (is_valid, suggestion)
         """
-        errors = []
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="NamingConventions",
+            message=f"Validating property name: {name} (type: {property_type})"
+        )
         
-        if property_type == "object":
-            # Object properties: camelCase, verbs/verb phrases
-            if not self._is_camel_case(name):
-                errors.append("Object property names should be camelCase")
-            if not self._is_verb_phrase(name):
-                errors.append("Object property names should be verbs or verb phrases")
-        else:
-            # Data properties: lowercase or camelCase
-            if not (self._is_lowercase(name) or self._is_camel_case(name)):
-                errors.append("Data property names should be lowercase or camelCase")
-        
-        if errors:
-            suggestion = self.suggest_property_name(name, property_type)
-            return (False, suggestion)
-        
-        return (True, None)
+        try:
+            errors = []
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Checking naming conventions...")
+            if property_type == "object":
+                # Object properties: camelCase, verbs/verb phrases
+                if not self._is_camel_case(name):
+                    errors.append("Object property names should be camelCase")
+                if not self._is_verb_phrase(name):
+                    errors.append("Object property names should be verbs or verb phrases")
+            else:
+                # Data properties: lowercase or camelCase
+                if not (self._is_lowercase(name) or self._is_camel_case(name)):
+                    errors.append("Data property names should be lowercase or camelCase")
+            
+            if errors:
+                suggestion = self.suggest_property_name(name, property_type)
+                self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                                   message=f"Validation complete: Invalid, suggested: {suggestion}")
+                return (False, suggestion)
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message="Validation complete: Valid")
+            return (True, None)
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def validate_ontology_name(self, name: str) -> Tuple[bool, Optional[str]]:
         """
@@ -131,21 +167,37 @@ class NamingConventions:
         Returns:
             Tuple of (is_valid, suggestion)
         """
-        errors = []
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="NamingConventions",
+            message=f"Validating ontology name: {name}"
+        )
         
-        # Check if title case
-        if not self._is_title_case(name):
-            errors.append("Ontology names should be Title Case")
-        
-        # Check if ends with "Ontology"
-        if not name.endswith("Ontology"):
-            errors.append("Ontology names should end with 'Ontology'")
-        
-        if errors:
-            suggestion = self.suggest_ontology_name(name)
-            return (False, suggestion)
-        
-        return (True, None)
+        try:
+            errors = []
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Checking naming conventions...")
+            # Check if title case
+            if not self._is_title_case(name):
+                errors.append("Ontology names should be Title Case")
+            
+            # Check if ends with "Ontology"
+            if not name.endswith("Ontology"):
+                errors.append("Ontology names should end with 'Ontology'")
+            
+            if errors:
+                suggestion = self.suggest_ontology_name(name)
+                self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                                   message=f"Validation complete: Invalid, suggested: {suggestion}")
+                return (False, suggestion)
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message="Validation complete: Valid")
+            return (True, None)
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def suggest_class_name(self, name: str) -> str:
         """

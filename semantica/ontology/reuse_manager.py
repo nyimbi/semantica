@@ -36,6 +36,7 @@ from datetime import datetime
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 
 
 @dataclass
@@ -74,6 +75,9 @@ class ReuseManager:
         self.config = config or {}
         self.config.update(kwargs)
         
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
+        
         self.reuse_decisions: List[ReuseDecision] = []
         self.known_ontologies: Dict[str, Dict[str, Any]] = {}
         
@@ -110,14 +114,30 @@ class ReuseManager:
         Returns:
             Ontology information or None
         """
-        # Check known ontologies
-        for key, info in self.known_ontologies.items():
-            if info["uri"] == uri:
-                return info
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="ReuseManager",
+            message=f"Researching ontology: {uri}"
+        )
         
-        # Try to load from URI (placeholder)
-        self.logger.warning(f"Ontology not found in catalog: {uri}")
-        return None
+        try:
+            # Check known ontologies
+            self.progress_tracker.update_tracking(tracking_id, message="Checking known ontologies...")
+            for key, info in self.known_ontologies.items():
+                if info["uri"] == uri:
+                    self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                                       message=f"Found ontology in catalog: {key}")
+                    return info
+            
+            # Try to load from URI (placeholder)
+            self.logger.warning(f"Ontology not found in catalog: {uri}")
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message="Ontology not found in catalog")
+            return None
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def evaluate_alignment(
         self,
@@ -134,29 +154,49 @@ class ReuseManager:
         Returns:
             Alignment evaluation results
         """
-        # Basic alignment check
-        source_info = self.research_ontology(source_uri)
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="ReuseManager",
+            message=f"Evaluating alignment for {source_uri}"
+        )
         
-        if not source_info:
-            return {
-                "compatible": False,
-                "score": 0.0,
-                "issues": ["Source ontology not found"]
+        try:
+            # Basic alignment check
+            self.progress_tracker.update_tracking(tracking_id, message="Researching source ontology...")
+            source_info = self.research_ontology(source_uri)
+            
+            if not source_info:
+                result = {
+                    "compatible": False,
+                    "score": 0.0,
+                    "issues": ["Source ontology not found"]
+                }
+                self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                                   message="Source ontology not found")
+                return result
+            
+            # Check namespace compatibility
+            self.progress_tracker.update_tracking(tracking_id, message="Checking namespace compatibility...")
+            target_namespace = target_ontology.get("uri", "")
+            namespace_compatible = not target_namespace.startswith(source_uri)
+            
+            # Calculate compatibility score
+            score = 0.5 if namespace_compatible else 0.0
+            
+            result = {
+                "compatible": score > 0.3,
+                "score": score,
+                "namespace_compatible": namespace_compatible,
+                "issues": [] if namespace_compatible else ["Namespace conflict"]
             }
-        
-        # Check namespace compatibility
-        target_namespace = target_ontology.get("uri", "")
-        namespace_compatible = not target_namespace.startswith(source_uri)
-        
-        # Calculate compatibility score
-        score = 0.5 if namespace_compatible else 0.0
-        
-        return {
-            "compatible": score > 0.3,
-            "score": score,
-            "namespace_compatible": namespace_compatible,
-            "issues": [] if namespace_compatible else ["Namespace conflict"]
-        }
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Alignment evaluation complete: compatible={result['compatible']}, score={score:.2f}")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def assess_interoperability(
         self,
@@ -203,25 +243,39 @@ class ReuseManager:
         Returns:
             Updated ontology with imports
         """
-        # Add import to ontology
-        if "imports" not in target_ontology:
-            target_ontology["imports"] = []
-        
-        if source_uri not in target_ontology["imports"]:
-            target_ontology["imports"].append(source_uri)
-        
-        # Record reuse decision
-        decision = ReuseDecision(
-            source_uri=source_uri,
-            decision="reuse",
-            reason="External ontology import",
-            metadata={"imported_at": datetime.now().isoformat()}
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="ReuseManager",
+            message=f"Importing external ontology: {source_uri}"
         )
-        self.reuse_decisions.append(decision)
         
-        self.logger.info(f"Imported external ontology: {source_uri}")
-        
-        return target_ontology
+        try:
+            # Add import to ontology
+            self.progress_tracker.update_tracking(tracking_id, message="Adding import to ontology...")
+            if "imports" not in target_ontology:
+                target_ontology["imports"] = []
+            
+            if source_uri not in target_ontology["imports"]:
+                target_ontology["imports"].append(source_uri)
+            
+            # Record reuse decision
+            self.progress_tracker.update_tracking(tracking_id, message="Recording reuse decision...")
+            decision = ReuseDecision(
+                source_uri=source_uri,
+                decision="reuse",
+                reason="External ontology import",
+                metadata={"imported_at": datetime.now().isoformat()}
+            )
+            self.reuse_decisions.append(decision)
+            
+            self.logger.info(f"Imported external ontology: {source_uri}")
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Imported external ontology: {source_uri}")
+            return target_ontology
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def convert_non_ontological_resource(
         self,

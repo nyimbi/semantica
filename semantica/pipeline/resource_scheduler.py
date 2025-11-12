@@ -36,6 +36,7 @@ import time
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from .pipeline_builder import Pipeline
 
 
@@ -96,6 +97,9 @@ class ResourceScheduler:
         self.logger = get_logger("resource_scheduler")
         self.config = config or {}
         self.config.update(kwargs)
+        
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
         
         self.resources: Dict[str, Resource] = {}
         self.allocations: Dict[str, ResourceAllocation] = {}
@@ -185,28 +189,44 @@ class ResourceScheduler:
         Returns:
             Dictionary of resource allocations
         """
-        allocations = {}
+        tracking_id = self.progress_tracker.start_tracking(
+            module="pipeline",
+            submodule="ResourceScheduler",
+            message=f"Allocating resources for pipeline: {pipeline.name}"
+        )
         
-        with self.lock:
-            # Allocate CPU
-            cpu_cores = options.get("cpu_cores", 1)
-            cpu_allocation = self.allocate_cpu(cpu_cores, pipeline.name)
-            if cpu_allocation:
-                allocations["cpu"] = cpu_allocation
+        try:
+            allocations = {}
             
-            # Allocate memory
-            memory_gb = options.get("memory_gb", 1.0)
-            memory_allocation = self.allocate_memory(memory_gb, pipeline.name)
-            if memory_allocation:
-                allocations["memory"] = memory_allocation
+            with self.lock:
+                # Allocate CPU
+                self.progress_tracker.update_tracking(tracking_id, message="Allocating CPU resources...")
+                cpu_cores = options.get("cpu_cores", 1)
+                cpu_allocation = self.allocate_cpu(cpu_cores, pipeline.name)
+                if cpu_allocation:
+                    allocations["cpu"] = cpu_allocation
+                
+                # Allocate memory
+                self.progress_tracker.update_tracking(tracking_id, message="Allocating memory resources...")
+                memory_gb = options.get("memory_gb", 1.0)
+                memory_allocation = self.allocate_memory(memory_gb, pipeline.name)
+                if memory_allocation:
+                    allocations["memory"] = memory_allocation
+                
+                # Allocate GPU if requested
+                if options.get("gpu_device") is not None:
+                    self.progress_tracker.update_tracking(tracking_id, message="Allocating GPU resources...")
+                    gpu_allocation = self.allocate_gpu(options["gpu_device"], pipeline.name)
+                    if gpu_allocation:
+                        allocations["gpu"] = gpu_allocation
             
-            # Allocate GPU if requested
-            if options.get("gpu_device") is not None:
-                gpu_allocation = self.allocate_gpu(options["gpu_device"], pipeline.name)
-                if gpu_allocation:
-                    allocations["gpu"] = gpu_allocation
-        
-        return allocations
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Allocated {len(allocations)} resource(s) for pipeline: {pipeline.name}")
+            return allocations
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def allocate_cpu(
         self,
@@ -399,17 +419,34 @@ class ResourceScheduler:
         Returns:
             Optimization recommendations
         """
-        # Analyze pipeline requirements
-        step_count = len(pipeline.steps)
+        tracking_id = self.progress_tracker.start_tracking(
+            module="pipeline",
+            submodule="ResourceScheduler",
+            message=f"Optimizing resource allocation for pipeline: {pipeline.name}"
+        )
         
-        # Calculate resource recommendations
-        recommendations = {
-            "cpu_cores": min(step_count, self.resources.get("cpu", Resource("", ResourceType.CPU, 0)).capacity),
-            "memory_gb": step_count * 0.5,  # 0.5 GB per step
-            "parallel_execution": step_count > 1
-        }
-        
-        return {
-            "recommendations": recommendations,
-            "available_resources": self.get_resource_usage()
-        }
+        try:
+            # Analyze pipeline requirements
+            self.progress_tracker.update_tracking(tracking_id, message="Analyzing pipeline requirements...")
+            step_count = len(pipeline.steps)
+            
+            # Calculate resource recommendations
+            self.progress_tracker.update_tracking(tracking_id, message="Calculating resource recommendations...")
+            recommendations = {
+                "cpu_cores": min(step_count, self.resources.get("cpu", Resource("", ResourceType.CPU, 0)).capacity),
+                "memory_gb": step_count * 0.5,  # 0.5 GB per step
+                "parallel_execution": step_count > 1
+            }
+            
+            result = {
+                "recommendations": recommendations,
+                "available_resources": self.get_resource_usage()
+            }
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Optimization complete: {recommendations['cpu_cores']} CPU cores, {recommendations['memory_gb']} GB memory recommended")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise

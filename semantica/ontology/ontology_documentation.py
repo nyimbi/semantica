@@ -36,6 +36,7 @@ from pathlib import Path
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from ..utils.helpers import ensure_directory
 
 
@@ -78,6 +79,9 @@ class OntologyDocumentationManager:
         self.logger = get_logger("ontology_documentation_manager")
         self.config = config or {}
         self.config.update(kwargs)
+        
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
         
         self.documentation: Dict[str, OntologyDocumentation] = {}
     
@@ -159,75 +163,91 @@ class OntologyDocumentationManager:
         Returns:
             Markdown documentation string
         """
-        if ontology_name not in self.documentation:
-            raise ValidationError(f"Documentation not found: {ontology_name}")
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="OntologyDocumentationManager",
+            message=f"Generating Markdown documentation for: {ontology_name}"
+        )
         
-        doc = self.documentation[ontology_name]
-        
-        lines = []
-        lines.append(f"# {doc.name}")
-        lines.append("")
-        lines.append(f"**Version:** {doc.version}")
-        lines.append(f"**Namespace:** {doc.namespace}")
-        lines.append("")
-        
-        lines.append("## Description")
-        lines.append("")
-        lines.append(doc.description)
-        lines.append("")
-        
-        lines.append("## Purpose")
-        lines.append("")
-        lines.append(doc.purpose)
-        lines.append("")
-        
-        lines.append("## Scope")
-        lines.append("")
-        lines.append(doc.scope)
-        lines.append("")
-        
-        if doc.authors:
-            lines.append("## Authors")
-            lines.append("")
-            for author in doc.authors:
-                lines.append(f"- {author}")
-            lines.append("")
-        
-        if doc.contributors:
-            lines.append("## Contributors")
-            lines.append("")
-            for contributor in doc.contributors:
-                lines.append(f"- {contributor}")
-            lines.append("")
-        
-        if doc.license:
-            lines.append("## License")
-            lines.append("")
-            lines.append(doc.license)
-            lines.append("")
-        
-        if ontology:
-            classes = ontology.get("classes", [])
-            properties = ontology.get("properties", [])
+        try:
+            if ontology_name not in self.documentation:
+                raise ValidationError(f"Documentation not found: {ontology_name}")
             
-            lines.append("## Classes")
+            doc = self.documentation[ontology_name]
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Generating documentation sections...")
+            lines = []
+            lines.append(f"# {doc.name}")
             lines.append("")
-            for cls in classes:
-                lines.append(f"### {cls.get('name', 'Unknown')}")
-                if cls.get("comment"):
-                    lines.append(f"{cls['comment']}")
+            lines.append(f"**Version:** {doc.version}")
+            lines.append(f"**Namespace:** {doc.namespace}")
+            lines.append("")
+            
+            lines.append("## Description")
+            lines.append("")
+            lines.append(doc.description)
+            lines.append("")
+            
+            lines.append("## Purpose")
+            lines.append("")
+            lines.append(doc.purpose)
+            lines.append("")
+            
+            lines.append("## Scope")
+            lines.append("")
+            lines.append(doc.scope)
+            lines.append("")
+            
+            if doc.authors:
+                lines.append("## Authors")
+                lines.append("")
+                for author in doc.authors:
+                    lines.append(f"- {author}")
                 lines.append("")
             
-            lines.append("## Properties")
-            lines.append("")
-            for prop in properties:
-                lines.append(f"### {prop.get('name', 'Unknown')}")
-                lines.append(f"**Type:** {prop.get('type', 'unknown')}")
-                if prop.get("comment"):
-                    lines.append(f"{prop['comment']}")
+            if doc.contributors:
+                lines.append("## Contributors")
                 lines.append("")
-        
-        return "\n".join(lines)
+                for contributor in doc.contributors:
+                    lines.append(f"- {contributor}")
+                lines.append("")
+            
+            if doc.license:
+                lines.append("## License")
+                lines.append("")
+                lines.append(doc.license)
+                lines.append("")
+            
+            if ontology:
+                self.progress_tracker.update_tracking(tracking_id, message="Adding ontology classes and properties...")
+                classes = ontology.get("classes", [])
+                properties = ontology.get("properties", [])
+                
+                lines.append("## Classes")
+                lines.append("")
+                for cls in classes:
+                    lines.append(f"### {cls.get('name', 'Unknown')}")
+                    if cls.get("comment"):
+                        lines.append(f"{cls['comment']}")
+                    lines.append("")
+                
+                lines.append("## Properties")
+                lines.append("")
+                for prop in properties:
+                    lines.append(f"### {prop.get('name', 'Unknown')}")
+                    lines.append(f"**Type:** {prop.get('type', 'unknown')}")
+                    if prop.get("comment"):
+                        lines.append(f"{prop['comment']}")
+                    lines.append("")
+            
+            result = "\n".join(lines)
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Generated Markdown documentation: {len(result)} characters")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def export_documentation(
         self,
@@ -270,29 +290,45 @@ class OntologyDocumentationManager:
         Returns:
             Validation results
         """
-        if ontology_name not in self.documentation:
-            raise ValidationError(f"Documentation not found: {ontology_name}")
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="OntologyDocumentationManager",
+            message=f"Validating documentation for: {ontology_name}"
+        )
         
-        doc = self.documentation[ontology_name]
-        errors = []
-        warnings = []
-        
-        if not doc.description:
-            errors.append("Documentation missing description")
-        if not doc.purpose:
-            errors.append("Documentation missing purpose")
-        if not doc.scope:
-            errors.append("Documentation missing scope")
-        if not doc.authors:
-            warnings.append("Documentation has no authors")
-        if not doc.namespace:
-            warnings.append("Documentation missing namespace")
-        
-        return {
-            "valid": len(errors) == 0,
-            "errors": errors,
-            "warnings": warnings
-        }
+        try:
+            if ontology_name not in self.documentation:
+                raise ValidationError(f"Documentation not found: {ontology_name}")
+            
+            doc = self.documentation[ontology_name]
+            errors = []
+            warnings = []
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Checking required fields...")
+            if not doc.description:
+                errors.append("Documentation missing description")
+            if not doc.purpose:
+                errors.append("Documentation missing purpose")
+            if not doc.scope:
+                errors.append("Documentation missing scope")
+            if not doc.authors:
+                warnings.append("Documentation has no authors")
+            if not doc.namespace:
+                warnings.append("Documentation missing namespace")
+            
+            result = {
+                "valid": len(errors) == 0,
+                "errors": errors,
+                "warnings": warnings
+            }
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Validation complete: {'Valid' if result['valid'] else 'Invalid'} ({len(errors)} errors, {len(warnings)} warnings)")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def get_documentation(self, ontology_name: str) -> Optional[OntologyDocumentation]:
         """Get documentation by name."""

@@ -36,6 +36,7 @@ from urllib.parse import urljoin
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 
 
 class NamespaceManager:
@@ -65,6 +66,9 @@ class NamespaceManager:
         self.logger = get_logger("namespace_manager")
         self.config = config or {}
         self.config.update(kwargs)
+        
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
         
         self.base_uri = self.config.get("base_uri", "https://semantica.dev/ontology/")
         self.version = self.config.get("version", "1.0")
@@ -227,10 +231,22 @@ class NamespaceManager:
         Returns:
             True if valid
         """
-        # Basic IRI validation
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="NamespaceManager",
+            message=f"Validating IRI: {iri[:50]}..."
+        )
+        
         try:
+            # Basic IRI validation
             from urllib.parse import urlparse
             parsed = urlparse(iri)
-            return bool(parsed.scheme and parsed.netloc)
-        except Exception:
+            is_valid = bool(parsed.scheme and parsed.netloc)
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"IRI validation: {'Valid' if is_valid else 'Invalid'}")
+            return is_valid
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
             return False

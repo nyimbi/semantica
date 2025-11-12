@@ -32,6 +32,7 @@ from collections import defaultdict, deque
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from .pipeline_builder import PipelineBuilder, Pipeline, PipelineStep
 
 
@@ -67,6 +68,9 @@ class PipelineValidator:
         self.logger = get_logger("pipeline_validator")
         self.config = config or {}
         self.config.update(kwargs)
+        
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
     
     def validate_pipeline(
         self,
@@ -83,42 +87,61 @@ class PipelineValidator:
         Returns:
             Validation result
         """
-        errors = []
-        warnings = []
-        
-        # Convert builder to pipeline if needed
-        if isinstance(pipeline, PipelineBuilder):
-            # Check structure
-            structure_result = self._validate_structure(pipeline)
-            errors.extend(structure_result.get("errors", []))
-            warnings.extend(structure_result.get("warnings", []))
-            
-            # Check dependencies
-            dependency_result = self.check_dependencies(pipeline)
-            errors.extend(dependency_result.get("errors", []))
-            warnings.extend(dependency_result.get("warnings", []))
-            
-        elif isinstance(pipeline, Pipeline):
-            # Validate pipeline steps
-            for step in pipeline.steps:
-                step_result = self.validate_step(step)
-                if not step_result.valid:
-                    errors.extend(step_result.errors)
-                warnings.extend(step_result.warnings)
-            
-            # Check dependencies
-            dependency_result = self.check_dependencies(pipeline)
-            errors.extend(dependency_result.get("errors", []))
-            warnings.extend(dependency_result.get("warnings", []))
-        
-        return ValidationResult(
-            valid=len(errors) == 0,
-            errors=errors,
-            warnings=warnings,
-            metadata={
-                "step_count": len(pipeline.steps) if hasattr(pipeline, "steps") else 0
-            }
+        tracking_id = self.progress_tracker.start_tracking(
+            module="pipeline",
+            submodule="PipelineValidator",
+            message="Validating pipeline"
         )
+        
+        try:
+            errors = []
+            warnings = []
+            
+            # Convert builder to pipeline if needed
+            if isinstance(pipeline, PipelineBuilder):
+                # Check structure
+                self.progress_tracker.update_tracking(tracking_id, message="Validating pipeline structure...")
+                structure_result = self._validate_structure(pipeline)
+                errors.extend(structure_result.get("errors", []))
+                warnings.extend(structure_result.get("warnings", []))
+                
+                # Check dependencies
+                self.progress_tracker.update_tracking(tracking_id, message="Checking dependencies...")
+                dependency_result = self.check_dependencies(pipeline)
+                errors.extend(dependency_result.get("errors", []))
+                warnings.extend(dependency_result.get("warnings", []))
+                
+            elif isinstance(pipeline, Pipeline):
+                # Validate pipeline steps
+                self.progress_tracker.update_tracking(tracking_id, message=f"Validating {len(pipeline.steps)} pipeline steps...")
+                for step in pipeline.steps:
+                    step_result = self.validate_step(step)
+                    if not step_result.valid:
+                        errors.extend(step_result.errors)
+                    warnings.extend(step_result.warnings)
+                
+                # Check dependencies
+                self.progress_tracker.update_tracking(tracking_id, message="Checking dependencies...")
+                dependency_result = self.check_dependencies(pipeline)
+                errors.extend(dependency_result.get("errors", []))
+                warnings.extend(dependency_result.get("warnings", []))
+            
+            result = ValidationResult(
+                valid=len(errors) == 0,
+                errors=errors,
+                warnings=warnings,
+                metadata={
+                    "step_count": len(pipeline.steps) if hasattr(pipeline, "steps") else 0
+                }
+            )
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Validation complete: {'Valid' if result.valid else 'Invalid'} ({len(errors)} errors, {len(warnings)} warnings)")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def _validate_structure(self, pipeline: PipelineBuilder) -> Dict[str, Any]:
         """Validate pipeline structure."""
@@ -195,35 +218,53 @@ class PipelineValidator:
         Returns:
             Dependency analysis results
         """
-        errors = []
-        warnings = []
+        tracking_id = self.progress_tracker.start_tracking(
+            module="pipeline",
+            submodule="PipelineValidator",
+            message="Checking pipeline dependencies"
+        )
         
-        steps = pipeline.steps if hasattr(pipeline, "steps") else []
-        step_names = {step.name for step in steps}
-        
-        # Check for circular dependencies
-        circular = self._detect_circular_dependencies(steps)
-        if circular:
-            errors.append(f"Circular dependency detected: {circular}")
-        
-        # Check for missing dependencies
-        for step in steps:
-            for dep in step.dependencies:
-                if dep not in step_names:
-                    errors.append(f"Step '{step.name}' depends on missing step: {dep}")
-        
-        # Check for unreachable steps
-        reachable = self._find_reachable_steps(steps)
-        unreachable = set(step_names) - reachable
-        if unreachable:
-            warnings.append(f"Unreachable steps found: {unreachable}")
-        
-        return {
-            "errors": errors,
-            "warnings": warnings,
-            "circular_dependencies": circular,
-            "reachable_steps": reachable
-        }
+        try:
+            errors = []
+            warnings = []
+            
+            steps = pipeline.steps if hasattr(pipeline, "steps") else []
+            step_names = {step.name for step in steps}
+            
+            # Check for circular dependencies
+            self.progress_tracker.update_tracking(tracking_id, message="Detecting circular dependencies...")
+            circular = self._detect_circular_dependencies(steps)
+            if circular:
+                errors.append(f"Circular dependency detected: {circular}")
+            
+            # Check for missing dependencies
+            self.progress_tracker.update_tracking(tracking_id, message="Checking for missing dependencies...")
+            for step in steps:
+                for dep in step.dependencies:
+                    if dep not in step_names:
+                        errors.append(f"Step '{step.name}' depends on missing step: {dep}")
+            
+            # Check for unreachable steps
+            self.progress_tracker.update_tracking(tracking_id, message="Finding reachable steps...")
+            reachable = self._find_reachable_steps(steps)
+            unreachable = set(step_names) - reachable
+            if unreachable:
+                warnings.append(f"Unreachable steps found: {unreachable}")
+            
+            result = {
+                "errors": errors,
+                "warnings": warnings,
+                "circular_dependencies": circular,
+                "reachable_steps": reachable
+            }
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Dependency check complete: {len(errors)} errors, {len(warnings)} warnings")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def _detect_circular_dependencies(self, steps: List[PipelineStep]) -> List[List[str]]:
         """Detect circular dependencies using DFS."""
@@ -299,20 +340,36 @@ class PipelineValidator:
         Returns:
             Performance validation results
         """
-        warnings = []
+        tracking_id = self.progress_tracker.start_tracking(
+            module="pipeline",
+            submodule="PipelineValidator",
+            message="Validating pipeline performance"
+        )
         
-        # Check for potential bottlenecks
-        step_count = len(pipeline.steps)
-        if step_count > 100:
-            warnings.append("Pipeline has many steps, may impact performance")
-        
-        # Check for sequential dependencies
-        sequential_steps = sum(1 for step in pipeline.steps if len(step.dependencies) > 0)
-        if sequential_steps == step_count:
-            warnings.append("All steps are sequential, consider parallelization")
-        
-        return {
-            "step_count": step_count,
-            "sequential_steps": sequential_steps,
-            "warnings": warnings
-        }
+        try:
+            warnings = []
+            
+            # Check for potential bottlenecks
+            self.progress_tracker.update_tracking(tracking_id, message="Analyzing pipeline structure...")
+            step_count = len(pipeline.steps)
+            if step_count > 100:
+                warnings.append("Pipeline has many steps, may impact performance")
+            
+            # Check for sequential dependencies
+            sequential_steps = sum(1 for step in pipeline.steps if len(step.dependencies) > 0)
+            if sequential_steps == step_count:
+                warnings.append("All steps are sequential, consider parallelization")
+            
+            result = {
+                "step_count": step_count,
+                "sequential_steps": sequential_steps,
+                "warnings": warnings
+            }
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Performance validation complete: {len(warnings)} warnings")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise

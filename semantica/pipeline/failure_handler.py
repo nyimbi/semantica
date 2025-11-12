@@ -42,6 +42,7 @@ import traceback
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from .pipeline_builder import PipelineStep
 
 
@@ -106,6 +107,9 @@ class FailureHandler:
         self.config = config or {}
         self.config.update(kwargs)
         
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
+        
         self.default_max_retries = self.config.get("default_max_retries", 3)
         self.default_backoff_factor = self.config.get("default_backoff_factor", 2.0)
         
@@ -129,46 +133,65 @@ class FailureHandler:
         Returns:
             Recovery result with retry information
         """
-        # Classify error
-        error_classification = self.classify_error(error)
-        
-        # Get retry policy
-        retry_policy = self.get_retry_policy(step.step_type)
-        
-        # Check if error is retryable
-        should_retry = self._should_retry(error, retry_policy)
-        
-        # Calculate retry delay
-        retry_delay = 0.0
-        if should_retry:
-            retry_delay = self._calculate_retry_delay(
-                step.name,
-                retry_policy
-            )
-        
-        # Log error
-        self.logger.error(
-            f"Step '{step.name}' failed: {error}",
-            exc_info=True
+        tracking_id = self.progress_tracker.start_tracking(
+            module="pipeline",
+            submodule="FailureHandler",
+            message=f"Handling step failure: {step.name}"
         )
         
-        # Record error history
-        self.error_history.append({
-            "step_name": step.name,
-            "step_type": step.step_type,
-            "error": str(error),
-            "error_type": type(error).__name__,
-            "severity": error_classification["severity"].value,
-            "timestamp": time.time(),
-            "retryable": should_retry
-        })
-        
-        return {
-            "retry": should_retry,
-            "retry_delay": retry_delay,
-            "error_classification": error_classification,
-            "recovery_action": self._determine_recovery_action(error, error_classification)
-        }
+        try:
+            # Classify error
+            self.progress_tracker.update_tracking(tracking_id, message="Classifying error...")
+            error_classification = self.classify_error(error)
+            
+            # Get retry policy
+            self.progress_tracker.update_tracking(tracking_id, message="Getting retry policy...")
+            retry_policy = self.get_retry_policy(step.step_type)
+            
+            # Check if error is retryable
+            self.progress_tracker.update_tracking(tracking_id, message="Checking if error is retryable...")
+            should_retry = self._should_retry(error, retry_policy)
+            
+            # Calculate retry delay
+            retry_delay = 0.0
+            if should_retry:
+                retry_delay = self._calculate_retry_delay(
+                    step.name,
+                    retry_policy
+                )
+            
+            # Log error
+            self.logger.error(
+                f"Step '{step.name}' failed: {error}",
+                exc_info=True
+            )
+            
+            # Record error history
+            self.progress_tracker.update_tracking(tracking_id, message="Recording error history...")
+            self.error_history.append({
+                "step_name": step.name,
+                "step_type": step.step_type,
+                "error": str(error),
+                "error_type": type(error).__name__,
+                "severity": error_classification["severity"].value,
+                "timestamp": time.time(),
+                "retryable": should_retry
+            })
+            
+            result = {
+                "retry": should_retry,
+                "retry_delay": retry_delay,
+                "error_classification": error_classification,
+                "recovery_action": self._determine_recovery_action(error, error_classification)
+            }
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Failure handled: {'Retry' if should_retry else 'No retry'}")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def classify_error(self, error: Exception) -> Dict[str, Any]:
         """
@@ -180,28 +203,44 @@ class FailureHandler:
         Returns:
             Error classification
         """
-        error_type = type(error)
-        error_message = str(error)
+        tracking_id = self.progress_tracker.start_tracking(
+            module="pipeline",
+            submodule="FailureHandler",
+            message=f"Classifying error: {type(error).__name__}"
+        )
         
-        # Determine severity
-        severity = ErrorSeverity.MEDIUM
-        if isinstance(error, ValidationError):
-            severity = ErrorSeverity.LOW
-        elif isinstance(error, ProcessingError):
-            severity = ErrorSeverity.HIGH
-        elif "timeout" in error_message.lower() or "connection" in error_message.lower():
+        try:
+            error_type = type(error)
+            error_message = str(error)
+            
+            # Determine severity
+            self.progress_tracker.update_tracking(tracking_id, message="Determining error severity...")
             severity = ErrorSeverity.MEDIUM
-        elif "memory" in error_message.lower() or "resource" in error_message.lower():
-            severity = ErrorSeverity.HIGH
-        else:
-            severity = ErrorSeverity.MEDIUM
-        
-        return {
-            "error_type": error_type.__name__,
-            "severity": severity,
-            "message": error_message,
-            "traceback": traceback.format_exc()
-        }
+            if isinstance(error, ValidationError):
+                severity = ErrorSeverity.LOW
+            elif isinstance(error, ProcessingError):
+                severity = ErrorSeverity.HIGH
+            elif "timeout" in error_message.lower() or "connection" in error_message.lower():
+                severity = ErrorSeverity.MEDIUM
+            elif "memory" in error_message.lower() or "resource" in error_message.lower():
+                severity = ErrorSeverity.HIGH
+            else:
+                severity = ErrorSeverity.MEDIUM
+            
+            result = {
+                "error_type": error_type.__name__,
+                "severity": severity,
+                "message": error_message,
+                "traceback": traceback.format_exc()
+            }
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Error classified: {severity.value}")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def set_retry_policy(
         self,
@@ -301,18 +340,34 @@ class FailureHandler:
         Returns:
             Step execution result
         """
-        recovery = self.handle_step_failure(step, error, **options)
+        tracking_id = self.progress_tracker.start_tracking(
+            module="pipeline",
+            submodule="FailureHandler",
+            message=f"Retrying failed step: {step.name}"
+        )
         
-        if not recovery["retry"]:
-            raise error
-        
-        # Wait for retry delay
-        if recovery["retry_delay"] > 0:
-            time.sleep(recovery["retry_delay"])
-        
-        # Retry step execution
-        # This would typically be called by the execution engine
-        return recovery
+        try:
+            recovery = self.handle_step_failure(step, error, **options)
+            
+            if not recovery["retry"]:
+                self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                                   message="Step not retryable, raising error")
+                raise error
+            
+            # Wait for retry delay
+            if recovery["retry_delay"] > 0:
+                self.progress_tracker.update_tracking(tracking_id, message=f"Waiting {recovery['retry_delay']}s before retry...")
+                time.sleep(recovery["retry_delay"])
+            
+            # Retry step execution
+            # This would typically be called by the execution engine
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Retry scheduled for step: {step.name}")
+            return recovery
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def get_error_history(self, step_name: Optional[str] = None) -> List[Dict[str, Any]]:
         """

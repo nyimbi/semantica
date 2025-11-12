@@ -35,6 +35,7 @@ from dataclasses import dataclass, field
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 
 
 @dataclass
@@ -117,6 +118,9 @@ class AssociativeClassBuilder:
         self.config = config or {}
         self.config.update(kwargs)
         
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
+        
         self.associative_classes: Dict[str, AssociativeClass] = {}
     
     def create_associative_class(
@@ -156,25 +160,38 @@ class AssociativeClassBuilder:
             )
             ```
         """
-        if not name:
-            raise ValidationError("Associative class name is required")
-        
-        if not connects or len(connects) < 2:
-            raise ValidationError("Associative class must connect at least 2 classes")
-        
-        assoc_class = AssociativeClass(
-            name=name,
-            connects=connects,
-            properties=options.get("properties", {}),
-            temporal=options.get("temporal", False),
-            metadata=options.get("metadata", {})
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="AssociativeClassBuilder",
+            message=f"Creating associative class: {name}"
         )
         
-        self.associative_classes[name] = assoc_class
-        
-        self.logger.info(f"Created associative class: {name} connecting {connects}")
-        
-        return assoc_class
+        try:
+            if not name:
+                raise ValidationError("Associative class name is required")
+            
+            if not connects or len(connects) < 2:
+                raise ValidationError("Associative class must connect at least 2 classes")
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Creating associative class definition...")
+            assoc_class = AssociativeClass(
+                name=name,
+                connects=connects,
+                properties=options.get("properties", {}),
+                temporal=options.get("temporal", False),
+                metadata=options.get("metadata", {})
+            )
+            
+            self.associative_classes[name] = assoc_class
+            
+            self.logger.info(f"Created associative class: {name} connecting {connects}")
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Created associative class: {name} connecting {len(connects)} classes")
+            return assoc_class
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def create_position_class(
         self,
@@ -334,23 +351,39 @@ class AssociativeClassBuilder:
                 print(f"Errors: {result['errors']}")
             ```
         """
-        errors = []
-        warnings = []
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="AssociativeClassBuilder",
+            message=f"Validating associative class: {assoc_class.name}"
+        )
         
-        # Check name
-        if not assoc_class.name:
-            errors.append("Associative class must have a name")
-        
-        # Check connects
-        if len(assoc_class.connects) < 2:
-            errors.append("Associative class must connect at least 2 classes")
-        
-        # Check for duplicate connections
-        if len(assoc_class.connects) != len(set(assoc_class.connects)):
-            warnings.append("Associative class has duplicate connections")
-        
-        return {
-            "valid": len(errors) == 0,
-            "errors": errors,
-            "warnings": warnings
-        }
+        try:
+            errors = []
+            warnings = []
+            
+            # Check name
+            self.progress_tracker.update_tracking(tracking_id, message="Validating class structure...")
+            if not assoc_class.name:
+                errors.append("Associative class must have a name")
+            
+            # Check connects
+            if len(assoc_class.connects) < 2:
+                errors.append("Associative class must connect at least 2 classes")
+            
+            # Check for duplicate connections
+            if len(assoc_class.connects) != len(set(assoc_class.connects)):
+                warnings.append("Associative class has duplicate connections")
+            
+            result = {
+                "valid": len(errors) == 0,
+                "errors": errors,
+                "warnings": warnings
+            }
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Validation complete: {'Valid' if result['valid'] else 'Invalid'} ({len(errors)} errors, {len(warnings)} warnings)")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise

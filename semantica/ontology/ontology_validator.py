@@ -36,6 +36,7 @@ from dataclasses import dataclass, field
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 
 # Optional reasoner imports
 try:
@@ -83,6 +84,9 @@ class OntologyValidator:
         self.config = config or {}
         self.config.update(kwargs)
         
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
+        
         self.reasoner = self.config.get("reasoner", "auto")
         self.check_consistency = self.config.get("check_consistency", True)
         self.check_satisfiability = self.config.get("check_satisfiability", True)
@@ -102,38 +106,57 @@ class OntologyValidator:
         Returns:
             Validation result
         """
-        errors = []
-        warnings = []
-        
-        # Basic structure validation
-        structure_validation = self._validate_structure(ontology)
-        errors.extend(structure_validation.get("errors", []))
-        warnings.extend(structure_validation.get("warnings", []))
-        
-        # Check consistency
-        consistent = True
-        if self.check_consistency:
-            consistency_check = self._check_consistency(ontology)
-            consistent = consistency_check.get("consistent", True)
-            errors.extend(consistency_check.get("errors", []))
-            warnings.extend(consistency_check.get("warnings", []))
-        
-        # Check satisfiability
-        if self.check_satisfiability:
-            satisfiability_check = self._check_satisfiability(ontology)
-            errors.extend(satisfiability_check.get("errors", []))
-            warnings.extend(satisfiability_check.get("warnings", []))
-        
-        # Calculate metrics
-        metrics = self._calculate_metrics(ontology)
-        
-        return ValidationResult(
-            valid=len(errors) == 0,
-            consistent=consistent,
-            errors=errors,
-            warnings=warnings,
-            metrics=metrics
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="OntologyValidator",
+            message="Validating ontology structure and consistency"
         )
+        
+        try:
+            errors = []
+            warnings = []
+            
+            # Basic structure validation
+            self.progress_tracker.update_tracking(tracking_id, message="Validating ontology structure...")
+            structure_validation = self._validate_structure(ontology)
+            errors.extend(structure_validation.get("errors", []))
+            warnings.extend(structure_validation.get("warnings", []))
+            
+            # Check consistency
+            consistent = True
+            if self.check_consistency:
+                self.progress_tracker.update_tracking(tracking_id, message="Checking consistency...")
+                consistency_check = self._check_consistency(ontology)
+                consistent = consistency_check.get("consistent", True)
+                errors.extend(consistency_check.get("errors", []))
+                warnings.extend(consistency_check.get("warnings", []))
+            
+            # Check satisfiability
+            if self.check_satisfiability:
+                self.progress_tracker.update_tracking(tracking_id, message="Checking satisfiability...")
+                satisfiability_check = self._check_satisfiability(ontology)
+                errors.extend(satisfiability_check.get("errors", []))
+                warnings.extend(satisfiability_check.get("warnings", []))
+            
+            # Calculate metrics
+            self.progress_tracker.update_tracking(tracking_id, message="Calculating metrics...")
+            metrics = self._calculate_metrics(ontology)
+            
+            result = ValidationResult(
+                valid=len(errors) == 0,
+                consistent=consistent,
+                errors=errors,
+                warnings=warnings,
+                metrics=metrics
+            )
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Validation complete: {'Valid' if result.valid else 'Invalid'} ({len(errors)} errors, {len(warnings)} warnings)")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def _validate_structure(self, ontology: Dict[str, Any]) -> Dict[str, Any]:
         """Validate ontology structure."""

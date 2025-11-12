@@ -35,6 +35,7 @@ from enum import Enum
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from .rule_manager import RuleManager, Rule
 
 
@@ -80,6 +81,9 @@ class InferenceEngine:
         self.logger = get_logger("inference_engine")
         self.config = config or {}
         self.config.update(kwargs)
+        
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
         
         self.rule_manager = RuleManager(**self.config)
         self.strategy = InferenceStrategy(self.config.get("strategy", "forward"))
@@ -148,34 +152,49 @@ class InferenceEngine:
         Returns:
             List of inference results
         """
-        if facts:
-            self.add_facts(facts)
+        tracking_id = self.progress_tracker.start_tracking(
+            module="reasoning",
+            submodule="InferenceEngine",
+            message="Performing forward chaining inference"
+        )
         
-        new_facts = True
-        iterations = 0
-        results = []
-        
-        while new_facts and iterations < self.max_iterations:
-            new_facts = False
-            iterations += 1
+        try:
+            if facts:
+                self.progress_tracker.update_tracking(tracking_id, message=f"Adding {len(facts)} initial facts...")
+                self.add_facts(facts)
             
-            # Get all rules
-            rules = self.rule_manager.get_all_rules()
+            new_facts = True
+            iterations = 0
+            results = []
             
-            for rule in rules:
-                # Check if rule can fire
-                if self._can_rule_fire(rule):
-                    # Apply rule
-                    result = self._apply_rule(rule)
-                    if result:
-                        results.append(result)
-                        self.inferred_facts.append(result)
-                        self.add_fact(result.conclusion)
-                        new_facts = True
-        
-        self.logger.info(f"Forward chaining completed: {len(results)} inferences in {iterations} iterations")
-        
-        return results
+            self.progress_tracker.update_tracking(tracking_id, message="Starting forward chaining iterations...")
+            while new_facts and iterations < self.max_iterations:
+                new_facts = False
+                iterations += 1
+                
+                # Get all rules
+                rules = self.rule_manager.get_all_rules()
+                self.progress_tracker.update_tracking(tracking_id, message=f"Iteration {iterations}: Checking {len(rules)} rules...")
+                
+                for rule in rules:
+                    # Check if rule can fire
+                    if self._can_rule_fire(rule):
+                        # Apply rule
+                        result = self._apply_rule(rule)
+                        if result:
+                            results.append(result)
+                            self.inferred_facts.append(result)
+                            self.add_fact(result.conclusion)
+                            new_facts = True
+            
+            self.logger.info(f"Forward chaining completed: {len(results)} inferences in {iterations} iterations")
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Forward chaining completed: {len(results)} inferences in {iterations} iterations")
+            return results
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def backward_chain(
         self,
@@ -192,34 +211,52 @@ class InferenceEngine:
         Returns:
             Inference result or None
         """
-        # Check if goal is already a fact
-        if goal in self.facts:
-            return InferenceResult(conclusion=goal, confidence=1.0)
+        tracking_id = self.progress_tracker.start_tracking(
+            module="reasoning",
+            submodule="InferenceEngine",
+            message=f"Performing backward chaining for goal: {goal}"
+        )
         
-        # Find rules that can prove the goal
-        rules = self.rule_manager.get_all_rules()
-        applicable_rules = [r for r in rules if self._rule_concludes(r, goal)]
-        
-        for rule in applicable_rules:
-            # Try to prove premises
-            premises = []
-            all_premises_proven = True
+        try:
+            # Check if goal is already a fact
+            self.progress_tracker.update_tracking(tracking_id, message="Checking if goal is already a fact...")
+            if goal in self.facts:
+                self.progress_tracker.stop_tracking(tracking_id, status="completed", message="Goal is already a fact")
+                return InferenceResult(conclusion=goal, confidence=1.0)
             
-            for premise in rule.conditions:
-                premise_result = self.backward_chain(premise, **options)
-                if premise_result:
-                    premises.append(premise_result.conclusion)
-                else:
-                    all_premises_proven = False
-                    break
+            # Find rules that can prove the goal
+            self.progress_tracker.update_tracking(tracking_id, message="Finding rules that can prove the goal...")
+            rules = self.rule_manager.get_all_rules()
+            applicable_rules = [r for r in rules if self._rule_concludes(r, goal)]
             
-            if all_premises_proven:
-                # All premises proven, rule can fire
-                result = self._apply_rule(rule, premises)
-                if result:
-                    return result
-        
-        return None
+            self.progress_tracker.update_tracking(tracking_id, message=f"Found {len(applicable_rules)} applicable rules, trying to prove premises...")
+            for rule in applicable_rules:
+                # Try to prove premises
+                premises = []
+                all_premises_proven = True
+                
+                for premise in rule.conditions:
+                    premise_result = self.backward_chain(premise, **options)
+                    if premise_result:
+                        premises.append(premise_result.conclusion)
+                    else:
+                        all_premises_proven = False
+                        break
+                
+                if all_premises_proven:
+                    # All premises proven, rule can fire
+                    result = self._apply_rule(rule, premises)
+                    if result:
+                        self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                                           message=f"Successfully proved goal using rule: {rule.name}")
+                        return result
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed", message="Could not prove goal")
+            return None
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def _can_rule_fire(self, rule: Rule) -> bool:
         """Check if rule can fire (all conditions met)."""
@@ -269,17 +306,36 @@ class InferenceEngine:
         Returns:
             List of inference results
         """
-        if self.strategy == InferenceStrategy.FORWARD:
-            return self.forward_chain(**options)
-        elif self.strategy == InferenceStrategy.BACKWARD:
-            result = self.backward_chain(query, **options)
-            return [result] if result else []
-        else:  # BIDIRECTIONAL
-            forward_results = self.forward_chain(**options)
-            backward_result = self.backward_chain(query, **options)
-            if backward_result:
-                forward_results.append(backward_result)
-            return forward_results
+        tracking_id = self.progress_tracker.start_tracking(
+            module="reasoning",
+            submodule="InferenceEngine",
+            message=f"Performing inference using {self.strategy.value} strategy"
+        )
+        
+        try:
+            if self.strategy == InferenceStrategy.FORWARD:
+                self.progress_tracker.update_tracking(tracking_id, message="Using forward chaining strategy...")
+                results = self.forward_chain(**options)
+            elif self.strategy == InferenceStrategy.BACKWARD:
+                self.progress_tracker.update_tracking(tracking_id, message="Using backward chaining strategy...")
+                result = self.backward_chain(query, **options)
+                results = [result] if result else []
+            else:  # BIDIRECTIONAL
+                self.progress_tracker.update_tracking(tracking_id, message="Using bidirectional strategy: forward chaining...")
+                forward_results = self.forward_chain(**options)
+                self.progress_tracker.update_tracking(tracking_id, message="Using bidirectional strategy: backward chaining...")
+                backward_result = self.backward_chain(query, **options)
+                if backward_result:
+                    forward_results.append(backward_result)
+                results = forward_results
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Inference complete: {len(results)} results using {self.strategy.value} strategy")
+            return results
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def get_facts(self) -> Set[Any]:
         """Get all facts."""

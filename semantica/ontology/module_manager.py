@@ -35,6 +35,7 @@ from datetime import datetime
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 
 
 @dataclass
@@ -73,6 +74,9 @@ class ModuleManager:
         self.config = config or {}
         self.config.update(kwargs)
         
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
+        
         self.modules: Dict[str, OntologyModule] = {}
     
     def create_module(
@@ -94,23 +98,35 @@ class ModuleManager:
         Returns:
             Created module
         """
-        module = OntologyModule(
-            name=name,
-            uri=uri,
-            version=version,
-            imports=options.get("imports", []),
-            classes=options.get("classes", []),
-            properties=options.get("properties", []),
-            metadata={
-                "created_at": datetime.now().isoformat(),
-                **options.get("metadata", {})
-            }
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="ModuleManager",
+            message=f"Creating ontology module: {name}"
         )
         
-        self.modules[name] = module
-        self.logger.info(f"Created ontology module: {name}")
-        
-        return module
+        try:
+            module = OntologyModule(
+                name=name,
+                uri=uri,
+                version=version,
+                imports=options.get("imports", []),
+                classes=options.get("classes", []),
+                properties=options.get("properties", []),
+                metadata={
+                    "created_at": datetime.now().isoformat(),
+                    **options.get("metadata", {})
+                }
+            )
+            
+            self.modules[name] = module
+            self.logger.info(f"Created ontology module: {name}")
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Created ontology module: {name}")
+            return module
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def add_import(
         self,
@@ -145,20 +161,34 @@ class ModuleManager:
         Returns:
             List of all imported URIs (including transitive)
         """
-        if module_name not in self.modules:
-            raise ValidationError(f"Module not found: {module_name}")
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="ModuleManager",
+            message=f"Resolving imports for module: {module_name}"
+        )
         
-        module = self.modules[module_name]
-        resolved = set(module.imports)
-        
-        # Resolve transitive imports
-        for import_uri in module.imports:
-            # Find module with this URI
-            for other_module in self.modules.values():
-                if other_module.uri == import_uri:
-                    resolved.update(other_module.imports)
-        
-        return list(resolved)
+        try:
+            if module_name not in self.modules:
+                raise ValidationError(f"Module not found: {module_name}")
+            
+            module = self.modules[module_name]
+            resolved = set(module.imports)
+            
+            # Resolve transitive imports
+            self.progress_tracker.update_tracking(tracking_id, message="Resolving transitive imports...")
+            for import_uri in module.imports:
+                # Find module with this URI
+                for other_module in self.modules.values():
+                    if other_module.uri == import_uri:
+                        resolved.update(other_module.imports)
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Resolved {len(resolved)} imports for module: {module_name}")
+            return list(resolved)
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def get_module(self, name: str) -> Optional[OntologyModule]:
         """Get module by name."""
@@ -178,27 +208,44 @@ class ModuleManager:
         Returns:
             Validation results
         """
-        if module_name not in self.modules:
-            raise ValidationError(f"Module not found: {module_name}")
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="ModuleManager",
+            message=f"Validating module: {module_name}"
+        )
         
-        module = self.modules[module_name]
-        errors = []
-        warnings = []
-        
-        # Check required fields
-        if not module.uri:
-            errors.append("Module missing URI")
-        if not module.classes and not module.properties:
-            warnings.append("Module has no classes or properties")
-        
-        # Check import validity
-        for import_uri in module.imports:
-            # Basic URI validation
-            if not import_uri.startswith("http"):
-                warnings.append(f"Import URI may be invalid: {import_uri}")
-        
-        return {
-            "valid": len(errors) == 0,
-            "errors": errors,
-            "warnings": warnings
-        }
+        try:
+            if module_name not in self.modules:
+                raise ValidationError(f"Module not found: {module_name}")
+            
+            module = self.modules[module_name]
+            errors = []
+            warnings = []
+            
+            # Check required fields
+            self.progress_tracker.update_tracking(tracking_id, message="Checking required fields...")
+            if not module.uri:
+                errors.append("Module missing URI")
+            if not module.classes and not module.properties:
+                warnings.append("Module has no classes or properties")
+            
+            # Check import validity
+            self.progress_tracker.update_tracking(tracking_id, message="Validating imports...")
+            for import_uri in module.imports:
+                # Basic URI validation
+                if not import_uri.startswith("http"):
+                    warnings.append(f"Import URI may be invalid: {import_uri}")
+            
+            result = {
+                "valid": len(errors) == 0,
+                "errors": errors,
+                "warnings": warnings
+            }
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Validation complete: {'Valid' if result['valid'] else 'Invalid'} ({len(errors)} errors, {len(warnings)} warnings)")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise

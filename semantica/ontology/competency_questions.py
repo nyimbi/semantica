@@ -35,6 +35,7 @@ from datetime import datetime
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 
 
 @dataclass
@@ -112,6 +113,9 @@ class CompetencyQuestionsManager:
         self.config = config or {}
         self.config.update(kwargs)
         
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
+        
         self.questions: List[CompetencyQuestion] = []
     
     def add_question(
@@ -187,35 +191,49 @@ class CompetencyQuestionsManager:
             print(f"Answerable: {results['answerable']}/{results['total_questions']}")
             ```
         """
-        results = {
-            "total_questions": len(self.questions),
-            "answerable": 0,
-            "unanswerable": 0,
-            "by_category": {},
-            "by_priority": {}
-        }
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="CompetencyQuestionsManager",
+            message=f"Validating ontology against {len(self.questions)} competency questions"
+        )
         
-        for question in self.questions:
-            # Basic check if ontology can answer the question
-            answerable = self._can_ontology_answer(ontology, question)
-            question.answerable = answerable
+        try:
+            results = {
+                "total_questions": len(self.questions),
+                "answerable": 0,
+                "unanswerable": 0,
+                "by_category": {},
+                "by_priority": {}
+            }
             
-            if answerable:
-                results["answerable"] += 1
-            else:
-                results["unanswerable"] += 1
+            self.progress_tracker.update_tracking(tracking_id, message="Checking if ontology can answer questions...")
+            for question in self.questions:
+                # Basic check if ontology can answer the question
+                answerable = self._can_ontology_answer(ontology, question)
+                question.answerable = answerable
+                
+                if answerable:
+                    results["answerable"] += 1
+                else:
+                    results["unanswerable"] += 1
+                
+                # Track by category
+                category = question.category
+                if category not in results["by_category"]:
+                    results["by_category"][category] = {"answerable": 0, "unanswerable": 0}
+                
+                if answerable:
+                    results["by_category"][category]["answerable"] += 1
+                else:
+                    results["by_category"][category]["unanswerable"] += 1
             
-            # Track by category
-            category = question.category
-            if category not in results["by_category"]:
-                results["by_category"][category] = {"answerable": 0, "unanswerable": 0}
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Validation complete: {results['answerable']}/{results['total_questions']} answerable")
+            return results
             
-            if answerable:
-                results["by_category"][category]["answerable"] += 1
-            else:
-                results["by_category"][category]["unanswerable"] += 1
-        
-        return results
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def _can_ontology_answer(self, ontology: Dict[str, Any], question: CompetencyQuestion) -> bool:
         """Check if ontology can answer the question (basic heuristic)."""
@@ -307,26 +325,43 @@ class CompetencyQuestionsManager:
                 print(f"{q['question']}: {q['answerable']}")
             ```
         """
-        validation = self.validate_ontology(ontology)
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="CompetencyQuestionsManager",
+            message="Generating competency question validation report"
+        )
         
-        # Trace all questions
-        for question in self.questions:
-            self.trace_to_elements(question, ontology)
-        
-        return {
-            "validation": validation,
-            "questions": [
-                {
-                    "question": q.question,
-                    "category": q.category,
-                    "priority": q.priority,
-                    "answerable": q.answerable,
-                    "trace_to_elements": q.trace_to_elements
-                }
-                for q in self.questions
-            ],
-            "generated_at": datetime.now().isoformat()
-        }
+        try:
+            self.progress_tracker.update_tracking(tracking_id, message="Validating ontology...")
+            validation = self.validate_ontology(ontology)
+            
+            # Trace all questions
+            self.progress_tracker.update_tracking(tracking_id, message=f"Tracing {len(self.questions)} questions to ontology elements...")
+            for question in self.questions:
+                self.trace_to_elements(question, ontology)
+            
+            result = {
+                "validation": validation,
+                "questions": [
+                    {
+                        "question": q.question,
+                        "category": q.category,
+                        "priority": q.priority,
+                        "answerable": q.answerable,
+                        "trace_to_elements": q.trace_to_elements
+                    }
+                    for q in self.questions
+                ],
+                "generated_at": datetime.now().isoformat()
+            }
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Generated report for {len(self.questions)} questions")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def get_questions_by_category(self, category: str) -> List[CompetencyQuestion]:
         """Get questions by category."""

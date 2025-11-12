@@ -33,6 +33,7 @@ from collections import Counter, defaultdict
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from .naming_conventions import NamingConventions
 
 
@@ -82,6 +83,9 @@ class ClassInferrer:
         self.config = config or {}
         self.config.update(kwargs)
         
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
+        
         self.naming_conventions = NamingConventions(**self.config)
         self.min_occurrences = self.config.get("min_occurrences", 2)
         self.similarity_threshold = self.config.get("similarity_threshold", 0.8)
@@ -127,24 +131,40 @@ class ClassInferrer:
             classes = inferrer.infer_classes(entities, build_hierarchy=True)
             ```
         """
-        # Group entities by type
-        entity_types = defaultdict(list)
-        for entity in entities:
-            entity_type = entity.get("type") or entity.get("entity_type", "Entity")
-            entity_types[entity_type].append(entity)
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="ClassInferrer",
+            message=f"Inferring classes from {len(entities)} entities"
+        )
         
-        # Infer classes from entity types
-        classes = []
-        for entity_type, type_entities in entity_types.items():
-            if len(type_entities) >= self.min_occurrences:
-                class_def = self._create_class_from_entities(entity_type, type_entities, **options)
-                classes.append(class_def)
-        
-        # Build hierarchy
-        if options.get("build_hierarchy", True):
-            classes = self.build_class_hierarchy(classes, **options)
-        
-        return classes
+        try:
+            self.progress_tracker.update_tracking(tracking_id, message="Grouping entities by type...")
+            # Group entities by type
+            entity_types = defaultdict(list)
+            for entity in entities:
+                entity_type = entity.get("type") or entity.get("entity_type", "Entity")
+                entity_types[entity_type].append(entity)
+            
+            # Infer classes from entity types
+            self.progress_tracker.update_tracking(tracking_id, message=f"Inferring classes from {len(entity_types)} entity types...")
+            classes = []
+            for entity_type, type_entities in entity_types.items():
+                if len(type_entities) >= self.min_occurrences:
+                    class_def = self._create_class_from_entities(entity_type, type_entities, **options)
+                    classes.append(class_def)
+            
+            # Build hierarchy
+            if options.get("build_hierarchy", True):
+                self.progress_tracker.update_tracking(tracking_id, message="Building class hierarchy...")
+                classes = self.build_class_hierarchy(classes, **options)
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Inferred {len(classes)} classes")
+            return classes
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def build_class_hierarchy(
         self,
@@ -179,19 +199,34 @@ class ClassInferrer:
             # Manager may have subClassOf: "Employee"
             ```
         """
-        # Create class map
-        class_map = {cls["name"]: cls for cls in classes}
+        tracking_id = self.progress_tracker.start_tracking(
+            module="ontology",
+            submodule="ClassInferrer",
+            message=f"Building hierarchy for {len(classes)} classes"
+        )
         
-        # Infer parent-child relationships
-        for cls in classes:
-            if "parent" not in cls:
-                # Try to find parent based on naming patterns
-                parent = self._find_parent_class(cls["name"], class_map)
-                if parent:
-                    cls["subClassOf"] = parent
-                    cls["parent"] = parent
-        
-        return classes
+        try:
+            self.progress_tracker.update_tracking(tracking_id, message="Creating class map...")
+            # Create class map
+            class_map = {cls["name"]: cls for cls in classes}
+            
+            # Infer parent-child relationships
+            self.progress_tracker.update_tracking(tracking_id, message="Inferring parent-child relationships...")
+            for cls in classes:
+                if "parent" not in cls:
+                    # Try to find parent based on naming patterns
+                    parent = self._find_parent_class(cls["name"], class_map)
+                    if parent:
+                        cls["subClassOf"] = parent
+                        cls["parent"] = parent
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Built hierarchy for {len(classes)} classes")
+            return classes
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def _create_class_from_entities(
         self,

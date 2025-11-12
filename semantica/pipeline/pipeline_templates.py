@@ -31,6 +31,7 @@ from dataclasses import dataclass, field
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from .pipeline_builder import PipelineBuilder
 
 
@@ -67,6 +68,9 @@ class PipelineTemplateManager:
         self.logger = get_logger("pipeline_template_manager")
         self.config = config or {}
         self.config.update(kwargs)
+        
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
         
         self.templates: Dict[str, PipelineTemplate] = {}
         self._load_default_templates()
@@ -161,34 +165,50 @@ class PipelineTemplateManager:
         Returns:
             Pipeline builder
         """
-        template = self.get_template(template_name)
-        if not template:
-            raise ValidationError(f"Template not found: {template_name}")
+        tracking_id = self.progress_tracker.start_tracking(
+            module="pipeline",
+            submodule="PipelineTemplateManager",
+            message=f"Creating pipeline from template: {template_name}"
+        )
         
-        builder = PipelineBuilder(**self.config)
-        
-        # Add steps from template
-        for step_config in template.steps:
-            step_name = step_config["name"]
-            step_type = step_config["type"]
-            config = step_config.get("config", {})
-            dependencies = step_config.get("dependencies", [])
+        try:
+            self.progress_tracker.update_tracking(tracking_id, message="Getting template...")
+            template = self.get_template(template_name)
+            if not template:
+                raise ValidationError(f"Template not found: {template_name}")
             
-            # Apply overrides
-            if step_name in overrides:
-                config.update(overrides[step_name])
+            builder = PipelineBuilder(**self.config)
             
-            builder.add_step(step_name, step_type, dependencies=dependencies, **config)
-        
-        # Set pipeline config
-        pipeline_config = template.config.copy()
-        pipeline_config.update(overrides.get("pipeline_config", {}))
-        
-        for key, value in pipeline_config.items():
-            if key == "parallelism":
-                builder.set_parallelism(value)
-        
-        return builder
+            # Add steps from template
+            self.progress_tracker.update_tracking(tracking_id, message=f"Adding {len(template.steps)} steps from template...")
+            for step_config in template.steps:
+                step_name = step_config["name"]
+                step_type = step_config["type"]
+                config = step_config.get("config", {})
+                dependencies = step_config.get("dependencies", [])
+                
+                # Apply overrides
+                if step_name in overrides:
+                    config.update(overrides[step_name])
+                
+                builder.add_step(step_name, step_type, dependencies=dependencies, **config)
+            
+            # Set pipeline config
+            self.progress_tracker.update_tracking(tracking_id, message="Setting pipeline configuration...")
+            pipeline_config = template.config.copy()
+            pipeline_config.update(overrides.get("pipeline_config", {}))
+            
+            for key, value in pipeline_config.items():
+                if key == "parallelism":
+                    builder.set_parallelism(value)
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Created pipeline from template: {template_name} with {len(template.steps)} steps")
+            return builder
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def register_template(
         self,

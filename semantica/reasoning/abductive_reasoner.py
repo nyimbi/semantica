@@ -37,6 +37,7 @@ from enum import Enum
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from .rule_manager import RuleManager, Rule
 
 
@@ -106,6 +107,9 @@ class AbductiveReasoner:
         self.config = config or {}
         self.config.update(kwargs)
         
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
+        
         self.rule_manager = RuleManager(**self.config)
         self.max_hypotheses = self.config.get("max_hypotheses", 10)
         self.ranking_strategy = HypothesisRanking(self.config.get("ranking_strategy", "plausibility"))
@@ -127,18 +131,34 @@ class AbductiveReasoner:
         Returns:
             List of generated hypotheses
         """
-        hypotheses = []
+        tracking_id = self.progress_tracker.start_tracking(
+            module="reasoning",
+            submodule="AbductiveReasoner",
+            message=f"Generating hypotheses for {len(observations)} observations"
+        )
         
-        for observation in observations:
-            # Generate hypotheses for this observation
-            obs_hypotheses = self._generate_hypotheses_for_observation(observation, **options)
-            hypotheses.extend(obs_hypotheses)
-        
-        # Rank hypotheses
-        ranked = self.rank_hypotheses(hypotheses)
-        
-        # Return top hypotheses
-        return ranked[:self.max_hypotheses]
+        try:
+            hypotheses = []
+            
+            self.progress_tracker.update_tracking(tracking_id, message=f"Generating hypotheses for {len(observations)} observations...")
+            for observation in observations:
+                # Generate hypotheses for this observation
+                obs_hypotheses = self._generate_hypotheses_for_observation(observation, **options)
+                hypotheses.extend(obs_hypotheses)
+            
+            # Rank hypotheses
+            self.progress_tracker.update_tracking(tracking_id, message=f"Ranking {len(hypotheses)} hypotheses...")
+            ranked = self.rank_hypotheses(hypotheses)
+            
+            # Return top hypotheses
+            result = ranked[:self.max_hypotheses]
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Generated {len(result)} hypotheses from {len(observations)} observations")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def _generate_hypotheses_for_observation(
         self,
@@ -211,27 +231,42 @@ class AbductiveReasoner:
         Returns:
             List of explanations
         """
-        explanations = []
+        tracking_id = self.progress_tracker.start_tracking(
+            module="reasoning",
+            submodule="AbductiveReasoner",
+            message=f"Finding explanations for {len(observations)} observations"
+        )
         
-        for observation in observations:
-            # Generate hypotheses
-            hypotheses = self.generate_hypotheses([observation], **options)
+        try:
+            explanations = []
             
-            # Select best hypothesis
-            best_hypothesis = hypotheses[0] if hypotheses else None
+            self.progress_tracker.update_tracking(tracking_id, message=f"Processing {len(observations)} observations...")
+            for observation in observations:
+                # Generate hypotheses
+                self.progress_tracker.update_tracking(tracking_id, message=f"Generating hypotheses for observation: {observation.observation_id}...")
+                hypotheses = self.generate_hypotheses([observation], **options)
+                
+                # Select best hypothesis
+                best_hypothesis = hypotheses[0] if hypotheses else None
+                
+                explanation = Explanation(
+                    explanation_id=f"exp_{len(explanations)}",
+                    observation=observation,
+                    hypotheses=hypotheses,
+                    best_hypothesis=best_hypothesis,
+                    confidence=best_hypothesis.confidence if best_hypothesis else 0.0,
+                    metadata={}
+                )
+                
+                explanations.append(explanation)
             
-            explanation = Explanation(
-                explanation_id=f"exp_{len(explanations)}",
-                observation=observation,
-                hypotheses=hypotheses,
-                best_hypothesis=best_hypothesis,
-                confidence=best_hypothesis.confidence if best_hypothesis else 0.0,
-                metadata={}
-            )
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Found {len(explanations)} explanations")
+            return explanations
             
-            explanations.append(explanation)
-        
-        return explanations
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def rank_hypotheses(
         self,

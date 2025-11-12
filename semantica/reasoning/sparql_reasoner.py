@@ -35,6 +35,7 @@ import re
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from .rule_manager import RuleManager, Rule
 
 
@@ -72,6 +73,9 @@ class SPARQLReasoner:
         self.config = config or {}
         self.config.update(kwargs)
         
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
+        
         self.rule_manager = RuleManager(**self.config)
         self.triple_store = self.config.get("triple_store")
         self.enable_inference = self.config.get("enable_inference", True)
@@ -93,24 +97,41 @@ class SPARQLReasoner:
         Returns:
             Expanded query
         """
-        if not self.enable_inference:
-            return query
+        tracking_id = self.progress_tracker.start_tracking(
+            module="reasoning",
+            submodule="SPARQLReasoner",
+            message="Expanding SPARQL query with inference rules"
+        )
         
-        # Parse query to find patterns
-        expanded_query = query
-        
-        # Get inference rules
-        rules = self.rule_manager.get_all_rules()
-        
-        # Add inferred patterns based on rules
-        for rule in rules:
-            # Convert rule to SPARQL pattern
-            sparql_pattern = self._rule_to_sparql(rule)
-            if sparql_pattern:
-                # Add to query (basic implementation)
-                expanded_query += f"\n# Inference: {rule.name}\n{sparql_pattern}"
-        
-        return expanded_query
+        try:
+            if not self.enable_inference:
+                self.progress_tracker.stop_tracking(tracking_id, status="completed", message="Inference disabled, returning original query")
+                return query
+            
+            # Parse query to find patterns
+            self.progress_tracker.update_tracking(tracking_id, message="Parsing query patterns...")
+            expanded_query = query
+            
+            # Get inference rules
+            self.progress_tracker.update_tracking(tracking_id, message="Getting inference rules...")
+            rules = self.rule_manager.get_all_rules()
+            
+            # Add inferred patterns based on rules
+            self.progress_tracker.update_tracking(tracking_id, message=f"Converting {len(rules)} rules to SPARQL patterns...")
+            for rule in rules:
+                # Convert rule to SPARQL pattern
+                sparql_pattern = self._rule_to_sparql(rule)
+                if sparql_pattern:
+                    # Add to query (basic implementation)
+                    expanded_query += f"\n# Inference: {rule.name}\n{sparql_pattern}"
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Expanded query with {len(rules)} inference rules")
+            return expanded_query
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def _rule_to_sparql(self, rule: Rule) -> Optional[str]:
         """Convert rule to SPARQL pattern."""
@@ -159,29 +180,47 @@ class SPARQLReasoner:
         Returns:
             Results with inferences
         """
-        inferred_bindings = list(query_results.bindings)
-        
-        # Apply inference rules
-        if self.enable_inference:
-            rules = self.rule_manager.get_all_rules()
-            
-            for rule in rules:
-                # Check if rule can be applied to results
-                new_bindings = self._apply_rule_to_results(rule, query_results.bindings)
-                inferred_bindings.extend(new_bindings)
-        
-        # Remove duplicates
-        unique_bindings = self._deduplicate_bindings(inferred_bindings)
-        
-        return SPARQLQueryResult(
-            bindings=unique_bindings,
-            variables=query_results.variables,
-            metadata={
-                **query_results.metadata,
-                "original_count": len(query_results.bindings),
-                "inferred_count": len(unique_bindings) - len(query_results.bindings)
-            }
+        tracking_id = self.progress_tracker.start_tracking(
+            module="reasoning",
+            submodule="SPARQLReasoner",
+            message="Inferring additional results from query results"
         )
+        
+        try:
+            inferred_bindings = list(query_results.bindings)
+            
+            # Apply inference rules
+            if self.enable_inference:
+                self.progress_tracker.update_tracking(tracking_id, message="Applying inference rules...")
+                rules = self.rule_manager.get_all_rules()
+                
+                for rule in rules:
+                    # Check if rule can be applied to results
+                    new_bindings = self._apply_rule_to_results(rule, query_results.bindings)
+                    inferred_bindings.extend(new_bindings)
+            
+            # Remove duplicates
+            self.progress_tracker.update_tracking(tracking_id, message="Removing duplicate bindings...")
+            unique_bindings = self._deduplicate_bindings(inferred_bindings)
+            
+            inferred_count = len(unique_bindings) - len(query_results.bindings)
+            result = SPARQLQueryResult(
+                bindings=unique_bindings,
+                variables=query_results.variables,
+                metadata={
+                    **query_results.metadata,
+                    "original_count": len(query_results.bindings),
+                    "inferred_count": inferred_count
+                }
+            )
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Inferred {inferred_count} additional results")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def _apply_rule_to_results(
         self,
@@ -282,31 +321,50 @@ class SPARQLReasoner:
         Returns:
             Query results
         """
-        # Check cache
-        if query in self.query_cache:
-            self.logger.debug("Returning cached query result")
-            return self.query_cache[query]
+        tracking_id = self.progress_tracker.start_tracking(
+            module="reasoning",
+            submodule="SPARQLReasoner",
+            message="Executing SPARQL query with reasoning"
+        )
         
-        # Expand query
-        expanded_query = self.expand_query(query, **options)
-        
-        # Execute query (if triple store available)
-        if self.triple_store:
-            # This would call the triple store's query method
-            # For now, return empty result
-            result = SPARQLQueryResult(bindings=[], variables=[])
-        else:
-            # Mock result for testing
-            result = SPARQLQueryResult(bindings=[], variables=[])
-        
-        # Infer additional results
-        if self.enable_inference:
-            result = self.infer_results(result, **options)
-        
-        # Cache result
-        self.query_cache[query] = result
-        
-        return result
+        try:
+            # Check cache
+            self.progress_tracker.update_tracking(tracking_id, message="Checking query cache...")
+            if query in self.query_cache:
+                self.logger.debug("Returning cached query result")
+                self.progress_tracker.stop_tracking(tracking_id, status="completed", message="Returned cached query result")
+                return self.query_cache[query]
+            
+            # Expand query
+            self.progress_tracker.update_tracking(tracking_id, message="Expanding query with inference rules...")
+            expanded_query = self.expand_query(query, **options)
+            
+            # Execute query (if triple store available)
+            self.progress_tracker.update_tracking(tracking_id, message="Executing query...")
+            if self.triple_store:
+                # This would call the triple store's query method
+                # For now, return empty result
+                result = SPARQLQueryResult(bindings=[], variables=[])
+            else:
+                # Mock result for testing
+                result = SPARQLQueryResult(bindings=[], variables=[])
+            
+            # Infer additional results
+            if self.enable_inference:
+                self.progress_tracker.update_tracking(tracking_id, message="Inferring additional results...")
+                result = self.infer_results(result, **options)
+            
+            # Cache result
+            self.progress_tracker.update_tracking(tracking_id, message="Caching query result...")
+            self.query_cache[query] = result
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Query executed: {len(result.bindings)} results")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def clear_cache(self) -> None:
         """Clear query cache."""

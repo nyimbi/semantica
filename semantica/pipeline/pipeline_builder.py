@@ -36,6 +36,7 @@ from enum import Enum
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from .pipeline_validator import PipelineValidator
 
 
@@ -93,6 +94,9 @@ class PipelineBuilder:
         self.logger = get_logger("pipeline_builder")
         self.config = config or {}
         self.config.update(kwargs)
+        
+        # Initialize progress tracker
+        self.progress_tracker = get_progress_tracker()
         
         self.validator = PipelineValidator(**self.config)
         self.steps: List[PipelineStep] = []
@@ -179,25 +183,39 @@ class PipelineBuilder:
         Returns:
             Built pipeline
         """
-        # Validate pipeline structure
-        validation_result = self.validator.validate_pipeline(self)
-        if not validation_result.get("valid", False):
-            errors = validation_result.get("errors", [])
-            raise ValidationError(f"Pipeline validation failed: {errors}")
-        
-        pipeline = Pipeline(
-            name=name,
-            steps=list(self.steps),
-            config=self.pipeline_config,
-            metadata={
-                "step_count": len(self.steps),
-                "parallelism": self.pipeline_config.get("parallelism", 1)
-            }
+        tracking_id = self.progress_tracker.start_tracking(
+            module="pipeline",
+            submodule="PipelineBuilder",
+            message=f"Building pipeline: {name}"
         )
         
-        self.logger.info(f"Built pipeline: {name} with {len(self.steps)} steps")
-        
-        return pipeline
+        try:
+            # Validate pipeline structure
+            self.progress_tracker.update_tracking(tracking_id, message="Validating pipeline structure...")
+            validation_result = self.validator.validate_pipeline(self)
+            if not validation_result.get("valid", False):
+                errors = validation_result.get("errors", [])
+                raise ValidationError(f"Pipeline validation failed: {errors}")
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Creating pipeline object...")
+            pipeline = Pipeline(
+                name=name,
+                steps=list(self.steps),
+                config=self.pipeline_config,
+                metadata={
+                    "step_count": len(self.steps),
+                    "parallelism": self.pipeline_config.get("parallelism", 1)
+                }
+            )
+            
+            self.logger.info(f"Built pipeline: {name} with {len(self.steps)} steps")
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Built pipeline: {name} with {len(self.steps)} steps")
+            return pipeline
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def build_pipeline(
         self,
@@ -214,22 +232,39 @@ class PipelineBuilder:
         Returns:
             Built pipeline
         """
-        # Parse configuration
-        pipeline_name = pipeline_config.get("name", "default_pipeline")
-        steps_config = pipeline_config.get("steps", [])
+        tracking_id = self.progress_tracker.start_tracking(
+            module="pipeline",
+            submodule="PipelineBuilder",
+            message="Building pipeline from configuration"
+        )
         
-        # Add steps from configuration
-        for step_config in steps_config:
-            step_name = step_config.get("name")
-            step_type = step_config.get("type")
-            if step_name and step_type:
-                self.add_step(step_name, step_type, **step_config.get("config", {}))
-        
-        # Set parallelism if specified
-        if "parallelism" in pipeline_config:
-            self.set_parallelism(pipeline_config["parallelism"])
-        
-        return self.build(pipeline_name)
+        try:
+            # Parse configuration
+            self.progress_tracker.update_tracking(tracking_id, message="Parsing pipeline configuration...")
+            pipeline_name = pipeline_config.get("name", "default_pipeline")
+            steps_config = pipeline_config.get("steps", [])
+            
+            # Add steps from configuration
+            self.progress_tracker.update_tracking(tracking_id, message=f"Adding {len(steps_config)} steps from configuration...")
+            for step_config in steps_config:
+                step_name = step_config.get("name")
+                step_type = step_config.get("type")
+                if step_name and step_type:
+                    self.add_step(step_name, step_type, **step_config.get("config", {}))
+            
+            # Set parallelism if specified
+            if "parallelism" in pipeline_config:
+                self.progress_tracker.update_tracking(tracking_id, message="Setting parallelism...")
+                self.set_parallelism(pipeline_config["parallelism"])
+            
+            result = self.build(pipeline_name)
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Built pipeline from configuration: {pipeline_name}")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def register_step_handler(
         self,
@@ -287,7 +322,21 @@ class PipelineBuilder:
         Returns:
             Validation results
         """
-        return self.validator.validate_pipeline(self)
+        tracking_id = self.progress_tracker.start_tracking(
+            module="pipeline",
+            submodule="PipelineBuilder",
+            message="Validating pipeline"
+        )
+        
+        try:
+            result = self.validator.validate_pipeline(self)
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                               message=f"Validation complete: {'Valid' if result.get('valid', False) else 'Invalid'}")
+            return result
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
 
 
 class PipelineSerializer:
