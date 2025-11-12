@@ -38,6 +38,7 @@ import numpy as np
 
 from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 
 # Optional Qdrant import
 try:
@@ -250,6 +251,7 @@ class QdrantAdapter:
         """Initialize Qdrant adapter."""
         self.logger = get_logger("qdrant_adapter")
         self.config = config
+        self.progress_tracker = get_progress_tracker()
         self.url = url or config.get("url", "http://localhost:6333")
         self.api_key = api_key or config.get("api_key")
         
@@ -377,13 +379,24 @@ class QdrantAdapter:
         Returns:
             Insert response
         """
-        if self.collection is None:
-            raise ProcessingError("Collection not initialized. Call create_collection() or get_collection() first.")
-        
-        if not QDRANT_AVAILABLE:
-            raise ProcessingError("Qdrant not available")
+        tracking_id = self.progress_tracker.start_tracking(
+            module="vector_store",
+            submodule="QdrantAdapter",
+            message=f"Inserting {len(vectors)} vectors into Qdrant collection"
+        )
         
         try:
+            if self.collection is None:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed",
+                                                  message="Collection not initialized")
+                raise ProcessingError("Collection not initialized. Call create_collection() or get_collection() first.")
+            
+            if not QDRANT_AVAILABLE:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed",
+                                                  message="Qdrant not available")
+                raise ProcessingError("Qdrant not available")
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Preparing points...")
             points = []
             for i, (vector, point_id) in enumerate(zip(vectors, ids)):
                 if isinstance(vector, np.ndarray):
@@ -399,9 +412,15 @@ class QdrantAdapter:
                     )
                 )
             
-            return self.collection.upsert_points(points, **options)
+            self.progress_tracker.update_tracking(tracking_id, message="Upserting points to collection...")
+            result = self.collection.upsert_points(points, **options)
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Inserted {len(vectors)} vectors")
+            return result
         
         except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
             raise ProcessingError(f"Failed to insert vectors: {str(e)}")
     
     def search_vectors(
@@ -423,10 +442,27 @@ class QdrantAdapter:
         Returns:
             List of search results
         """
-        if self.search_engine is None:
-            raise ProcessingError("Collection not initialized. Call create_collection() or get_collection() first.")
+        tracking_id = self.progress_tracker.start_tracking(
+            module="vector_store",
+            submodule="QdrantAdapter",
+            message=f"Searching for {limit} similar vectors in Qdrant"
+        )
         
-        return self.search_engine.similarity_search(query_vector, limit, filter, **options)
+        try:
+            if self.search_engine is None:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed",
+                                                  message="Collection not initialized")
+                raise ProcessingError("Collection not initialized. Call create_collection() or get_collection() first.")
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Performing similarity search...")
+            results = self.search_engine.similarity_search(query_vector, limit, filter, **options)
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Found {len(results)} similar vectors")
+            return results
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def delete_vectors(
         self,

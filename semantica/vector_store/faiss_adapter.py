@@ -41,6 +41,7 @@ from pathlib import Path
 
 from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 
 # Optional FAISS import
 try:
@@ -225,6 +226,7 @@ class FAISSAdapter:
         """Initialize FAISS adapter."""
         self.logger = get_logger("faiss_adapter")
         self.config = config
+        self.progress_tracker = get_progress_tracker()
         self.dimension = dimension
         
         self.index: Optional[FAISSIndex] = None
@@ -279,29 +281,46 @@ class FAISSAdapter:
         Returns:
             List of vector IDs
         """
-        if self.index is None:
-            self.create_index(**options)
+        num_vectors = len(vectors) if isinstance(vectors, (list, np.ndarray)) else 1
+        tracking_id = self.progress_tracker.start_tracking(
+            module="vector_store",
+            submodule="FAISSAdapter",
+            message=f"Adding {num_vectors} vectors to FAISS index"
+        )
         
-        # Convert to numpy array
-        if isinstance(vectors, list):
-            vectors = np.array(vectors)
-        
-        vectors = vectors.astype(np.float32)
-        
-        # Generate IDs if not provided
-        if ids is None:
-            ids = [f"vec_{len(self.index.vector_ids) + i}" for i in range(len(vectors))]
-        
-        # Store metadata
-        if metadata:
-            for vec_id, meta in zip(ids, metadata):
-                self.index.metadata[vec_id] = meta
-        
-        # Add vectors to index
-        self.index.add_vectors(vectors, ids)
-        
-        self.logger.info(f"Added {len(vectors)} vectors to FAISS index")
-        return ids
+        try:
+            if self.index is None:
+                self.progress_tracker.update_tracking(tracking_id, message="Creating FAISS index...")
+                self.create_index(**options)
+            
+            # Convert to numpy array
+            self.progress_tracker.update_tracking(tracking_id, message="Preparing vectors...")
+            if isinstance(vectors, list):
+                vectors = np.array(vectors)
+            
+            vectors = vectors.astype(np.float32)
+            
+            # Generate IDs if not provided
+            if ids is None:
+                ids = [f"vec_{len(self.index.vector_ids) + i}" for i in range(len(vectors))]
+            
+            # Store metadata
+            if metadata:
+                self.progress_tracker.update_tracking(tracking_id, message="Storing metadata...")
+                for vec_id, meta in zip(ids, metadata):
+                    self.index.metadata[vec_id] = meta
+            
+            # Add vectors to index
+            self.progress_tracker.update_tracking(tracking_id, message="Adding vectors to index...")
+            self.index.add_vectors(vectors, ids)
+            
+            self.logger.info(f"Added {len(vectors)} vectors to FAISS index")
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Added {len(vectors)} vectors to FAISS index")
+            return ids
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def search_similar(
         self,
@@ -320,10 +339,27 @@ class FAISSAdapter:
         Returns:
             List of search results
         """
-        if self.search_engine is None:
-            raise ProcessingError("Index not initialized. Call create_index() first.")
+        tracking_id = self.progress_tracker.start_tracking(
+            module="vector_store",
+            submodule="FAISSAdapter",
+            message=f"Searching for {k} similar vectors"
+        )
         
-        return self.search_engine.search_similar(query_vector, k, **options)
+        try:
+            if self.search_engine is None:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed",
+                                                  message="Index not initialized")
+                raise ProcessingError("Index not initialized. Call create_index() first.")
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Performing similarity search...")
+            results = self.search_engine.search_similar(query_vector, k, **options)
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Found {len(results)} similar vectors")
+            return results
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def save_index(self, path: Union[str, Path], **options) -> bool:
         """

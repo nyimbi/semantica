@@ -40,6 +40,7 @@ import numpy as np
 
 from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 
 # Optional Milvus import
 try:
@@ -255,6 +256,7 @@ class MilvusAdapter:
         """Initialize Milvus adapter."""
         self.logger = get_logger("milvus_adapter")
         self.config = config
+        self.progress_tracker = get_progress_tracker()
         self.host = host or config.get("host", "localhost")
         self.port = port or config.get("port", 19530)
         self.user = user or config.get("user")
@@ -407,14 +409,25 @@ class MilvusAdapter:
         Returns:
             Insert result
         """
-        if self.collection is None:
-            raise ProcessingError("Collection not initialized. Call create_collection() or get_collection() first.")
-        
-        if not MILVUS_AVAILABLE:
-            raise ProcessingError("Milvus not available")
+        tracking_id = self.progress_tracker.start_tracking(
+            module="vector_store",
+            submodule="MilvusAdapter",
+            message=f"Inserting {len(vectors)} vectors into Milvus collection"
+        )
         
         try:
+            if self.collection is None:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed",
+                                                  message="Collection not initialized")
+                raise ProcessingError("Collection not initialized. Call create_collection() or get_collection() first.")
+            
+            if not MILVUS_AVAILABLE:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed",
+                                                  message="Milvus not available")
+                raise ProcessingError("Milvus not available")
+            
             # Convert vectors to list format
+            self.progress_tracker.update_tracking(tracking_id, message="Converting vectors to list format...")
             vector_data = []
             for vector in vectors:
                 if isinstance(vector, np.ndarray):
@@ -422,9 +435,15 @@ class MilvusAdapter:
                 vector_data.append(vector)
             
             data = [vector_data]
-            return self.collection.insert(data, **options)
+            self.progress_tracker.update_tracking(tracking_id, message="Inserting vectors into collection...")
+            result = self.collection.insert(data, **options)
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Inserted {len(vectors)} vectors")
+            return result
         
         except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
             raise ProcessingError(f"Failed to insert vectors: {str(e)}")
     
     def search_vectors(
@@ -448,16 +467,34 @@ class MilvusAdapter:
         Returns:
             List of search results
         """
-        if self.search_engine is None:
-            raise ProcessingError("Collection not initialized. Call create_collection() or get_collection() first.")
-        
-        # Load collection if not loaded
-        if not self.collection.collection.has_index():
-            self.collection.load()
-        
-        return self.search_engine.similarity_search(
-            query_vector, limit, metric_type, expr, **options
+        tracking_id = self.progress_tracker.start_tracking(
+            module="vector_store",
+            submodule="MilvusAdapter",
+            message=f"Searching for {limit} similar vectors in Milvus"
         )
+        
+        try:
+            if self.search_engine is None:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed",
+                                                  message="Collection not initialized")
+                raise ProcessingError("Collection not initialized. Call create_collection() or get_collection() first.")
+            
+            # Load collection if not loaded
+            if not self.collection.collection.has_index():
+                self.progress_tracker.update_tracking(tracking_id, message="Loading collection...")
+                self.collection.load()
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Performing similarity search...")
+            results = self.search_engine.similarity_search(
+                query_vector, limit, metric_type, expr, **options
+            )
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Found {len(results)} similar vectors")
+            return results
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def get_stats(self, collection_name: Optional[str] = None) -> Dict[str, Any]:
         """Get collection statistics."""

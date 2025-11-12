@@ -30,6 +30,7 @@ from typing import Any, Dict, List, Optional
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from ..semantic_extract.triple_extractor import Triple
 
 # Optional Jena imports
@@ -67,6 +68,7 @@ class JenaAdapter:
         """
         self.logger = get_logger("jena_adapter")
         self.config = config
+        self.progress_tracker = get_progress_tracker()
         
         self.endpoint = config.get("endpoint")
         self.dataset = config.get("dataset", "default")
@@ -127,11 +129,19 @@ class JenaAdapter:
         Returns:
             Operation status
         """
-        if not self.graph:
-            raise ProcessingError("Graph not initialized")
+        tracking_id = self.progress_tracker.start_tracking(
+            module="triple_store",
+            submodule="JenaAdapter",
+            message=f"Adding {len(triples)} triples to Jena model"
+        )
         
         try:
+            if not self.graph:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed", message="Graph not initialized")
+                raise ProcessingError("Graph not initialized")
+            
             added_count = 0
+            self.progress_tracker.update_tracking(tracking_id, message="Adding triples to graph...")
             for triple in triples:
                 try:
                     subject = URIRef(triple.subject)
@@ -143,6 +153,8 @@ class JenaAdapter:
                 except Exception as e:
                     self.logger.warning(f"Failed to add triple: {e}")
             
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Added {added_count}/{len(triples)} triples")
             return {
                 "success": True,
                 "added": added_count,
@@ -150,6 +162,7 @@ class JenaAdapter:
             }
         except Exception as e:
             self.logger.error(f"Failed to add triples: {e}")
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
             raise ProcessingError(f"Failed to add triples: {e}")
     
     def add_triple(self, triple: Triple, **options) -> Dict[str, Any]:

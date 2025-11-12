@@ -33,6 +33,7 @@ from urllib.parse import urljoin
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from ..semantic_extract.triple_extractor import Triple
 
 
@@ -62,6 +63,7 @@ class BlazegraphAdapter:
         """
         self.logger = get_logger("blazegraph_adapter")
         self.config = config
+        self.progress_tracker = get_progress_tracker()
         
         self.endpoint = endpoint.rstrip('/')
         self.namespace = config.get("namespace", "kb")
@@ -115,12 +117,20 @@ class BlazegraphAdapter:
         Returns:
             Query results
         """
-        if not self.connected:
-            raise ProcessingError("Not connected to Blazegraph")
-        
-        sparql_endpoint = self._get_sparql_endpoint()
+        tracking_id = self.progress_tracker.start_tracking(
+            module="triple_store",
+            submodule="BlazegraphAdapter",
+            message="Executing SPARQL query on Blazegraph"
+        )
         
         try:
+            if not self.connected:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed", message="Not connected to Blazegraph")
+                raise ProcessingError("Not connected to Blazegraph")
+            
+            sparql_endpoint = self._get_sparql_endpoint()
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Sending query to Blazegraph endpoint...")
             response = requests.post(
                 sparql_endpoint,
                 data={"query": query},
@@ -132,9 +142,10 @@ class BlazegraphAdapter:
             response.raise_for_status()
             
             # Parse JSON response
+            self.progress_tracker.update_tracking(tracking_id, message="Parsing query results...")
             result_data = response.json()
             
-            return {
+            result = {
                 "success": True,
                 "bindings": result_data.get("results", {}).get("bindings", []),
                 "variables": result_data.get("head", {}).get("vars", []),
@@ -143,8 +154,13 @@ class BlazegraphAdapter:
                     "endpoint": sparql_endpoint
                 }
             }
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Query executed: {len(result['bindings'])} results")
+            return result
         except Exception as e:
             self.logger.error(f"SPARQL query failed: {e}")
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
             raise ProcessingError(f"SPARQL query failed: {e}")
     
     def bulk_load(

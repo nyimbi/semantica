@@ -41,6 +41,7 @@ from plotly.subplots import make_subplots
 
 from ..utils.logging import get_logger
 from ..utils.exceptions import ProcessingError
+from ..utils.progress_tracker import get_progress_tracker
 from .utils.color_schemes import ColorPalette, ColorScheme
 from .utils.export_formats import export_plotly_figure
 
@@ -60,6 +61,7 @@ class AnalyticsVisualizer:
         """Initialize analytics visualizer."""
         self.logger = get_logger("analytics_visualizer")
         self.config = config
+        self.progress_tracker = get_progress_tracker()
         color_scheme_name = config.get("color_scheme", "default")
         try:
             self.color_scheme = ColorScheme[color_scheme_name.upper()]
@@ -89,44 +91,60 @@ class AnalyticsVisualizer:
         Returns:
             Visualization figure or None
         """
-        self.logger.info(f"Visualizing {centrality_type} centrality rankings")
-        
-        # Get rankings
-        rankings = centrality.get("rankings", [])
-        if not rankings:
-            # Try to get from centrality scores
-            centrality_scores = centrality.get("centrality", {})
-            rankings = [{"node": node, "score": score} for node, score in centrality_scores.items()]
-            rankings.sort(key=lambda x: x["score"], reverse=True)
-        
-        # Get top N
-        top_rankings = rankings[:top_n]
-        
-        nodes = [r["node"] for r in top_rankings]
-        scores = [r["score"] for r in top_rankings]
-        
-        fig = go.Figure(data=[go.Bar(
-            x=nodes,
-            y=scores,
-            marker_color='lightblue',
-            text=[f"{s:.3f}" for s in scores],
-            textposition='auto'
-        )])
-        
-        fig.update_layout(
-            title=f"Top {top_n} Nodes by {centrality_type.capitalize()} Centrality",
-            xaxis_title="Node",
-            yaxis_title="Centrality Score",
-            xaxis={'tickangle': -45},
-            width=1000,
-            height=600
+        tracking_id = self.progress_tracker.start_tracking(
+            module="visualization",
+            submodule="AnalyticsVisualizer",
+            message=f"Visualizing {centrality_type} centrality rankings"
         )
         
-        if output == "interactive":
-            return fig
-        elif file_path:
-            export_plotly_figure(fig, file_path, format=output if output != "interactive" else "html")
-            return None
+        try:
+            self.logger.info(f"Visualizing {centrality_type} centrality rankings")
+            
+            # Get rankings
+            self.progress_tracker.update_tracking(tracking_id, message="Processing centrality data...")
+            rankings = centrality.get("rankings", [])
+            if not rankings:
+                # Try to get from centrality scores
+                centrality_scores = centrality.get("centrality", {})
+                rankings = [{"node": node, "score": score} for node, score in centrality_scores.items()]
+                rankings.sort(key=lambda x: x["score"], reverse=True)
+            
+            # Get top N
+            top_rankings = rankings[:top_n]
+            
+            nodes = [r["node"] for r in top_rankings]
+            scores = [r["score"] for r in top_rankings]
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Generating visualization...")
+            fig = go.Figure(data=[go.Bar(
+                x=nodes,
+                y=scores,
+                marker_color='lightblue',
+                text=[f"{s:.3f}" for s in scores],
+                textposition='auto'
+            )])
+            
+            fig.update_layout(
+                title=f"Top {top_n} Nodes by {centrality_type.capitalize()} Centrality",
+                xaxis_title="Node",
+                yaxis_title="Centrality Score",
+                xaxis={'tickangle': -45},
+                width=1000,
+                height=600
+            )
+            
+            if output == "interactive":
+                self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                                  message=f"Centrality rankings visualization generated: top {top_n} nodes")
+                return fig
+            elif file_path:
+                export_plotly_figure(fig, file_path, format=output if output != "interactive" else "html")
+                self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                                  message=f"Centrality rankings saved to {file_path}")
+                return None
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def visualize_community_structure(
         self,

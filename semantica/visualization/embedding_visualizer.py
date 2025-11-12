@@ -49,6 +49,7 @@ except ImportError:
 
 from ..utils.logging import get_logger
 from ..utils.exceptions import ProcessingError
+from ..utils.progress_tracker import get_progress_tracker
 from .utils.color_schemes import ColorPalette, ColorScheme
 from .utils.export_formats import export_plotly_figure, export_matplotlib_figure
 
@@ -75,6 +76,7 @@ class EmbeddingVisualizer:
         """
         self.logger = get_logger("embedding_visualizer")
         self.config = config
+        self.progress_tracker = get_progress_tracker()
         
         color_scheme_name = config.get("color_scheme", "default")
         try:
@@ -109,15 +111,32 @@ class EmbeddingVisualizer:
         Returns:
             Visualization figure or None
         """
-        self.logger.info(f"Visualizing 2D projection using {method}")
+        tracking_id = self.progress_tracker.start_tracking(
+            module="visualization",
+            submodule="EmbeddingVisualizer",
+            message=f"Visualizing 2D projection using {method}"
+        )
         
-        if embeddings.shape[1] <= 2:
-            # Already 2D or less, use directly
-            projected = embeddings[:, :2]
-        else:
-            projected = self._reduce_dimensions(embeddings, method=method, n_components=2, **options)
-        
-        return self._visualize_2d_plotly(projected, labels, output, file_path, **options)
+        try:
+            self.logger.info(f"Visualizing 2D projection using {method}")
+            
+            if embeddings.shape[1] <= 2:
+                # Already 2D or less, use directly
+                self.progress_tracker.update_tracking(tracking_id, message="Using embeddings directly (already 2D)...")
+                projected = embeddings[:, :2]
+            else:
+                self.progress_tracker.update_tracking(tracking_id, message=f"Reducing dimensions using {method}...")
+                projected = self._reduce_dimensions(embeddings, method=method, n_components=2, **options)
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Generating visualization...")
+            result = self._visualize_2d_plotly(projected, labels, output, file_path, **options)
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"2D projection visualization generated: {len(projected)} points")
+            return result
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def visualize_3d_projection(
         self,
@@ -142,14 +161,31 @@ class EmbeddingVisualizer:
         Returns:
             Visualization figure or None
         """
-        self.logger.info(f"Visualizing 3D projection using {method}")
+        tracking_id = self.progress_tracker.start_tracking(
+            module="visualization",
+            submodule="EmbeddingVisualizer",
+            message=f"Visualizing 3D projection using {method}"
+        )
         
-        if embeddings.shape[1] <= 3:
-            projected = embeddings[:, :3]
-        else:
-            projected = self._reduce_dimensions(embeddings, method=method, n_components=3, **options)
-        
-        return self._visualize_3d_plotly(projected, labels, output, file_path, **options)
+        try:
+            self.logger.info(f"Visualizing 3D projection using {method}")
+            
+            if embeddings.shape[1] <= 3:
+                self.progress_tracker.update_tracking(tracking_id, message="Using embeddings directly (already 3D)...")
+                projected = embeddings[:, :3]
+            else:
+                self.progress_tracker.update_tracking(tracking_id, message=f"Reducing dimensions using {method}...")
+                projected = self._reduce_dimensions(embeddings, method=method, n_components=3, **options)
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Generating visualization...")
+            result = self._visualize_3d_plotly(projected, labels, output, file_path, **options)
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"3D projection visualization generated: {len(projected)} points")
+            return result
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def visualize_similarity_heatmap(
         self,
@@ -172,44 +208,60 @@ class EmbeddingVisualizer:
         Returns:
             Visualization figure or None
         """
-        self.logger.info("Visualizing similarity heatmap")
-        
-        # Calculate cosine similarity
-        # Normalize embeddings
-        norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
-        norms[norms == 0] = 1  # Avoid division by zero
-        normalized = embeddings / norms
-        
-        # Calculate similarity matrix
-        similarity_matrix = np.dot(normalized, normalized.T)
-        
-        fig = go.Figure(data=go.Heatmap(
-            z=similarity_matrix,
-            colorscale='Viridis',
-            text=similarity_matrix,
-            texttemplate='%{text:.2f}',
-            textfont={"size": 8}
-        ))
-        
-        if labels:
-            fig.update_layout(
-                xaxis=dict(tickmode='array', tickvals=list(range(len(labels))), ticktext=labels),
-                yaxis=dict(tickmode='array', tickvals=list(range(len(labels))), ticktext=labels)
-            )
-        
-        fig.update_layout(
-            title="Embedding Similarity Heatmap",
-            xaxis_title="Embedding Index",
-            yaxis_title="Embedding Index",
-            width=800,
-            height=800
+        tracking_id = self.progress_tracker.start_tracking(
+            module="visualization",
+            submodule="EmbeddingVisualizer",
+            message="Visualizing similarity heatmap"
         )
         
-        if output == "interactive":
-            return fig
-        elif file_path:
-            export_plotly_figure(fig, file_path, format=output if output != "interactive" else "html")
-            return None
+        try:
+            self.logger.info("Visualizing similarity heatmap")
+            
+            # Calculate cosine similarity
+            self.progress_tracker.update_tracking(tracking_id, message="Calculating similarity matrix...")
+            # Normalize embeddings
+            norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
+            norms[norms == 0] = 1  # Avoid division by zero
+            normalized = embeddings / norms
+            
+            # Calculate similarity matrix
+            similarity_matrix = np.dot(normalized, normalized.T)
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Generating heatmap visualization...")
+            fig = go.Figure(data=go.Heatmap(
+                z=similarity_matrix,
+                colorscale='Viridis',
+                text=similarity_matrix,
+                texttemplate='%{text:.2f}',
+                textfont={"size": 8}
+            ))
+            
+            if labels:
+                fig.update_layout(
+                    xaxis=dict(tickmode='array', tickvals=list(range(len(labels))), ticktext=labels),
+                    yaxis=dict(tickmode='array', tickvals=list(range(len(labels))), ticktext=labels)
+                )
+            
+            fig.update_layout(
+                title="Embedding Similarity Heatmap",
+                xaxis_title="Embedding Index",
+                yaxis_title="Embedding Index",
+                width=800,
+                height=800
+            )
+            
+            if output == "interactive":
+                self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                                  message=f"Similarity heatmap generated: {len(embeddings)}x{len(embeddings)} matrix")
+                return fig
+            elif file_path:
+                export_plotly_figure(fig, file_path, format=output if output != "interactive" else "html")
+                self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                                  message=f"Similarity heatmap saved to {file_path}")
+                return None
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def visualize_clustering(
         self,
@@ -234,45 +286,62 @@ class EmbeddingVisualizer:
         Returns:
             Visualization figure or None
         """
-        self.logger.info("Visualizing embedding clusters")
-        
-        # Project to 2D
-        if embeddings.shape[1] <= 2:
-            projected = embeddings[:, :2]
-        else:
-            projected = self._reduce_dimensions(embeddings, method=method, n_components=2, **options)
-        
-        num_clusters = len(set(cluster_labels))
-        cluster_colors = ColorPalette.get_community_colors(num_clusters, self.color_scheme)
-        
-        colors = [cluster_colors[label % num_clusters] for label in cluster_labels]
-        
-        fig = go.Figure(data=go.Scatter(
-            x=projected[:, 0],
-            y=projected[:, 1],
-            mode='markers',
-            marker=dict(
-                size=self.point_size,
-                color=colors,
-                line=dict(width=1, color='black')
-            ),
-            text=[f"Cluster {label}" for label in cluster_labels],
-            hovertemplate='%{text}<extra></extra>'
-        ))
-        
-        fig.update_layout(
-            title="Embedding Clusters",
-            xaxis_title="Dimension 1",
-            yaxis_title="Dimension 2",
-            width=800,
-            height=600
+        tracking_id = self.progress_tracker.start_tracking(
+            module="visualization",
+            submodule="EmbeddingVisualizer",
+            message="Visualizing embedding clusters"
         )
         
-        if output == "interactive":
-            return fig
-        elif file_path:
-            export_plotly_figure(fig, file_path, format=output if output != "interactive" else "html")
-            return None
+        try:
+            self.logger.info("Visualizing embedding clusters")
+            
+            # Project to 2D
+            if embeddings.shape[1] <= 2:
+                self.progress_tracker.update_tracking(tracking_id, message="Using embeddings directly (already 2D)...")
+                projected = embeddings[:, :2]
+            else:
+                self.progress_tracker.update_tracking(tracking_id, message=f"Reducing dimensions using {method}...")
+                projected = self._reduce_dimensions(embeddings, method=method, n_components=2, **options)
+            
+            num_clusters = len(set(cluster_labels))
+            cluster_colors = ColorPalette.get_community_colors(num_clusters, self.color_scheme)
+            
+            colors = [cluster_colors[label % num_clusters] for label in cluster_labels]
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Generating visualization...")
+            fig = go.Figure(data=go.Scatter(
+                x=projected[:, 0],
+                y=projected[:, 1],
+                mode='markers',
+                marker=dict(
+                    size=self.point_size,
+                    color=colors,
+                    line=dict(width=1, color='black')
+                ),
+                text=[f"Cluster {label}" for label in cluster_labels],
+                hovertemplate='%{text}<extra></extra>'
+            ))
+            
+            fig.update_layout(
+                title="Embedding Clusters",
+                xaxis_title="Dimension 1",
+                yaxis_title="Dimension 2",
+                width=800,
+                height=600
+            )
+            
+            if output == "interactive":
+                self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                                  message=f"Clustering visualization generated: {num_clusters} clusters, {len(embeddings)} points")
+                return fig
+            elif file_path:
+                export_plotly_figure(fig, file_path, format=output if output != "interactive" else "html")
+                self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                                  message=f"Clustering visualization saved to {file_path}")
+                return None
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def visualize_multimodal_comparison(
         self,
@@ -299,70 +368,90 @@ class EmbeddingVisualizer:
         Returns:
             Visualization figure or None
         """
-        self.logger.info("Visualizing multi-modal embedding comparison")
-        
-        # Collect embeddings and labels
-        all_embeddings = []
-        all_labels = []
-        all_types = []
-        
-        if text_embeddings is not None:
-            all_embeddings.append(text_embeddings)
-            all_labels.extend([f"Text {i}" for i in range(len(text_embeddings))])
-            all_types.extend(["text"] * len(text_embeddings))
-        
-        if image_embeddings is not None:
-            all_embeddings.append(image_embeddings)
-            all_labels.extend([f"Image {i}" for i in range(len(image_embeddings))])
-            all_types.extend(["image"] * len(image_embeddings))
-        
-        if audio_embeddings is not None:
-            all_embeddings.append(audio_embeddings)
-            all_labels.extend([f"Audio {i}" for i in range(len(audio_embeddings))])
-            all_types.extend(["audio"] * len(audio_embeddings))
-        
-        if not all_embeddings:
-            raise ProcessingError("No embeddings provided")
-        
-        # Concatenate embeddings
-        combined_embeddings = np.vstack(all_embeddings)
-        
-        # Project to 2D
-        if combined_embeddings.shape[1] <= 2:
-            projected = combined_embeddings[:, :2]
-        else:
-            projected = self._reduce_dimensions(combined_embeddings, method=method, n_components=2, **options)
-        
-        # Color by type
-        type_colors = {"text": "#1f77b4", "image": "#ff7f0e", "audio": "#2ca02c"}
-        colors = [type_colors.get(t, "#888") for t in all_types]
-        
-        fig = go.Figure(data=go.Scatter(
-            x=projected[:, 0],
-            y=projected[:, 1],
-            mode='markers',
-            marker=dict(
-                size=self.point_size,
-                color=colors,
-                line=dict(width=1, color='black')
-            ),
-            text=all_labels,
-            hovertemplate='%{text}<extra></extra>'
-        ))
-        
-        fig.update_layout(
-            title="Multi-Modal Embedding Comparison",
-            xaxis_title="Dimension 1",
-            yaxis_title="Dimension 2",
-            width=800,
-            height=600
+        tracking_id = self.progress_tracker.start_tracking(
+            module="visualization",
+            submodule="EmbeddingVisualizer",
+            message="Visualizing multi-modal embedding comparison"
         )
         
-        if output == "interactive":
-            return fig
-        elif file_path:
-            export_plotly_figure(fig, file_path, format=output if output != "interactive" else "html")
-            return None
+        try:
+            self.logger.info("Visualizing multi-modal embedding comparison")
+            
+            # Collect embeddings and labels
+            self.progress_tracker.update_tracking(tracking_id, message="Collecting embeddings...")
+            all_embeddings = []
+            all_labels = []
+            all_types = []
+            
+            if text_embeddings is not None:
+                all_embeddings.append(text_embeddings)
+                all_labels.extend([f"Text {i}" for i in range(len(text_embeddings))])
+                all_types.extend(["text"] * len(text_embeddings))
+            
+            if image_embeddings is not None:
+                all_embeddings.append(image_embeddings)
+                all_labels.extend([f"Image {i}" for i in range(len(image_embeddings))])
+                all_types.extend(["image"] * len(image_embeddings))
+            
+            if audio_embeddings is not None:
+                all_embeddings.append(audio_embeddings)
+                all_labels.extend([f"Audio {i}" for i in range(len(audio_embeddings))])
+                all_types.extend(["audio"] * len(audio_embeddings))
+            
+            if not all_embeddings:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed",
+                                                  message="No embeddings provided")
+                raise ProcessingError("No embeddings provided")
+            
+            # Concatenate embeddings
+            combined_embeddings = np.vstack(all_embeddings)
+            
+            # Project to 2D
+            if combined_embeddings.shape[1] <= 2:
+                self.progress_tracker.update_tracking(tracking_id, message="Using embeddings directly (already 2D)...")
+                projected = combined_embeddings[:, :2]
+            else:
+                self.progress_tracker.update_tracking(tracking_id, message=f"Reducing dimensions using {method}...")
+                projected = self._reduce_dimensions(combined_embeddings, method=method, n_components=2, **options)
+            
+            # Color by type
+            type_colors = {"text": "#1f77b4", "image": "#ff7f0e", "audio": "#2ca02c"}
+            colors = [type_colors.get(t, "#888") for t in all_types]
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Generating visualization...")
+            fig = go.Figure(data=go.Scatter(
+                x=projected[:, 0],
+                y=projected[:, 1],
+                mode='markers',
+                marker=dict(
+                    size=self.point_size,
+                    color=colors,
+                    line=dict(width=1, color='black')
+                ),
+                text=all_labels,
+                hovertemplate='%{text}<extra></extra>'
+            ))
+            
+            fig.update_layout(
+                title="Multi-Modal Embedding Comparison",
+                xaxis_title="Dimension 1",
+                yaxis_title="Dimension 2",
+                width=800,
+                height=600
+            )
+            
+            if output == "interactive":
+                self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                                  message=f"Multi-modal comparison generated: {len(combined_embeddings)} embeddings")
+                return fig
+            elif file_path:
+                export_plotly_figure(fig, file_path, format=output if output != "interactive" else "html")
+                self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                                  message=f"Multi-modal comparison saved to {file_path}")
+                return None
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def visualize_quality_metrics(
         self,
@@ -383,43 +472,59 @@ class EmbeddingVisualizer:
         Returns:
             Visualization figure or None
         """
-        self.logger.info("Visualizing embedding quality metrics")
-        
-        # Calculate norms
-        norms = np.linalg.norm(embeddings, axis=1)
-        
-        fig = make_subplots(
-            rows=1, cols=2,
-            subplot_titles=("Embedding Norm Distribution", "Norm Statistics"),
-            specs=[[{"type": "histogram"}, {"type": "bar"}]]
+        tracking_id = self.progress_tracker.start_tracking(
+            module="visualization",
+            submodule="EmbeddingVisualizer",
+            message="Visualizing embedding quality metrics"
         )
         
-        # Norm distribution
-        fig.add_trace(
-            go.Histogram(x=norms, nbinsx=30, name="Norm Distribution"),
-            row=1, col=1
-        )
-        
-        # Statistics
-        stats = {
-            "Mean": np.mean(norms),
-            "Std": np.std(norms),
-            "Min": np.min(norms),
-            "Max": np.max(norms)
-        }
-        
-        fig.add_trace(
-            go.Bar(x=list(stats.keys()), y=list(stats.values()), name="Statistics"),
-            row=1, col=2
-        )
-        
-        fig.update_layout(title="Embedding Quality Metrics")
-        
-        if output == "interactive":
-            return fig
-        elif file_path:
-            export_plotly_figure(fig, file_path, format=output if output != "interactive" else "html")
-            return None
+        try:
+            self.logger.info("Visualizing embedding quality metrics")
+            
+            # Calculate norms
+            self.progress_tracker.update_tracking(tracking_id, message="Calculating embedding norms...")
+            norms = np.linalg.norm(embeddings, axis=1)
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Generating visualization...")
+            fig = make_subplots(
+                rows=1, cols=2,
+                subplot_titles=("Embedding Norm Distribution", "Norm Statistics"),
+                specs=[[{"type": "histogram"}, {"type": "bar"}]]
+            )
+            
+            # Norm distribution
+            fig.add_trace(
+                go.Histogram(x=norms, nbinsx=30, name="Norm Distribution"),
+                row=1, col=1
+            )
+            
+            # Statistics
+            stats = {
+                "Mean": np.mean(norms),
+                "Std": np.std(norms),
+                "Min": np.min(norms),
+                "Max": np.max(norms)
+            }
+            
+            fig.add_trace(
+                go.Bar(x=list(stats.keys()), y=list(stats.values()), name="Statistics"),
+                row=1, col=2
+            )
+            
+            fig.update_layout(title="Embedding Quality Metrics")
+            
+            if output == "interactive":
+                self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                                  message=f"Quality metrics visualization generated: {len(embeddings)} embeddings")
+                return fig
+            elif file_path:
+                export_plotly_figure(fig, file_path, format=output if output != "interactive" else "html")
+                self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                                  message=f"Quality metrics saved to {file_path}")
+                return None
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def _reduce_dimensions(
         self,

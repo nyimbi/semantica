@@ -35,6 +35,7 @@ import time
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from ..semantic_extract.triple_extractor import Triple
 
 
@@ -78,6 +79,7 @@ class BulkLoader:
         self.logger = get_logger("bulk_loader")
         self.config = config or {}
         self.config.update(kwargs)
+        self.progress_tracker = get_progress_tracker()
         
         self.batch_size = self.config.get("batch_size", 1000)
         self.max_retries = self.config.get("max_retries", 3)
@@ -103,102 +105,117 @@ class BulkLoader:
         Returns:
             Load progress information
         """
-        start_time = time.time()
-        batch_size = options.get("batch_size", self.batch_size)
-        stop_on_error = options.get("stop_on_error", False)
-        progress_callback = options.get("progress_callback")
+        tracking_id = self.progress_tracker.start_tracking(
+            module="triple_store",
+            submodule="BulkLoader",
+            message=f"Loading {len(triples)} triples in bulk"
+        )
         
-        total_triples = len(triples)
-        total_batches = (total_triples + batch_size - 1) // batch_size
-        
-        loaded_count = 0
-        failed_count = 0
-        
-        self.logger.info(f"Starting bulk load: {total_triples} triples in {total_batches} batches")
-        
-        # Process in batches
-        for batch_num in range(total_batches):
-            batch_start = batch_num * batch_size
-            batch_end = min(batch_start + batch_size, total_triples)
-            batch = triples[batch_start:batch_end]
+        try:
+            start_time = time.time()
+            batch_size = options.get("batch_size", self.batch_size)
+            stop_on_error = options.get("stop_on_error", False)
+            progress_callback = options.get("progress_callback")
             
-            # Load batch with retries
-            batch_loaded = 0
-            for attempt in range(self.max_retries):
-                try:
-                    if hasattr(store_adapter, "bulk_load"):
-                        result = store_adapter.bulk_load(batch, **options)
-                    elif hasattr(store_adapter, "add_triples"):
-                        result = store_adapter.add_triples(batch, **options)
-                    else:
-                        raise ProcessingError("Store adapter does not support bulk loading")
-                    
-                    batch_loaded = len(batch)
-                    loaded_count += batch_loaded
-                    break
-                    
-                except Exception as e:
-                    if attempt < self.max_retries - 1:
-                        self.logger.warning(f"Batch {batch_num} failed, retrying: {e}")
-                        time.sleep(self.retry_delay * (attempt + 1))
-                    else:
-                        self.logger.error(f"Batch {batch_num} failed after {self.max_retries} attempts: {e}")
-                        failed_count += len(batch)
+            total_triples = len(triples)
+            total_batches = (total_triples + batch_size - 1) // batch_size
+            
+            loaded_count = 0
+            failed_count = 0
+            
+            self.logger.info(f"Starting bulk load: {total_triples} triples in {total_batches} batches")
+            
+            # Process in batches
+            for batch_num in range(total_batches):
+                self.progress_tracker.update_tracking(tracking_id, message=f"Processing batch {batch_num + 1}/{total_batches}...")
+                batch_start = batch_num * batch_size
+                batch_end = min(batch_start + batch_size, total_triples)
+                batch = triples[batch_start:batch_end]
+                
+                # Load batch with retries
+                batch_loaded = 0
+                for attempt in range(self.max_retries):
+                    try:
+                        if hasattr(store_adapter, "bulk_load"):
+                            result = store_adapter.bulk_load(batch, **options)
+                        elif hasattr(store_adapter, "add_triples"):
+                            result = store_adapter.add_triples(batch, **options)
+                        else:
+                            raise ProcessingError("Store adapter does not support bulk loading")
                         
-                        if stop_on_error:
-                            raise ProcessingError(f"Bulk load stopped due to error: {e}")
+                        batch_loaded = len(batch)
+                        loaded_count += batch_loaded
+                        break
+                        
+                    except Exception as e:
+                        if attempt < self.max_retries - 1:
+                            self.logger.warning(f"Batch {batch_num} failed, retrying: {e}")
+                            time.sleep(self.retry_delay * (attempt + 1))
+                        else:
+                            self.logger.error(f"Batch {batch_num} failed after {self.max_retries} attempts: {e}")
+                            failed_count += len(batch)
+                            
+                            if stop_on_error:
+                                self.progress_tracker.stop_tracking(tracking_id, status="failed", message=f"Bulk load stopped due to error: {e}")
+                                raise ProcessingError(f"Bulk load stopped due to error: {e}")
+                
+                # Update progress
+                elapsed = time.time() - start_time
+                progress = (loaded_count / total_triples * 100) if total_triples > 0 else 0.0
+                estimated_remaining = None
+                if loaded_count > 0:
+                    estimated_remaining = (elapsed / loaded_count) * (total_triples - loaded_count)
+                
+                progress_info = LoadProgress(
+                    total_triples=total_triples,
+                    loaded_triples=loaded_count,
+                    failed_triples=failed_count,
+                    current_batch=batch_num + 1,
+                    total_batches=total_batches,
+                    progress_percentage=progress,
+                    elapsed_time=elapsed,
+                    estimated_remaining=estimated_remaining,
+                    metadata={
+                        "batch_size": batch_size,
+                        "store_type": store_adapter.__class__.__name__
+                    }
+                )
+                
+                # Call progress callback if provided
+                if progress_callback:
+                    progress_callback(progress_info)
+                
+                self.logger.debug(f"Progress: {progress:.1f}% ({loaded_count}/{total_triples} triples)")
             
-            # Update progress
             elapsed = time.time() - start_time
-            progress = (loaded_count / total_triples * 100) if total_triples > 0 else 0.0
-            estimated_remaining = None
-            if loaded_count > 0:
-                estimated_remaining = (elapsed / loaded_count) * (total_triples - loaded_count)
             
-            progress_info = LoadProgress(
+            final_progress = LoadProgress(
                 total_triples=total_triples,
                 loaded_triples=loaded_count,
                 failed_triples=failed_count,
-                current_batch=batch_num + 1,
+                current_batch=total_batches,
                 total_batches=total_batches,
-                progress_percentage=progress,
+                progress_percentage=100.0,
                 elapsed_time=elapsed,
-                estimated_remaining=estimated_remaining,
+                estimated_remaining=0.0,
                 metadata={
-                    "batch_size": batch_size,
-                    "store_type": store_adapter.__class__.__name__
+                    "success": failed_count == 0,
+                    "throughput": loaded_count / elapsed if elapsed > 0 else 0.0
                 }
             )
             
-            # Call progress callback if provided
-            if progress_callback:
-                progress_callback(progress_info)
+            self.logger.info(
+                f"Bulk load completed: {loaded_count}/{total_triples} triples loaded "
+                f"in {elapsed:.2f}s ({loaded_count / elapsed:.0f} triples/sec)"
+            )
             
-            self.logger.debug(f"Progress: {progress:.1f}% ({loaded_count}/{total_triples} triples)")
-        
-        elapsed = time.time() - start_time
-        
-        final_progress = LoadProgress(
-            total_triples=total_triples,
-            loaded_triples=loaded_count,
-            failed_triples=failed_count,
-            current_batch=total_batches,
-            total_batches=total_batches,
-            progress_percentage=100.0,
-            elapsed_time=elapsed,
-            estimated_remaining=0.0,
-            metadata={
-                "success": failed_count == 0,
-                "throughput": loaded_count / elapsed if elapsed > 0 else 0.0
-            }
-        )
-        
-        self.logger.info(
-            f"Bulk load completed: {loaded_count}/{total_triples} triples loaded "
-            f"in {elapsed:.2f}s ({loaded_count / elapsed:.0f} triples/sec)"
-        )
-        
-        return final_progress
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Bulk load completed: {loaded_count}/{total_triples} triples loaded")
+            return final_progress
+            
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def load_from_file(
         self,

@@ -37,6 +37,7 @@ import time
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 
 
 @dataclass
@@ -84,6 +85,7 @@ class QueryEngine:
         self.logger = get_logger("query_engine")
         self.config = config or {}
         self.config.update(kwargs)
+        self.progress_tracker = get_progress_tracker()
         
         self.enable_caching = self.config.get("enable_caching", True)
         self.enable_optimization = self.config.get("enable_optimization", True)
@@ -109,29 +111,41 @@ class QueryEngine:
         Returns:
             Query result
         """
-        start_time = time.time()
+        tracking_id = self.progress_tracker.start_tracking(
+            module="triple_store",
+            submodule="QueryEngine",
+            message="Executing SPARQL query"
+        )
         
-        # Validate query
-        if not self._validate_query(query):
-            raise ValidationError("Invalid SPARQL query")
-        
-        # Check cache
-        if self.enable_caching:
-            cache_key = self._get_cache_key(query)
-            if cache_key in self.query_cache:
-                self.logger.debug("Returning cached query result")
-                cached_result = self.query_cache[cache_key]
-                cached_result.metadata["cached"] = True
-                return cached_result
-        
-        # Optimize query
-        if self.enable_optimization:
-            optimized_query = self.optimize_query(query, **options)
-        else:
-            optimized_query = query
-        
-        # Execute query
         try:
+            start_time = time.time()
+            
+            # Validate query
+            self.progress_tracker.update_tracking(tracking_id, message="Validating query...")
+            if not self._validate_query(query):
+                self.progress_tracker.stop_tracking(tracking_id, status="failed", message="Invalid SPARQL query")
+                raise ValidationError("Invalid SPARQL query")
+            
+            # Check cache
+            if self.enable_caching:
+                self.progress_tracker.update_tracking(tracking_id, message="Checking cache...")
+                cache_key = self._get_cache_key(query)
+                if cache_key in self.query_cache:
+                    self.logger.debug("Returning cached query result")
+                    cached_result = self.query_cache[cache_key]
+                    cached_result.metadata["cached"] = True
+                    self.progress_tracker.stop_tracking(tracking_id, status="completed", message="Returned cached result")
+                    return cached_result
+            
+            # Optimize query
+            if self.enable_optimization:
+                self.progress_tracker.update_tracking(tracking_id, message="Optimizing query...")
+                optimized_query = self.optimize_query(query, **options)
+            else:
+                optimized_query = query
+            
+            # Execute query
+            self.progress_tracker.update_tracking(tracking_id, message="Executing query on store...")
             if hasattr(store_adapter, "execute_sparql"):
                 result_data = store_adapter.execute_sparql(optimized_query, **options)
             else:
@@ -152,6 +166,7 @@ class QueryEngine:
             
             # Cache result
             if self.enable_caching:
+                self.progress_tracker.update_tracking(tracking_id, message="Caching result...")
                 self._cache_result(query, result)
             
             # Record history
@@ -162,11 +177,14 @@ class QueryEngine:
                 "timestamp": datetime.now().isoformat()
             })
             
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Query executed: {len(result.bindings)} results in {execution_time:.2f}s")
             return result
             
         except Exception as e:
-            execution_time = time.time() - start_time
+            execution_time = time.time() - start_time if 'start_time' in locals() else 0.0
             self.logger.error(f"Query execution failed: {e}")
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
             raise ProcessingError(f"Query execution failed: {e}")
     
     def optimize_query(

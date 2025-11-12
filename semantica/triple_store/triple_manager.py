@@ -34,6 +34,7 @@ from dataclasses import dataclass, field
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from ..semantic_extract.triple_extractor import Triple
 
 
@@ -71,6 +72,7 @@ class TripleManager:
         self.logger = get_logger("triple_manager")
         self.config = config or {}
         self.config.update(kwargs)
+        self.progress_tracker = get_progress_tracker()
         
         self.stores: Dict[str, TripleStore] = {}
         self.default_store_id = self.config.get("default_store")
@@ -167,28 +169,40 @@ class TripleManager:
         Returns:
             Operation status
         """
-        store = self._get_store(store_id)
+        tracking_id = self.progress_tracker.start_tracking(
+            module="triple_store",
+            submodule="TripleManager",
+            message=f"Adding {len(triples)} triples to store"
+        )
         
-        # Validate triples
-        if options.get("validate", True):
-            valid_triples = [t for t in triples if self._validate_triple(t)]
-            invalid_count = len(triples) - len(valid_triples)
-            if invalid_count > 0:
-                self.logger.warning(f"{invalid_count} invalid triples filtered out")
-        else:
-            valid_triples = triples
-        
-        # Add to store
         try:
+            store = self._get_store(store_id)
+            
+            # Validate triples
+            if options.get("validate", True):
+                self.progress_tracker.update_tracking(tracking_id, message="Validating triples...")
+                valid_triples = [t for t in triples if self._validate_triple(t)]
+                invalid_count = len(triples) - len(valid_triples)
+                if invalid_count > 0:
+                    self.logger.warning(f"{invalid_count} invalid triples filtered out")
+            else:
+                valid_triples = triples
+            
+            # Add to store
             adapter = self._get_adapter(store)
             batch_size = options.get("batch_size", 1000)
+            total_batches = (len(valid_triples) + batch_size - 1) // batch_size
             
             results = []
             for i in range(0, len(valid_triples), batch_size):
+                batch_num = i // batch_size + 1
+                self.progress_tracker.update_tracking(tracking_id, message=f"Processing batch {batch_num}/{total_batches}...")
                 batch = valid_triples[i:i + batch_size]
                 result = adapter.add_triples(batch, **options)
                 results.append(result)
             
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Added {len(valid_triples)} triples in {len(results)} batches")
             return {
                 "success": True,
                 "store_id": store.store_id,
@@ -198,6 +212,7 @@ class TripleManager:
             }
         except Exception as e:
             self.logger.error(f"Failed to add triples: {e}")
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
             raise ProcessingError(f"Failed to add triples: {e}")
     
     def get_triple(

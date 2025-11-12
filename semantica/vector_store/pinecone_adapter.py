@@ -38,6 +38,7 @@ import numpy as np
 
 from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 
 # Optional Pinecone import
 try:
@@ -228,6 +229,7 @@ class PineconeAdapter:
         """Initialize Pinecone adapter."""
         self.logger = get_logger("pinecone_adapter")
         self.config = config
+        self.progress_tracker = get_progress_tracker()
         self.api_key = api_key or config.get("api_key")
         self.environment = environment or config.get("environment")
         
@@ -366,23 +368,41 @@ class PineconeAdapter:
         Returns:
             Upsert response
         """
-        if self.index is None:
-            raise ProcessingError("Index not initialized. Call create_index() or get_index() first.")
+        tracking_id = self.progress_tracker.start_tracking(
+            module="vector_store",
+            submodule="PineconeAdapter",
+            message=f"Upserting {len(vectors)} vectors to Pinecone"
+        )
         
-        # Format vectors
-        formatted_vectors = []
-        for i, vector in enumerate(vectors):
-            if isinstance(vector, np.ndarray):
-                vector = vector.tolist()
+        try:
+            if self.index is None:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed",
+                                                  message="Index not initialized")
+                raise ProcessingError("Index not initialized. Call create_index() or get_index() first.")
             
-            vector_data = {"id": ids[i], "values": vector}
+            # Format vectors
+            self.progress_tracker.update_tracking(tracking_id, message="Formatting vectors...")
+            formatted_vectors = []
+            for i, vector in enumerate(vectors):
+                if isinstance(vector, np.ndarray):
+                    vector = vector.tolist()
+                
+                vector_data = {"id": ids[i], "values": vector}
+                
+                if metadata and i < len(metadata):
+                    vector_data["metadata"] = PineconeMetadata.validate_metadata(metadata[i])
+                
+                formatted_vectors.append(vector_data)
             
-            if metadata and i < len(metadata):
-                vector_data["metadata"] = PineconeMetadata.validate_metadata(metadata[i])
+            self.progress_tracker.update_tracking(tracking_id, message="Upserting vectors to Pinecone...")
+            result = self.index.upsert_vectors(formatted_vectors, namespace, **options)
             
-            formatted_vectors.append(vector_data)
-        
-        return self.index.upsert_vectors(formatted_vectors, namespace, **options)
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Upserted {len(vectors)} vectors")
+            return result
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def query_vectors(
         self,
@@ -405,14 +425,32 @@ class PineconeAdapter:
         Returns:
             List of search results
         """
-        if self.query_builder is None:
-            raise ProcessingError("Index not initialized. Call create_index() or get_index() first.")
-        
-        query_params = self.query_builder.build_query(
-            query_vector, top_k, namespace, filter, **options
+        tracking_id = self.progress_tracker.start_tracking(
+            module="vector_store",
+            submodule="PineconeAdapter",
+            message=f"Querying {top_k} similar vectors from Pinecone"
         )
         
-        return self.query_builder.execute(query_params)
+        try:
+            if self.query_builder is None:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed",
+                                                  message="Index not initialized")
+                raise ProcessingError("Index not initialized. Call create_index() or get_index() first.")
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Building query...")
+            query_params = self.query_builder.build_query(
+                query_vector, top_k, namespace, filter, **options
+            )
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Executing query...")
+            results = self.query_builder.execute(query_params)
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Query completed: {len(results) if isinstance(results, list) else 'N/A'} results")
+            return results
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def delete_vectors(
         self,

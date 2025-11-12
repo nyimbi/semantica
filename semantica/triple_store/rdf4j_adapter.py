@@ -31,6 +31,7 @@ import requests
 
 from ..utils.exceptions import ValidationError, ProcessingError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 from ..semantic_extract.triple_extractor import Triple
 
 
@@ -60,6 +61,7 @@ class RDF4JAdapter:
         """
         self.logger = get_logger("rdf4j_adapter")
         self.config = config
+        self.progress_tracker = get_progress_tracker()
         
         self.endpoint = endpoint.rstrip('/')
         self.repository_id = config.get("repository_id", "default")
@@ -176,12 +178,20 @@ class RDF4JAdapter:
         Returns:
             Query results
         """
-        if not self.connected:
-            raise ProcessingError("Not connected to RDF4J")
-        
-        sparql_endpoint = self._get_sparql_endpoint()
+        tracking_id = self.progress_tracker.start_tracking(
+            module="triple_store",
+            submodule="RDF4JAdapter",
+            message="Executing SPARQL query on RDF4J"
+        )
         
         try:
+            if not self.connected:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed", message="Not connected to RDF4J")
+                raise ProcessingError("Not connected to RDF4J")
+            
+            sparql_endpoint = self._get_sparql_endpoint()
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Sending query to RDF4J endpoint...")
             response = requests.post(
                 sparql_endpoint,
                 data={"query": query},
@@ -192,9 +202,10 @@ class RDF4JAdapter:
             
             response.raise_for_status()
             
+            self.progress_tracker.update_tracking(tracking_id, message="Parsing query results...")
             result_data = response.json()
             
-            return {
+            result = {
                 "success": True,
                 "bindings": result_data.get("results", {}).get("bindings", []),
                 "variables": result_data.get("head", {}).get("vars", []),
@@ -203,8 +214,13 @@ class RDF4JAdapter:
                     "endpoint": sparql_endpoint
                 }
             }
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Query executed: {len(result['bindings'])} results")
+            return result
         except Exception as e:
             self.logger.error(f"SPARQL query failed: {e}")
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
             raise ProcessingError(f"SPARQL query failed: {e}")
     
     def add_triples(
@@ -222,15 +238,24 @@ class RDF4JAdapter:
         Returns:
             Operation status
         """
-        if not self.connected:
-            raise ProcessingError("Not connected to RDF4J")
-        
-        update_endpoint = self._get_update_endpoint()
-        
-        # Convert triples to RDF format
-        rdf_data = self._triples_to_ntriples(triples)
+        tracking_id = self.progress_tracker.start_tracking(
+            module="triple_store",
+            submodule="RDF4JAdapter",
+            message=f"Adding {len(triples)} triples to RDF4J repository"
+        )
         
         try:
+            if not self.connected:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed", message="Not connected to RDF4J")
+                raise ProcessingError("Not connected to RDF4J")
+            
+            update_endpoint = self._get_update_endpoint()
+            
+            # Convert triples to RDF format
+            self.progress_tracker.update_tracking(tracking_id, message="Converting triples to RDF format...")
+            rdf_data = self._triples_to_ntriples(triples)
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Sending triples to RDF4J repository...")
             response = requests.post(
                 update_endpoint,
                 data=rdf_data,
@@ -241,12 +266,16 @@ class RDF4JAdapter:
             
             response.raise_for_status()
             
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Added {len(triples)} triples to repository")
+            
             return {
                 "success": True,
                 "triples_added": len(triples)
             }
         except Exception as e:
             self.logger.error(f"Add triples failed: {e}")
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
             raise ProcessingError(f"Add triples failed: {e}")
     
     def add_triple(self, triple: Triple, **options) -> Dict[str, Any]:

@@ -39,6 +39,7 @@ from plotly.subplots import make_subplots
 
 from ..utils.logging import get_logger
 from ..utils.exceptions import ProcessingError
+from ..utils.progress_tracker import get_progress_tracker
 from .utils.color_schemes import ColorPalette, ColorScheme
 from .utils.export_formats import export_plotly_figure
 
@@ -58,6 +59,7 @@ class TemporalVisualizer:
         """Initialize temporal visualizer."""
         self.logger = get_logger("temporal_visualizer")
         self.config = config
+        self.progress_tracker = get_progress_tracker()
         color_scheme_name = config.get("color_scheme", "default")
         try:
             self.color_scheme = ColorScheme[color_scheme_name.upper()]
@@ -83,67 +85,86 @@ class TemporalVisualizer:
         Returns:
             Visualization figure or None
         """
-        self.logger.info("Visualizing temporal timeline")
-        
-        # Extract timeline data
-        events = temporal_data.get("events", [])
-        timestamps = temporal_data.get("timestamps", [])
-        
-        if not events:
-            raise ProcessingError("No temporal events found")
-        
-        # Build timeline
-        event_types = []
-        event_times = []
-        event_labels = []
-        
-        for event in events:
-            event_time = event.get("timestamp") or event.get("time", "")
-            event_type = event.get("type") or event.get("event_type", "change")
-            event_label = event.get("label") or event.get("entity", "")
-            
-            event_times.append(event_time)
-            event_types.append(event_type)
-            event_labels.append(event_label)
-        
-        # Create Gantt chart style timeline
-        fig = go.Figure()
-        
-        # Group by type
-        type_colors = {}
-        unique_types = list(set(event_types))
-        colors = ColorPalette.get_colors(self.color_scheme, len(unique_types))
-        for i, t in enumerate(unique_types):
-            type_colors[t] = colors[i]
-        
-        for event_type in unique_types:
-            mask = [t == event_type for t in event_types]
-            type_times = [event_times[i] for i in range(len(event_times)) if mask[i]]
-            type_labels = [event_labels[i] for i in range(len(event_labels)) if mask[i]]
-            
-            fig.add_trace(go.Scatter(
-                x=type_times,
-                y=[event_type] * len(type_times),
-                mode='markers',
-                name=event_type,
-                marker=dict(size=10, color=type_colors[event_type]),
-                text=type_labels,
-                hovertemplate='%{text}<br>Time: %{x}<extra></extra>'
-            ))
-        
-        fig.update_layout(
-            title="Temporal Timeline",
-            xaxis_title="Time",
-            yaxis_title="Event Type",
-            width=1200,
-            height=600
+        tracking_id = self.progress_tracker.start_tracking(
+            module="visualization",
+            submodule="TemporalVisualizer",
+            message="Visualizing temporal timeline"
         )
         
-        if output == "interactive":
-            return fig
-        elif file_path:
-            export_plotly_figure(fig, file_path, format=output if output != "interactive" else "html")
-            return None
+        try:
+            self.logger.info("Visualizing temporal timeline")
+            
+            # Extract timeline data
+            self.progress_tracker.update_tracking(tracking_id, message="Extracting timeline data...")
+            events = temporal_data.get("events", [])
+            timestamps = temporal_data.get("timestamps", [])
+            
+            if not events:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed",
+                                                  message="No temporal events found")
+                raise ProcessingError("No temporal events found")
+            
+            # Build timeline
+            self.progress_tracker.update_tracking(tracking_id, message="Building timeline...")
+            event_types = []
+            event_times = []
+            event_labels = []
+            
+            for event in events:
+                event_time = event.get("timestamp") or event.get("time", "")
+                event_type = event.get("type") or event.get("event_type", "change")
+                event_label = event.get("label") or event.get("entity", "")
+                
+                event_times.append(event_time)
+                event_types.append(event_type)
+                event_labels.append(event_label)
+            
+            # Create Gantt chart style timeline
+            self.progress_tracker.update_tracking(tracking_id, message="Generating visualization...")
+            fig = go.Figure()
+            
+            # Group by type
+            type_colors = {}
+            unique_types = list(set(event_types))
+            colors = ColorPalette.get_colors(self.color_scheme, len(unique_types))
+            for i, t in enumerate(unique_types):
+                type_colors[t] = colors[i]
+            
+            for event_type in unique_types:
+                mask = [t == event_type for t in event_types]
+                type_times = [event_times[i] for i in range(len(event_times)) if mask[i]]
+                type_labels = [event_labels[i] for i in range(len(event_labels)) if mask[i]]
+                
+                fig.add_trace(go.Scatter(
+                    x=type_times,
+                    y=[event_type] * len(type_times),
+                    mode='markers',
+                    name=event_type,
+                    marker=dict(size=10, color=type_colors[event_type]),
+                    text=type_labels,
+                    hovertemplate='%{text}<br>Time: %{x}<extra></extra>'
+                ))
+            
+            fig.update_layout(
+                title="Temporal Timeline",
+                xaxis_title="Time",
+                yaxis_title="Event Type",
+                width=1200,
+                height=600
+            )
+            
+            if output == "interactive":
+                self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                                  message=f"Timeline visualization generated: {len(events)} events")
+                return fig
+            elif file_path:
+                export_plotly_figure(fig, file_path, format=output if output != "interactive" else "html")
+                self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                                  message=f"Timeline saved to {file_path}")
+                return None
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def visualize_temporal_patterns(
         self,

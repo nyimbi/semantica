@@ -39,6 +39,7 @@ import numpy as np
 
 from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 
 # Optional Weaviate import
 try:
@@ -233,6 +234,7 @@ class WeaviateAdapter:
         """Initialize Weaviate adapter."""
         self.logger = get_logger("weaviate_adapter")
         self.config = config
+        self.progress_tracker = get_progress_tracker()
         self.url = url or config.get("url", "http://localhost:8080")
         self.api_key = api_key or config.get("api_key")
         
@@ -361,16 +363,28 @@ class WeaviateAdapter:
         Returns:
             List of object IDs
         """
-        if self.collection is None and class_name:
-            self.get_collection(class_name)
-        
-        if self.collection is None:
-            raise ProcessingError("Collection not initialized. Call get_collection() first.")
-        
-        if not WEAVIATE_AVAILABLE:
-            raise ProcessingError("Weaviate not available")
+        tracking_id = self.progress_tracker.start_tracking(
+            module="vector_store",
+            submodule="WeaviateAdapter",
+            message=f"Adding {len(objects)} objects to Weaviate"
+        )
         
         try:
+            if self.collection is None and class_name:
+                self.progress_tracker.update_tracking(tracking_id, message="Getting collection...")
+                self.get_collection(class_name)
+            
+            if self.collection is None:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed",
+                                                  message="Collection not initialized")
+                raise ProcessingError("Collection not initialized. Call get_collection() first.")
+            
+            if not WEAVIATE_AVAILABLE:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed",
+                                                  message="Weaviate not available")
+                raise ProcessingError("Weaviate not available")
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Adding objects in batch...")
             object_ids = []
             
             with self.collection.batch.dynamic() as batch:
@@ -384,9 +398,12 @@ class WeaviateAdapter:
                     object_ids.append(str(uuid))
             
             self.logger.info(f"Added {len(objects)} objects to Weaviate")
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Added {len(objects)} objects to Weaviate")
             return object_ids
         
         except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
             raise ProcessingError(f"Failed to add objects: {str(e)}")
     
     def query_vectors(
@@ -410,13 +427,31 @@ class WeaviateAdapter:
         Returns:
             List of search results
         """
-        if self.collection is None and class_name:
-            self.get_collection(class_name)
+        tracking_id = self.progress_tracker.start_tracking(
+            module="vector_store",
+            submodule="WeaviateAdapter",
+            message=f"Querying {limit} similar vectors from Weaviate"
+        )
         
-        if self.query_builder is None:
-            raise ProcessingError("Collection not initialized. Call get_collection() first.")
-        
-        return self.query_builder.similarity_search(query_vector, limit, where, **options)
+        try:
+            if self.collection is None and class_name:
+                self.progress_tracker.update_tracking(tracking_id, message="Getting collection...")
+                self.get_collection(class_name)
+            
+            if self.query_builder is None:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed",
+                                                  message="Collection not initialized")
+                raise ProcessingError("Collection not initialized. Call get_collection() first.")
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Performing similarity search...")
+            results = self.query_builder.similarity_search(query_vector, limit, where, **options)
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Query completed: {len(results)} results")
+            return results
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def graphql_query(self, query: str, **options) -> Dict[str, Any]:
         """

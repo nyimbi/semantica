@@ -42,6 +42,7 @@ import matplotlib.patches as mpatches
 
 from ..utils.logging import get_logger
 from ..utils.exceptions import ProcessingError
+from ..utils.progress_tracker import get_progress_tracker
 from .utils.layout_algorithms import ForceDirectedLayout, HierarchicalLayout, CircularLayout
 from .utils.color_schemes import ColorPalette, ColorScheme
 from .utils.export_formats import export_plotly_figure, export_matplotlib_figure, save_html
@@ -71,6 +72,7 @@ class KGVisualizer:
         """
         self.logger = get_logger("kg_visualizer")
         self.config = config
+        self.progress_tracker = get_progress_tracker()
         
         self.layout_type = config.get("layout", "force")
         color_scheme_name = config.get("color_scheme", "default")
@@ -105,20 +107,38 @@ class KGVisualizer:
         Returns:
             Plotly figure (if interactive) or None
         """
-        self.logger.info("Visualizing knowledge graph network")
+        tracking_id = self.progress_tracker.start_tracking(
+            module="visualization",
+            submodule="KGVisualizer",
+            message="Visualizing knowledge graph network"
+        )
         
-        # Extract entities and relationships
-        entities = graph.get("entities", [])
-        relationships = graph.get("relationships", [])
-        
-        if not entities:
-            raise ProcessingError("No entities found in graph")
-        
-        # Build node and edge lists
-        nodes = self._extract_nodes(entities)
-        edges = self._extract_edges(relationships, entities)
-        
-        return self._visualize_network_plotly(nodes, edges, output, file_path, **options)
+        try:
+            self.logger.info("Visualizing knowledge graph network")
+            
+            # Extract entities and relationships
+            self.progress_tracker.update_tracking(tracking_id, message="Extracting entities and relationships...")
+            entities = graph.get("entities", [])
+            relationships = graph.get("relationships", [])
+            
+            if not entities:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed", message="No entities found in graph")
+                raise ProcessingError("No entities found in graph")
+            
+            # Build node and edge lists
+            self.progress_tracker.update_tracking(tracking_id, message="Building node and edge lists...")
+            nodes = self._extract_nodes(entities)
+            edges = self._extract_edges(relationships, entities)
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Generating visualization...")
+            result = self._visualize_network_plotly(nodes, edges, output, file_path, **options)
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Visualization generated: {len(nodes)} nodes, {len(edges)} edges")
+            return result
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def visualize_communities(
         self,

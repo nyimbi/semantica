@@ -61,6 +61,7 @@ class VirtuosoAdapter:
         """
         self.logger = get_logger("virtuoso_adapter")
         self.config = config
+        self.progress_tracker = get_progress_tracker()
         
         self.endpoint = endpoint.rstrip('/')
         self.username = config.get("username", "dba")
@@ -148,12 +149,20 @@ class VirtuosoAdapter:
         Returns:
             Query results
         """
-        if not self.connected:
-            raise ProcessingError("Not connected to Virtuoso")
-        
-        sparql_endpoint = self._get_sparql_endpoint()
+        tracking_id = self.progress_tracker.start_tracking(
+            module="triple_store",
+            submodule="VirtuosoAdapter",
+            message="Executing SPARQL query on Virtuoso"
+        )
         
         try:
+            if not self.connected:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed", message="Not connected to Virtuoso")
+                raise ProcessingError("Not connected to Virtuoso")
+            
+            sparql_endpoint = self._get_sparql_endpoint()
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Sending query to Virtuoso endpoint...")
             response = requests.get(
                 sparql_endpoint,
                 params={"query": query, "default-graph-uri": self.default_graph} if self.default_graph else {"query": query},
@@ -164,9 +173,10 @@ class VirtuosoAdapter:
             
             response.raise_for_status()
             
+            self.progress_tracker.update_tracking(tracking_id, message="Parsing query results...")
             result_data = response.json()
             
-            return {
+            result = {
                 "success": True,
                 "bindings": result_data.get("results", {}).get("bindings", []),
                 "variables": result_data.get("head", {}).get("vars", []),
@@ -175,8 +185,13 @@ class VirtuosoAdapter:
                     "endpoint": sparql_endpoint
                 }
             }
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Query executed: {len(result['bindings'])} results")
+            return result
         except Exception as e:
             self.logger.error(f"SPARQL query failed: {e}")
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
             raise ProcessingError(f"SPARQL query failed: {e}")
     
     def optimize_queries(
@@ -225,23 +240,32 @@ class VirtuosoAdapter:
         Returns:
             Load status
         """
-        if not self.connected:
-            raise ProcessingError("Not connected to Virtuoso")
-        
-        graph = options.get("graph", self.default_graph)
-        format = options.get("format", "turtle")
-        
-        # Convert triples to RDF
-        rdf_data = self._triples_to_rdf(triples, format)
-        
-        # Use SPARQL INSERT for bulk loading
-        update_endpoint = self._get_sparql_update_endpoint()
-        
-        graph_clause = f"GRAPH <{graph}>" if graph else ""
-        insert_data = self._build_insert_data(triples)
-        query = f"INSERT DATA {graph_clause} {{ {insert_data} }}"
+        tracking_id = self.progress_tracker.start_tracking(
+            module="triple_store",
+            submodule="VirtuosoAdapter",
+            message=f"Bulk loading {len(triples)} triples to Virtuoso"
+        )
         
         try:
+            if not self.connected:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed", message="Not connected to Virtuoso")
+                raise ProcessingError("Not connected to Virtuoso")
+            
+            graph = options.get("graph", self.default_graph)
+            format = options.get("format", "turtle")
+            
+            # Convert triples to RDF
+            self.progress_tracker.update_tracking(tracking_id, message="Converting triples to RDF format...")
+            rdf_data = self._triples_to_rdf(triples, format)
+            
+            # Use SPARQL INSERT for bulk loading
+            update_endpoint = self._get_sparql_update_endpoint()
+            
+            graph_clause = f"GRAPH <{graph}>" if graph else ""
+            insert_data = self._build_insert_data(triples)
+            query = f"INSERT DATA {graph_clause} {{ {insert_data} }}"
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Sending bulk load request...")
             response = requests.post(
                 update_endpoint,
                 data={"query": query},
@@ -252,6 +276,8 @@ class VirtuosoAdapter:
             
             response.raise_for_status()
             
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Bulk loaded {len(triples)} triples")
             return {
                 "success": True,
                 "triples_loaded": len(triples),
@@ -259,6 +285,7 @@ class VirtuosoAdapter:
             }
         except Exception as e:
             self.logger.error(f"Bulk load failed: {e}")
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
             raise ProcessingError(f"Bulk load failed: {e}")
     
     def _triples_to_rdf(self, triples: List[Triple], format: str = "turtle") -> str:

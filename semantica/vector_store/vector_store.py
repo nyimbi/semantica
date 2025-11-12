@@ -42,6 +42,7 @@ import numpy as np
 
 from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 
 
 class VectorStore:
@@ -61,11 +62,12 @@ class VectorStore:
         self.logger = get_logger("vector_store")
         self.config = config or {}
         self.config.update(kwargs)
+        self.progress_tracker = get_progress_tracker()
         
         self.backend = backend
         self.vectors: Dict[str, np.ndarray] = {}
         self.metadata: Dict[str, Dict[str, Any]] = {}
-        self.dimension = config.get("dimension", 768)
+        self.dimension = config.get("dimension", 768) if config else 768
         
         # Initialize backend-specific indexer
         self.indexer = VectorIndexer(backend=backend, dimension=self.dimension, **config)
@@ -88,19 +90,33 @@ class VectorStore:
         Returns:
             List of vector IDs
         """
-        vector_ids = []
-        metadata = metadata or [{}] * len(vectors)
+        tracking_id = self.progress_tracker.start_tracking(
+            module="vector_store",
+            submodule="VectorStore",
+            message=f"Storing {len(vectors)} vectors"
+        )
         
-        for i, (vector, meta) in enumerate(zip(vectors, metadata)):
-            vector_id = f"vec_{len(self.vectors) + i}"
-            self.vectors[vector_id] = vector
-            self.metadata[vector_id] = meta
-            vector_ids.append(vector_id)
-        
-        # Update index
-        self.indexer.create_index(list(self.vectors.values()), vector_ids)
-        
-        return vector_ids
+        try:
+            vector_ids = []
+            metadata = metadata or [{}] * len(vectors)
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Storing vectors...")
+            for i, (vector, meta) in enumerate(zip(vectors, metadata)):
+                vector_id = f"vec_{len(self.vectors) + i}"
+                self.vectors[vector_id] = vector
+                self.metadata[vector_id] = meta
+                vector_ids.append(vector_id)
+            
+            # Update index
+            self.progress_tracker.update_tracking(tracking_id, message="Updating vector index...")
+            self.indexer.create_index(list(self.vectors.values()), vector_ids)
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Stored {len(vector_ids)} vectors")
+            return vector_ids
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def search_vectors(
         self,
@@ -119,19 +135,33 @@ class VectorStore:
         Returns:
             List of search results with scores
         """
-        if not self.vectors:
-            return []
-        
-        # Use retriever for similarity search
-        results = self.retriever.search_similar(
-            query_vector,
-            list(self.vectors.values()),
-            list(self.vectors.keys()),
-            k=k,
-            **options
+        tracking_id = self.progress_tracker.start_tracking(
+            module="vector_store",
+            submodule="VectorStore",
+            message=f"Searching for {k} similar vectors"
         )
         
-        return results
+        try:
+            if not self.vectors:
+                self.progress_tracker.stop_tracking(tracking_id, status="completed", message="No vectors to search")
+                return []
+            
+            # Use retriever for similarity search
+            self.progress_tracker.update_tracking(tracking_id, message="Performing similarity search...")
+            results = self.retriever.search_similar(
+                query_vector,
+                list(self.vectors.values()),
+                list(self.vectors.keys()),
+                k=k,
+                **options
+            )
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Found {len(results)} similar vectors")
+            return results
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def update_vectors(
         self,

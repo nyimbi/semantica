@@ -40,6 +40,7 @@ from datetime import datetime
 
 from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 
 
 class Namespace:
@@ -126,6 +127,7 @@ class NamespaceManager:
         """Initialize namespace manager."""
         self.logger = get_logger("namespace_manager")
         self.config = config
+        self.progress_tracker = get_progress_tracker()
         self.namespaces: Dict[str, Namespace] = {}
         self.default_namespace = config.get("default_namespace", "default")
         self.vector_namespace_map: Dict[str, str] = {}  # vector_id -> namespace
@@ -149,17 +151,34 @@ class NamespaceManager:
         Returns:
             Namespace instance
         """
-        if name in self.namespaces:
-            raise ValidationError(f"Namespace '{name}' already exists")
+        tracking_id = self.progress_tracker.start_tracking(
+            module="vector_store",
+            submodule="NamespaceManager",
+            message=f"Creating namespace: {name}"
+        )
         
-        if not self._validate_namespace_name(name):
-            raise ValidationError(f"Invalid namespace name: {name}")
-        
-        namespace = Namespace(name, description, metadata, **options)
-        self.namespaces[name] = namespace
-        
-        self.logger.info(f"Created namespace: {name}")
-        return namespace
+        try:
+            if name in self.namespaces:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed",
+                                                  message=f"Namespace '{name}' already exists")
+                raise ValidationError(f"Namespace '{name}' already exists")
+            
+            if not self._validate_namespace_name(name):
+                self.progress_tracker.stop_tracking(tracking_id, status="failed",
+                                                  message=f"Invalid namespace name: {name}")
+                raise ValidationError(f"Invalid namespace name: {name}")
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Initializing namespace...")
+            namespace = Namespace(name, description, metadata, **options)
+            self.namespaces[name] = namespace
+            
+            self.logger.info(f"Created namespace: {name}")
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Namespace '{name}' created successfully")
+            return namespace
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def get_namespace(self, name: str) -> Optional[Namespace]:
         """
@@ -184,20 +203,37 @@ class NamespaceManager:
         Returns:
             True if successful
         """
-        if name not in self.namespaces:
-            raise ProcessingError(f"Namespace '{name}' does not exist")
+        tracking_id = self.progress_tracker.start_tracking(
+            module="vector_store",
+            submodule="NamespaceManager",
+            message=f"Deleting namespace: {name}"
+        )
         
-        if name == self.default_namespace:
-            raise ProcessingError("Cannot delete default namespace")
-        
-        # Remove namespace vectors from mapping
-        namespace = self.namespaces[name]
-        for vector_id in list(namespace.vector_ids):
-            self.vector_namespace_map.pop(vector_id, None)
-        
-        del self.namespaces[name]
-        self.logger.info(f"Deleted namespace: {name}")
-        return True
+        try:
+            if name not in self.namespaces:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed",
+                                                  message=f"Namespace '{name}' does not exist")
+                raise ProcessingError(f"Namespace '{name}' does not exist")
+            
+            if name == self.default_namespace:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed",
+                                                  message="Cannot delete default namespace")
+                raise ProcessingError("Cannot delete default namespace")
+            
+            # Remove namespace vectors from mapping
+            self.progress_tracker.update_tracking(tracking_id, message="Removing vectors from namespace mapping...")
+            namespace = self.namespaces[name]
+            for vector_id in list(namespace.vector_ids):
+                self.vector_namespace_map.pop(vector_id, None)
+            
+            del self.namespaces[name]
+            self.logger.info(f"Deleted namespace: {name}")
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Namespace '{name}' deleted successfully")
+            return True
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def list_namespaces(self, **options) -> List[str]:
         """
@@ -209,7 +245,20 @@ class NamespaceManager:
         Returns:
             List of namespace names
         """
-        return list(self.namespaces.keys())
+        tracking_id = self.progress_tracker.start_tracking(
+            module="vector_store",
+            submodule="NamespaceManager",
+            message="Listing all namespaces"
+        )
+        
+        try:
+            namespaces = list(self.namespaces.keys())
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Found {len(namespaces)} namespaces")
+            return namespaces
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def add_vector_to_namespace(
         self,
@@ -228,20 +277,36 @@ class NamespaceManager:
         Returns:
             True if successful
         """
-        if namespace not in self.namespaces:
-            raise ProcessingError(f"Namespace '{namespace}' does not exist")
+        tracking_id = self.progress_tracker.start_tracking(
+            module="vector_store",
+            submodule="NamespaceManager",
+            message=f"Adding vector {vector_id} to namespace {namespace}"
+        )
         
-        # Remove from old namespace if exists
-        old_namespace = self.vector_namespace_map.get(vector_id)
-        if old_namespace and old_namespace in self.namespaces:
-            self.namespaces[old_namespace].remove_vector(vector_id)
-        
-        # Add to new namespace
-        self.namespaces[namespace].add_vector(vector_id)
-        self.vector_namespace_map[vector_id] = namespace
-        
-        self.logger.debug(f"Added vector {vector_id} to namespace {namespace}")
-        return True
+        try:
+            if namespace not in self.namespaces:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed",
+                                                  message=f"Namespace '{namespace}' does not exist")
+                raise ProcessingError(f"Namespace '{namespace}' does not exist")
+            
+            # Remove from old namespace if exists
+            old_namespace = self.vector_namespace_map.get(vector_id)
+            if old_namespace and old_namespace in self.namespaces:
+                self.progress_tracker.update_tracking(tracking_id, message=f"Removing from old namespace: {old_namespace}")
+                self.namespaces[old_namespace].remove_vector(vector_id)
+            
+            # Add to new namespace
+            self.progress_tracker.update_tracking(tracking_id, message=f"Adding to namespace: {namespace}")
+            self.namespaces[namespace].add_vector(vector_id)
+            self.vector_namespace_map[vector_id] = namespace
+            
+            self.logger.debug(f"Added vector {vector_id} to namespace {namespace}")
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Vector {vector_id} added to namespace {namespace}")
+            return True
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def remove_vector_from_namespace(
         self,
@@ -260,15 +325,30 @@ class NamespaceManager:
         Returns:
             True if successful
         """
-        if namespace is None:
-            namespace = self.vector_namespace_map.get(vector_id)
+        tracking_id = self.progress_tracker.start_tracking(
+            module="vector_store",
+            submodule="NamespaceManager",
+            message=f"Removing vector {vector_id} from namespace"
+        )
         
-        if namespace and namespace in self.namespaces:
-            self.namespaces[namespace].remove_vector(vector_id)
-            self.vector_namespace_map.pop(vector_id, None)
-            return True
-        
-        return False
+        try:
+            if namespace is None:
+                namespace = self.vector_namespace_map.get(vector_id)
+            
+            if namespace and namespace in self.namespaces:
+                self.progress_tracker.update_tracking(tracking_id, message=f"Removing from namespace: {namespace}")
+                self.namespaces[namespace].remove_vector(vector_id)
+                self.vector_namespace_map.pop(vector_id, None)
+                self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                                  message=f"Vector {vector_id} removed from namespace {namespace}")
+                return True
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Vector {vector_id} not found in any namespace")
+            return False
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def get_vector_namespace(self, vector_id: str) -> Optional[str]:
         """
@@ -292,10 +372,25 @@ class NamespaceManager:
         Returns:
             List of vector IDs
         """
-        if namespace not in self.namespaces:
-            return []
+        tracking_id = self.progress_tracker.start_tracking(
+            module="vector_store",
+            submodule="NamespaceManager",
+            message=f"Getting vectors from namespace: {namespace}"
+        )
         
-        return list(self.namespaces[namespace].vector_ids)
+        try:
+            if namespace not in self.namespaces:
+                self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                                  message=f"Namespace '{namespace}' not found")
+                return []
+            
+            vectors = list(self.namespaces[namespace].vector_ids)
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Found {len(vectors)} vectors in namespace {namespace}")
+            return vectors
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def set_namespace_access_control(
         self,
@@ -354,18 +449,34 @@ class NamespaceManager:
         Returns:
             Namespace statistics
         """
-        if namespace not in self.namespaces:
-            raise ProcessingError(f"Namespace '{namespace}' does not exist")
+        tracking_id = self.progress_tracker.start_tracking(
+            module="vector_store",
+            submodule="NamespaceManager",
+            message=f"Getting statistics for namespace: {namespace}"
+        )
         
-        ns = self.namespaces[namespace]
-        return {
-            "name": ns.name,
-            "description": ns.description,
-            "vector_count": ns.get_vector_count(),
-            "created_at": ns.created_at.isoformat(),
-            "updated_at": ns.updated_at.isoformat(),
-            "metadata": ns.metadata
-        }
+        try:
+            if namespace not in self.namespaces:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed",
+                                                  message=f"Namespace '{namespace}' does not exist")
+                raise ProcessingError(f"Namespace '{namespace}' does not exist")
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Collecting namespace statistics...")
+            ns = self.namespaces[namespace]
+            stats = {
+                "name": ns.name,
+                "description": ns.description,
+                "vector_count": ns.get_vector_count(),
+                "created_at": ns.created_at.isoformat(),
+                "updated_at": ns.updated_at.isoformat(),
+                "metadata": ns.metadata
+            }
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Statistics collected for namespace {namespace}")
+            return stats
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def get_all_stats(self) -> Dict[str, Dict[str, Any]]:
         """Get statistics for all namespaces."""

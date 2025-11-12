@@ -41,6 +41,7 @@ import json
 
 from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 
 
 class MetadataIndex:
@@ -187,6 +188,7 @@ class MetadataStore:
         """Initialize metadata store."""
         self.logger = get_logger("metadata_store")
         self.config = config
+        self.progress_tracker = get_progress_tracker()
         self.schema = MetadataSchema(schema)
         self.index = MetadataIndex()
         self.metadata: Dict[str, Dict[str, Any]] = {}
@@ -208,18 +210,29 @@ class MetadataStore:
         Returns:
             True if successful
         """
+        tracking_id = self.progress_tracker.start_tracking(
+            module="vector_store",
+            submodule="MetadataStore",
+            message=f"Storing metadata for vector {vector_id}"
+        )
+        
         try:
             # Validate against schema
+            self.progress_tracker.update_tracking(tracking_id, message="Validating metadata against schema...")
             self.schema.validate(metadata)
             
             # Store metadata
+            self.progress_tracker.update_tracking(tracking_id, message="Indexing metadata...")
             self.metadata[vector_id] = metadata
             self.index.index_metadata(vector_id, metadata)
             
             self.logger.debug(f"Stored metadata for vector {vector_id}")
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Metadata stored for vector {vector_id}")
             return True
         
         except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
             raise ProcessingError(f"Failed to store metadata: {str(e)}")
     
     def get_metadata(self, vector_id: str) -> Optional[Dict[str, Any]]:

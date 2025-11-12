@@ -49,6 +49,7 @@ except ImportError:
 
 from ..utils.logging import get_logger
 from ..utils.exceptions import ProcessingError
+from ..utils.progress_tracker import get_progress_tracker
 from .utils.layout_algorithms import HierarchicalLayout
 from .utils.color_schemes import ColorPalette, ColorScheme
 from .utils.export_formats import export_plotly_figure, export_matplotlib_figure, save_html
@@ -76,6 +77,7 @@ class OntologyVisualizer:
         """
         self.logger = get_logger("ontology_visualizer")
         self.config = config
+        self.progress_tracker = get_progress_tracker()
         
         color_scheme_name = config.get("color_scheme", "default")
         try:
@@ -104,35 +106,58 @@ class OntologyVisualizer:
         Returns:
             Visualization figure or None
         """
-        self.logger.info("Visualizing ontology class hierarchy")
+        tracking_id = self.progress_tracker.start_tracking(
+            module="visualization",
+            submodule="OntologyVisualizer",
+            message="Visualizing ontology class hierarchy"
+        )
         
-        # Handle different input formats
-        if hasattr(ontology, "classes"):
-            # OntologyGenerator result object
-            classes = ontology.classes if hasattr(ontology, "classes") else []
-        elif isinstance(ontology, dict):
-            classes = ontology.get("classes", ontology.get("class_definitions", []))
-        else:
-            classes = []
-        
-        # If no classes, try to extract from semantic network
-        if not classes and isinstance(ontology, dict):
-            # Check if it's a semantic model or semantic network
-            semantic_network = ontology.get("semantic_network", ontology.get("network"))
-            if semantic_network:
-                classes = self._extract_classes_from_semantic_network(semantic_network)
-        
-        if not classes:
-            raise ProcessingError("No classes found in ontology. Please provide classes or a semantic network.")
-        
-        # If output is dot and graphviz is available, use it
-        if output == "dot" and graphviz is not None and file_path:
-            return self._visualize_hierarchy_graphviz(classes, file_path, **options)
-        
-        # Build hierarchy tree
-        hierarchy = self._build_hierarchy_tree(classes)
-        
-        return self._visualize_hierarchy_plotly(hierarchy, classes, output, file_path, **options)
+        try:
+            self.logger.info("Visualizing ontology class hierarchy")
+            
+            # Handle different input formats
+            self.progress_tracker.update_tracking(tracking_id, message="Extracting classes from ontology...")
+            if hasattr(ontology, "classes"):
+                # OntologyGenerator result object
+                classes = ontology.classes if hasattr(ontology, "classes") else []
+            elif isinstance(ontology, dict):
+                classes = ontology.get("classes", ontology.get("class_definitions", []))
+            else:
+                classes = []
+            
+            # If no classes, try to extract from semantic network
+            if not classes and isinstance(ontology, dict):
+                # Check if it's a semantic model or semantic network
+                semantic_network = ontology.get("semantic_network", ontology.get("network"))
+                if semantic_network:
+                    classes = self._extract_classes_from_semantic_network(semantic_network)
+            
+            if not classes:
+                self.progress_tracker.stop_tracking(tracking_id, status="failed",
+                                                  message="No classes found in ontology")
+                raise ProcessingError("No classes found in ontology. Please provide classes or a semantic network.")
+            
+            # If output is dot and graphviz is available, use it
+            if output == "dot" and graphviz is not None and file_path:
+                self.progress_tracker.update_tracking(tracking_id, message="Generating Graphviz visualization...")
+                result = self._visualize_hierarchy_graphviz(classes, file_path, **options)
+                self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                                  message=f"Hierarchy visualized: {len(classes)} classes")
+                return result
+            
+            # Build hierarchy tree
+            self.progress_tracker.update_tracking(tracking_id, message="Building hierarchy tree...")
+            hierarchy = self._build_hierarchy_tree(classes)
+            
+            self.progress_tracker.update_tracking(tracking_id, message="Generating visualization...")
+            result = self._visualize_hierarchy_plotly(hierarchy, classes, output, file_path, **options)
+            
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Hierarchy visualized: {len(classes)} classes")
+            return result
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def visualize_properties(
         self,

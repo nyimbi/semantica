@@ -40,6 +40,7 @@ import numpy as np
 
 from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 
 
 class MetadataFilter:
@@ -279,6 +280,7 @@ class HybridSearch:
         """Initialize hybrid search."""
         self.logger = get_logger("hybrid_search")
         self.config = config
+        self.progress_tracker = get_progress_tracker()
         self.ranker = SearchRanker(config.get("ranking_strategy", "reciprocal_rank_fusion"))
     
     def search(
@@ -306,45 +308,62 @@ class HybridSearch:
         Returns:
             List of search results
         """
-        if not vectors or not metadata:
-            return []
-        
-        # Filter by metadata first
-        if metadata_filter:
-            filtered_indices = [
-                i for i, meta in enumerate(metadata)
-                if metadata_filter.matches(meta)
-            ]
-            
-            filtered_vectors = [vectors[i] for i in filtered_indices]
-            filtered_metadata = [metadata[i] for i in filtered_indices]
-            filtered_ids = [vector_ids[i] for i in filtered_indices]
-        else:
-            filtered_vectors = vectors
-            filtered_metadata = metadata
-            filtered_ids = vector_ids
-        
-        if not filtered_vectors:
-            return []
-        
-        # Perform vector similarity search
-        vector_results = self._vector_search(
-            query_vector,
-            filtered_vectors,
-            filtered_ids,
-            k * 2,  # Get more results for ranking
-            **options
+        tracking_id = self.progress_tracker.start_tracking(
+            module="vector_store",
+            submodule="HybridSearch",
+            message=f"Performing hybrid search for {k} results"
         )
         
-        # Add metadata to results
-        for result in vector_results:
-            result_id = result.get("id")
-            if result_id in filtered_ids:
-                idx = filtered_ids.index(result_id)
-                result["metadata"] = filtered_metadata[idx]
-        
-        # Rank and return top k
-        return vector_results[:k]
+        try:
+            if not vectors or not metadata:
+                self.progress_tracker.stop_tracking(tracking_id, status="completed", message="No vectors or metadata to search")
+                return []
+            
+            # Filter by metadata first
+            if metadata_filter:
+                self.progress_tracker.update_tracking(tracking_id, message="Filtering by metadata...")
+                filtered_indices = [
+                    i for i, meta in enumerate(metadata)
+                    if metadata_filter.matches(meta)
+                ]
+                
+                filtered_vectors = [vectors[i] for i in filtered_indices]
+                filtered_metadata = [metadata[i] for i in filtered_indices]
+                filtered_ids = [vector_ids[i] for i in filtered_indices]
+            else:
+                filtered_vectors = vectors
+                filtered_metadata = metadata
+                filtered_ids = vector_ids
+            
+            if not filtered_vectors:
+                self.progress_tracker.stop_tracking(tracking_id, status="completed", message="No vectors after filtering")
+                return []
+            
+            # Perform vector similarity search
+            self.progress_tracker.update_tracking(tracking_id, message="Performing vector similarity search...")
+            vector_results = self._vector_search(
+                query_vector,
+                filtered_vectors,
+                filtered_ids,
+                k * 2,  # Get more results for ranking
+                **options
+            )
+            
+            # Add metadata to results
+            self.progress_tracker.update_tracking(tracking_id, message="Adding metadata to results...")
+            for result in vector_results:
+                result_id = result.get("id")
+                if result_id in filtered_ids:
+                    idx = filtered_ids.index(result_id)
+                    result["metadata"] = filtered_metadata[idx]
+            
+            # Rank and return top k
+            self.progress_tracker.stop_tracking(tracking_id, status="completed",
+                                              message=f"Hybrid search completed: {len(vector_results[:k])} results")
+            return vector_results[:k]
+        except Exception as e:
+            self.progress_tracker.stop_tracking(tracking_id, status="failed", message=str(e))
+            raise
     
     def _vector_search(
         self,
