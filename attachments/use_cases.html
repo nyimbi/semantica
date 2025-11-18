@@ -195,15 +195,12 @@ print(f"✅ Built knowledge graph: {kg.node_count} nodes, {kg.edge_count} edges"
         
         <div class="stats-box">
             <div class="stat-item">
-                <div class="stat-number">80%</div>
                 <div>Faster Discovery</div>
             </div>
             <div class="stat-item">
-                <div class="stat-number">100%</div>
                 <div>Auto Cross-Reference</div>
             </div>
             <div class="stat-item">
-                <div class="stat-number">50%</div>
                 <div>Less Manual Work</div>
             </div>
         </div>
@@ -274,7 +271,7 @@ for source in response.sources:
         <div class="benefit">
             <h4>Performance Improvements:</h4>
             <ul>
-                <li><strong>30% Accuracy Improvement:</strong> Over vector-only RAG systems (91% vs 70%)</li>
+                <li><strong>Significant Accuracy Improvement:</strong> Over vector-only RAG systems</li>
                 <li><strong>Better Context:</strong> Graph traversal provides related concepts</li>
                 <li><strong>Citation Support:</strong> Traceable sources for all answers</li>
                 <li><strong>Complex Queries:</strong> Answer multi-hop questions requiring reasoning</li>
@@ -283,16 +280,13 @@ for source in response.sources:
         
         <div class="stats-box">
             <div class="stat-item">
-                <div class="stat-number">91%</div>
-                <div>Accuracy</div>
+                <div>High Accuracy</div>
             </div>
             <div class="stat-item">
-                <div class="stat-number">30%</div>
-                <div>Improvement</div>
+                <div>Significant Improvement</div>
             </div>
             <div class="stat-item">
-                <div class="stat-number">80ms</div>
-                <div>Latency</div>
+                <div>Low Latency</div>
             </div>
         </div>
     </div>
@@ -330,7 +324,7 @@ generator = OntologyGenerator(
 ontology = generator.generate_from_documents(
     sources=["medical_documents/", "clinical_notes/", "research_papers/"],
     requirements=requirements,
-    quality_threshold=0.95,
+    quality_threshold=0.9,
     namespace="https://example.org/medical#",
     prefix="med"
 )
@@ -354,13 +348,13 @@ else:
         print(f"  - {issue.message}")</code></pre>
         
         <div class="workflow">
-            <h4>6-Stage Ontology Generation:</h4>
+            <h4>Multi-Stage Ontology Generation:</h4>
             <div class="workflow-step">1. Semantic Network Parsing - Extract domain concepts</div>
             <div class="workflow-step">2. YAML-to-Definition - Transform to class definitions</div>
             <div class="workflow-step">3. Definition-to-Types - Map to OWL types</div>
             <div class="workflow-step">4. Hierarchy Generation - Build taxonomic structures</div>
             <div class="workflow-step">5. TTL Generation - Generate OWL/Turtle syntax</div>
-            <div class="workflow-step">6. Symbolic Validation - HermiT/Pellet reasoning (F1 up to 0.99)</div>
+            <div class="workflow-step">6. Symbolic Validation - HermiT/Pellet reasoning</div>
         </div>
         
         <h3>✅ Expected Outcomes</h3>
@@ -368,24 +362,21 @@ else:
             <h4>Key Advantages:</h4>
             <ul>
                 <li><strong>Automatic Generation:</strong> W3C-compliant OWL ontology from unstructured content</li>
-                <li><strong>High Quality:</strong> F1 scores up to 0.99 with symbolic validation</li>
-                <li><strong>Time Savings:</strong> 40x faster than manual ontology engineering</li>
+                <li><strong>High Quality:</strong> Excellent validation scores with symbolic reasoning</li>
+                <li><strong>Time Savings:</strong> Significantly faster than manual ontology engineering</li>
                 <li><strong>Interoperability:</strong> Standard OWL format for integration</li>
             </ul>
         </div>
         
         <div class="stats-box">
             <div class="stat-item">
-                <div class="stat-number">0.99</div>
-                <div>F1 Score</div>
+                <div>High Quality</div>
             </div>
             <div class="stat-item">
-                <div class="stat-number">40x</div>
-                <div>Faster</div>
+                <div>Much Faster</div>
             </div>
             <div class="stat-item">
-                <div class="stat-number">W3C</div>
-                <div>Compliant</div>
+                <div>W3C Compliant</div>
             </div>
         </div>
     </div>
@@ -447,7 +438,7 @@ context_retriever = ContextRetriever(
 relevant_context = context_retriever.retrieve(
     query="What are the user's learning preferences?",
     max_results=5,
-    min_relevance_score=0.7
+    min_relevance_score=0.6
 )
 
 # Use context for agent decision-making
@@ -518,7 +509,7 @@ for conflict in conflicts:
 duplicate_detector = DuplicateDetector()
 duplicates = duplicate_detector.find_duplicates(
     entities=kg.entities,
-    similarity_threshold=0.85
+    similarity_threshold=0.8
 )
 
 entity_merger = EntityMerger()
@@ -557,7 +548,7 @@ print(f"   Consistency: {report.consistency_score}/100")</code></pre>
             <h4>🤖 AI/ML Engineer</h4>
             <p><strong>Needs:</strong> Build RAG systems, AI agents with structured knowledge</p>
             <p><strong>Use Case:</strong> GraphRAG, context engineering for agents</p>
-            <p><strong>Value:</strong> 30% accuracy improvement, easier agent development</p>
+            <p><strong>Value:</strong> Significant accuracy improvement, easier agent development</p>
         </div>
         
         <div class="persona-card">
@@ -571,7 +562,7 @@ print(f"   Consistency: {report.consistency_score}/100")</code></pre>
             <h4>📚 Knowledge Manager</h4>
             <p><strong>Needs:</strong> Build enterprise knowledge graphs from documents</p>
             <p><strong>Use Case:</strong> Enterprise knowledge graph construction</p>
-            <p><strong>Value:</strong> 80% faster information discovery, automatic relationship discovery</p>
+            <p><strong>Value:</strong> Much faster information discovery, automatic relationship discovery</p>
         </div>
         
         <div class="persona-card">
