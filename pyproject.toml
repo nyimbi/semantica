@@ -9,10 +9,10 @@ description = "🧠 Semantica - An Open Source Framework for building Semantic L
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
-    {name = "Semantica Contributors", email = "semantica-dev@users.noreply.github.com"}
+    {name = "Hawksight AI", email = "semantica-dev@users.noreply.github.com"}
 ]
 maintainers = [
-    {name = "Semantica Contributors", email = "semantica-dev@users.noreply.github.com"}
+    {name = "Hawksight AI", email = "semantica-dev@users.noreply.github.com"}
 ]
 keywords = [
     "semantic-layer", "knowledge-engineering", "nlp", "knowledge-graph",

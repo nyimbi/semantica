@@ -118,37 +118,41 @@ Semantica fills this gap with a **complete semantic intelligence framework**:
 - **Python**: 3.8 or higher (3.9+ recommended)
 - **pip**: Latest version
 
-#### Basic Installation
+#### Install from Source (Current Method)
+
+Since Semantica is currently in development, install from the local source:
 
 ```bash
-# Install Semantica with core dependencies
-pip install semantica
+# Navigate to the semantica directory
+cd path/to/semantica
+
+# Install in editable mode with core dependencies
+pip install -e .
+
+# Or install with all optional dependencies
+pip install -e ".[all]"
 ```
 
-#### Complete Installation (Recommended)
+#### Development Installation
 
 ```bash
-# Install with all optional dependencies
-pip install "semantica[all]"
+# Clone the repository (if not already cloned)
+git clone https://github.com/semantica-dev/semantica.git
+cd semantica
+
+# Install in editable mode with dev dependencies
+pip install -e ".[dev]"
 ```
 
 #### Custom Installation
 
 ```bash
 # Install specific extras as needed
-pip install "semantica[llm-openai]"        # LLM providers
-pip install "semantica[graph-neo4j]"       # Graph databases
-pip install "semantica[vector-pinecone]"   # Vector stores
-pip install "semantica[dev]"                # Development tools
-pip install "semantica[gpu]"                # GPU support
-```
-
-#### Development Installation
-
-```bash
-git clone https://github.com/semantica-dev/semantica.git
-cd semantica
-pip install -e ".[dev]"
+pip install -e ".[llm-openai]"        # LLM providers
+pip install -e ".[graph-neo4j]"       # Graph databases
+pip install -e ".[vector-pinecone]"   # Vector stores
+pip install -e ".[dev]"               # Development tools
+pip install -e ".[gpu]"               # GPU support
 ```
 
 #### Verify Installation
@@ -156,6 +160,8 @@ pip install -e ".[dev]"
 ```bash
 python -c "import semantica; print(semantica.__version__)"
 ```
+
+> **Note:** Once published to PyPI, you'll be able to install with `pip install semantica`
 
 ---
 
