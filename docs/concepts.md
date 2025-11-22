@@ -2,9 +2,15 @@
 
 Understand the fundamental concepts behind Semantica.
 
+!!! note "Conceptual Foundation"
+    This guide covers the theoretical foundations of Semantica. For hands-on examples, see the [Quickstart Guide](quickstart.md) or [Examples](examples.md).
+
 ## What is a Knowledge Graph?
 
 A knowledge graph is a structured representation of information where:
+
+!!! tip "Visual Understanding"
+    The diagram below shows how entities (nodes) are connected by relationships (edges) to form a knowledge graph. This structure enables powerful querying and reasoning capabilities.
 
 - **Entities** are the nodes (people, places, concepts, etc.)
 - **Relationships** are the edges connecting entities
@@ -132,6 +138,9 @@ Unify data from multiple sources:
 - **Conflict resolution**: Handle contradictions
 
 ## Best Practices
+
+!!! note "Best Practices"
+    Following these practices will help you build high-quality knowledge graphs and avoid common pitfalls.
 
 ### 1. Start Small
 

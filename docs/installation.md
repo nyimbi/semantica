@@ -2,6 +2,9 @@
 
 Get Semantica up and running in minutes.
 
+!!! note "System Requirements"
+    Semantica requires Python 3.8 or higher. For best performance, we recommend Python 3.10+.
+
 ## Prerequisites
 
 Before installing Semantica, ensure you have:
@@ -21,6 +24,9 @@ pip install semantica
 ```
 
 This installs Semantica with all core dependencies.
+
+!!! tip "Virtual Environment"
+    We recommend installing Semantica in a virtual environment to avoid dependency conflicts. Use `python -m venv venv` to create one, then activate it before installing.
 
 ## Verify Installation
 

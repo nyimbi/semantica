@@ -132,42 +132,134 @@ html {
   display: none !important;
 }
 
-/* Table of Contents - Move to Left Side */
+/* Table of Contents - Three Column Layout with Sidebars */
 @media screen and (min-width: 76.25em) {
+  /* Left Navigation Sidebar */
   .md-sidebar--primary {
-    width: 8rem !important;
-  }
-
-  .md-sidebar--secondary {
+    width: 16rem !important;
+    position: fixed !important;
     left: 0 !important;
-    right: auto !important;
-    width: 8rem !important;
-    border-right: 1px solid var(--md-default-fg-color--lightest);
+    top: 2.4rem !important;
+    height: calc(100vh - 2.4rem) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    border-right: 1px solid rgba(0, 0, 0, 0.1) !important;
+    background-color: var(--md-default-bg-color) !important;
   }
 
+  [data-md-color-scheme="slate"] .md-sidebar--primary {
+    border-right: 1px solid rgba(255, 255, 255, 0.12) !important;
+  }
+
+  /* Right TOC Sidebar */
+  .md-sidebar--secondary {
+    position: fixed !important;
+    right: 0 !important;
+    top: 2.4rem !important;
+    width: 16rem !important;
+    height: calc(100vh - 2.4rem) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    border-left: 1px solid rgba(0, 0, 0, 0.1) !important;
+    background-color: var(--md-default-bg-color) !important;
+  }
+
+  [data-md-color-scheme="slate"] .md-sidebar--secondary {
+    border-left: 1px solid rgba(255, 255, 255, 0.12) !important;
+  }
+
+  /* Content Area - Fill space between sidebars with no gaps */
   .md-content {
-    margin-left: 8rem !important;
-    margin-right: 8rem !important;
+    margin-left: 16rem !important;
+    margin-right: 16rem !important;
+    max-width: none !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* Ensure sidebars scroll properly */
+  .md-sidebar__scrollwrap {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    height: 100% !important;
   }
 }
 
-/* Ensure content uses full available width */
+/* Custom Scrollbar Styling for Sidebars */
+.md-sidebar--primary::-webkit-scrollbar,
+.md-sidebar--secondary::-webkit-scrollbar {
+  width: 8px;
+}
+
+.md-sidebar--primary::-webkit-scrollbar-track,
+.md-sidebar--secondary::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.md-sidebar--primary::-webkit-scrollbar-thumb,
+.md-sidebar--secondary::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.md-sidebar--primary::-webkit-scrollbar-thumb:hover,
+.md-sidebar--secondary::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+[data-md-color-scheme="slate"] .md-sidebar--primary::-webkit-scrollbar-thumb,
+[data-md-color-scheme="slate"] .md-sidebar--secondary::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+[data-md-color-scheme="slate"] .md-sidebar--primary::-webkit-scrollbar-thumb:hover,
+[data-md-color-scheme="slate"] .md-sidebar--secondary::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Ensure content uses full available width - Gap-free layout */
 .md-grid {
   max-width: 100% !important;
 }
 
 .md-content__inner {
   max-width: 100% !important;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  padding-left: 2rem !important;
+  padding-right: 2rem !important;
+  margin: 0 !important;
 }
 
 .md-main__inner {
   max-width: 100% !important;
+  margin: 0 !important;
 }
 
 .md-container {
-  padding: 0;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Remove gaps between sidebars and content */
+@media screen and (min-width: 76.25em) {
+  .md-main {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .md-content {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-top: 0 !important;
+  }
+
+  /* Ensure sidebars are flush with content */
+  .md-sidebar--primary {
+    margin-right: 0 !important;
+  }
+
+  .md-sidebar--secondary {
+    margin-left: 0 !important;
+  }
 }
 
 /* Reduce spacing for compact look */
@@ -335,4 +427,147 @@ html {
 .md-header__inner {
   padding-bottom: 0.5rem !important;
   gap: 0.5rem !important;
+}
+
+/* ============================================
+   Pydantic-Style Callout Boxes (Admonitions)
+   ============================================ */
+
+/* Base Admonition Styling */
+.md-typeset .admonition {
+  border-radius: 6px;
+  border-left-width: 4px;
+  margin: 1.5em 0;
+  padding: 1em 1.5em;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Note - Blue */
+.md-typeset .admonition.note,
+.md-typeset .admonition-title--note {
+  border-color: #2196F3;
+  background-color: rgba(33, 150, 243, 0.1);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.note {
+  background-color: rgba(33, 150, 243, 0.15);
+  border-color: #42A5F5;
+}
+
+.md-typeset .admonition.note .admonition-title {
+  background-color: rgba(33, 150, 243, 0.2);
+  border-color: #2196F3;
+  color: #1976D2;
+  font-weight: 600;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.note .admonition-title {
+  background-color: rgba(33, 150, 243, 0.25);
+  color: #64B5F6;
+}
+
+/* Tip - Green */
+.md-typeset .admonition.tip,
+.md-typeset .admonition-title--tip {
+  border-color: #4CAF50;
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.tip {
+  background-color: rgba(76, 175, 80, 0.15);
+  border-color: #66BB6A;
+}
+
+.md-typeset .admonition.tip .admonition-title {
+  background-color: rgba(76, 175, 80, 0.2);
+  border-color: #4CAF50;
+  color: #388E3C;
+  font-weight: 600;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.tip .admonition-title {
+  background-color: rgba(76, 175, 80, 0.25);
+  color: #81C784;
+}
+
+/* Warning - Orange/Yellow */
+.md-typeset .admonition.warning,
+.md-typeset .admonition-title--warning {
+  border-color: #FF9800;
+  background-color: rgba(255, 152, 0, 0.1);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.warning {
+  background-color: rgba(255, 152, 0, 0.15);
+  border-color: #FFB74D;
+}
+
+.md-typeset .admonition.warning .admonition-title {
+  background-color: rgba(255, 152, 0, 0.2);
+  border-color: #FF9800;
+  color: #F57C00;
+  font-weight: 600;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.warning .admonition-title {
+  background-color: rgba(255, 152, 0, 0.25);
+  color: #FFB74D;
+}
+
+/* Danger - Red */
+.md-typeset .admonition.danger,
+.md-typeset .admonition-title--danger {
+  border-color: #F44336;
+  background-color: rgba(244, 67, 54, 0.1);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.danger {
+  background-color: rgba(244, 67, 54, 0.15);
+  border-color: #E57373;
+}
+
+.md-typeset .admonition.danger .admonition-title {
+  background-color: rgba(244, 67, 54, 0.2);
+  border-color: #F44336;
+  color: #D32F2F;
+  font-weight: 600;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.danger .admonition-title {
+  background-color: rgba(244, 67, 54, 0.25);
+  color: #EF5350;
+}
+
+/* Admonition Content Styling */
+.md-typeset .admonition p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.md-typeset .admonition p:first-child {
+  margin-top: 0;
+}
+
+.md-typeset .admonition p:last-child {
+  margin-bottom: 0;
+}
+
+/* Admonition Icons */
+.md-typeset .admonition-title::before {
+  margin-right: 0.5em;
+}
+
+/* Info - Alternative blue (if used) */
+.md-typeset .admonition.info {
+  border-color: #00BCD4;
+  background-color: rgba(0, 188, 212, 0.1);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.info {
+  background-color: rgba(0, 188, 212, 0.15);
+  border-color: #4DD0E1;
 }

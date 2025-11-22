@@ -2,7 +2,13 @@
 
 Real-world examples and use cases for Semantica.
 
+!!! tip "Interactive Learning"
+    For hands-on interactive tutorials, check out our [Cookbook](cookbook.md) with Jupyter notebooks covering everything from basics to advanced use cases.
+
 ## Basic Examples
+
+!!! note "Code Examples"
+    All examples assume you have Semantica installed and imported. See the [Installation Guide](installation.md) if you need to set it up first.
 
 ### Example 1: Basic Knowledge Graph
 

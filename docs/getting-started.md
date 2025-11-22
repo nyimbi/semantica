@@ -2,6 +2,9 @@
 
 Welcome to Semantica! This guide will help you get up and running quickly.
 
+!!! note "First Time User?"
+    If you're new to knowledge graphs or semantic processing, we recommend starting with the [Core Concepts](concepts.md) guide to understand the fundamentals before diving into code.
+
 ## Choose Your Path
 
 === "🚀 Quick Start (5 min)"
@@ -36,6 +39,9 @@ Welcome to Semantica! This guide will help you get up and running quickly.
     
     Perfect for: Hands-on learners
 
+!!! tip "Choose Your Path"
+    Not sure where to start? The Quick Start path (5 min) is perfect for trying Semantica quickly, while the Complete Guide (30 min) provides thorough understanding for production use.
+
 ## What Can You Build?
 
 Semantica helps you transform unstructured data into intelligent knowledge:
@@ -62,6 +68,9 @@ Semantica helps you transform unstructured data into intelligent knowledge:
 - Power GraphRAG systems
 - Enhance AI agent memory
 - Build semantic search systems
+
+!!! warning "Installation First"
+    Make sure you have Semantica installed before proceeding. If you encounter any issues, check the [Installation Guide](installation.md) troubleshooting section.
 
 ## Next Steps
 

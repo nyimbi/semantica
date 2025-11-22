@@ -2,6 +2,9 @@
 
 Get started with Semantica in 5 minutes. This guide will walk you through building your first knowledge graph.
 
+!!! tip "Before You Start"
+    Make sure you have Semantica installed. If not, follow the [Installation Guide](installation.md) first. This quickstart assumes basic Python knowledge.
+
 ## Overview
 
 ```mermaid
@@ -25,6 +28,9 @@ pip install semantica
 ```
 
 See the [Installation Guide](installation.md) for detailed instructions.
+
+!!! note "Installation Options"
+    For production use, consider installing with optional dependencies for better performance: `pip install semantica[all]`. See the [Installation Guide](installation.md) for all options.
 
 ## Step 2: Your First Knowledge Graph
 

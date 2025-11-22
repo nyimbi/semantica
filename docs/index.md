@@ -8,6 +8,9 @@
 
 Semantica is an open-source framework for building semantic layers and knowledge graphs that power the next generation of AI applications.
 
+!!! tip "New to Semantica?"
+    Start with the [Quickstart Guide](quickstart.md) to build your first knowledge graph in minutes, or explore our [interactive Cookbook](cookbook.md) for hands-on tutorials.
+
 ## 🚀 Get Started in 60 Seconds
 
 ```python
@@ -19,6 +22,9 @@ print(f"Extracted {len(result['knowledge_graph']['entities'])} entities")
 ```
 
 **Install:** `pip install semantica`
+
+!!! note "Installation Requirements"
+    Semantica requires Python 3.8+. For complete installation instructions including optional dependencies, see the [Installation Guide](installation.md).
 
 ## Choose Your Learning Path
 
@@ -86,6 +92,9 @@ Generate embeddings for text, images, and audio.
 
 ### 🔍 Vector Store Integration
 Store and query embeddings efficiently with support for multiple vector stores.
+
+!!! tip "Production Ready"
+    Semantica is designed for production use with enterprise-grade features including conflict resolution, quality assurance, and scalable processing pipelines.
 
 ## Resources
 
