@@ -134,9 +134,9 @@ html {
 
 /* Table of Contents - Three Column Layout with Sidebars */
 @media screen and (min-width: 76.25em) {
-  /* Left Navigation Sidebar */
+  /* Left Navigation Sidebar - Narrower for more content space */
   .md-sidebar--primary {
-    width: 16rem !important;
+    width: 12rem !important;
     position: fixed !important;
     left: 0 !important;
     top: 2.4rem !important;
@@ -151,12 +151,12 @@ html {
     border-right: 1px solid rgba(255, 255, 255, 0.12) !important;
   }
 
-  /* Right TOC Sidebar */
+  /* Right TOC Sidebar - Slightly narrower */
   .md-sidebar--secondary {
     position: fixed !important;
     right: 0 !important;
     top: 2.4rem !important;
-    width: 16rem !important;
+    width: 14rem !important;
     height: calc(100vh - 2.4rem) !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
@@ -168,10 +168,10 @@ html {
     border-left: 1px solid rgba(255, 255, 255, 0.12) !important;
   }
 
-  /* Content Area - Fill space between sidebars with no gaps */
+  /* Content Area - Wider to fill more space, dense layout */
   .md-content {
-    margin-left: 16rem !important;
-    margin-right: 16rem !important;
+    margin-left: 12rem !important;
+    margin-right: 14rem !important;
     max-width: none !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
@@ -224,9 +224,10 @@ html {
 
 .md-content__inner {
   max-width: 100% !important;
-  padding-left: 2rem !important;
-  padding-right: 2rem !important;
+  padding-left: 2.5rem !important;
+  padding-right: 2.5rem !important;
   margin: 0 !important;
+  width: 100% !important;
 }
 
 .md-main__inner {
@@ -239,17 +240,19 @@ html {
   margin: 0 !important;
 }
 
-/* Remove gaps between sidebars and content */
+/* Remove gaps between sidebars and content - Dense layout */
 @media screen and (min-width: 76.25em) {
   .md-main {
     margin: 0 !important;
     padding: 0 !important;
+    width: 100% !important;
   }
 
   .md-content {
     padding-left: 0 !important;
     padding-right: 0 !important;
     margin-top: 0 !important;
+    width: 100% !important;
   }
 
   /* Ensure sidebars are flush with content */
@@ -260,54 +263,68 @@ html {
   .md-sidebar--secondary {
     margin-left: 0 !important;
   }
+
+  /* Make content area use maximum available width */
+  .md-content__inner {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
 }
 
-/* Reduce spacing for compact look */
+/* Reduce spacing for compact, dense look */
 .md-content {
   padding-top: 0.8rem !important;
   padding-bottom: 1.2rem !important;
 }
 
-/* Tighter headings */
+/* Make content area wider and more dense */
+@media screen and (min-width: 76.25em) {
+  .md-content__inner {
+    padding-left: 2.5rem !important;
+    padding-right: 2.5rem !important;
+  }
+}
+
+/* Tighter headings - More dense */
 .md-typeset h1 {
-  margin-top: 1.5rem !important;
-  margin-bottom: 0.6rem !important;
+  margin-top: 1.2rem !important;
+  margin-bottom: 0.5rem !important;
   font-weight: 700;
 }
 
 .md-typeset h2 {
-  margin-top: 1.0rem !important;
-  margin-bottom: 0.4rem !important;
+  margin-top: 0.8rem !important;
+  margin-bottom: 0.3rem !important;
   font-weight: 600;
 }
 
 .md-typeset h3 {
-  margin-top: 1.0rem !important;
-  margin-bottom: 0.4rem !important;
+  margin-top: 0.8rem !important;
+  margin-bottom: 0.3rem !important;
   font-weight: 600;
 }
 
 .md-typeset h4 {
-  margin-top: 0.8rem !important;
-  margin-bottom: 0.3rem !important;
+  margin-top: 0.6rem !important;
+  margin-bottom: 0.25rem !important;
 }
 
 .md-typeset p {
-  margin-top: 0.8em;
-  margin-bottom: 0.8em;
-  line-height: 1.7;
+  margin-top: 0.6em;
+  margin-bottom: 0.6em;
+  line-height: 1.6;
 }
 
 .md-typeset ul,
 .md-typeset ol {
-  margin-top: 0.8em;
-  margin-bottom: 0.8em;
+  margin-top: 0.6em;
+  margin-bottom: 0.6em;
 }
 
 .md-typeset li {
-  margin-top: 0.4em;
-  margin-bottom: 0.4em;
-  line-height: 1.7;
+  margin-top: 0.3em;
+  margin-bottom: 0.3em;
+  line-height: 1.6;
 }
 
 /* Sidebar spacing */
@@ -386,11 +403,11 @@ html {
   color: #8C9464;
 }
 
-/* Theme toggle button - visible and accessible in header */
+/* Theme toggle button - positioned before search with spacing */
 .md-header__button[for^="__palette"] {
   margin: 0 !important;
   margin-left: auto !important;
-  margin-right: 0.5rem !important;
+  margin-right: 0.75rem !important;
   padding: 0.5rem !important;
   display: flex !important;
   align-items: center !important;
@@ -402,6 +419,14 @@ html {
   visibility: visible !important;
   cursor: pointer !important;
   transition: opacity 0.2s ease !important;
+  order: 1 !important;
+}
+
+/* Search button - positioned after theme toggle */
+.md-header__button[for="__search"],
+.md-header__button[for^="__search"] {
+  order: 2 !important;
+  margin-right: 0.5rem !important;
 }
 
 .md-header__button[for^="__palette"]:hover {
@@ -427,6 +452,19 @@ html {
 .md-header__inner {
   padding-bottom: 0.5rem !important;
   gap: 0.5rem !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* Ensure proper spacing between theme toggle and search */
+.md-header__inner > .md-header__button[for^="__palette"] {
+  margin-right: 0.75rem !important;
+}
+
+.md-header__inner > .md-header__button[for="__search"],
+.md-header__inner > .md-header__button[for^="__search"] {
+  margin-left: 0 !important;
+  margin-right: 0.5rem !important;
 }
 
 /* ============================================
