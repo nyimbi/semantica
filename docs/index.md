@@ -21,6 +21,34 @@
 
 ---
 
+<div class="grid cards" markdown>
+
+-   :material-rocket-launch: **Quick Start**
+    ---
+    Get up and running with Semantica in minutes.
+    
+    [Get Started](getting-started.md)
+
+-   :material-book-open-page-variant: **Core Concepts**
+    ---
+    Understand the fundamental concepts behind Semantica.
+    
+    [Learn Concepts](concepts.md)
+
+-   :material-code-braces: **API Reference**
+    ---
+    Detailed documentation for all Semantica modules.
+    
+    [View API](reference/core.md)
+
+-   :material-chef-hat: **Cookbook**
+    ---
+    Interactive tutorials and real-world examples.
+    
+    [Explore Cookbook](cookbook.md)
+
+</div>
+
 ## 🌟 What is Semantica?
 
 Semantica is the **first comprehensive open-source framework** that bridges the critical gap between raw data chaos and AI-ready knowledge. It's not just another data processing library—it's a complete **semantic intelligence platform** that transforms unstructured information into structured, queryable knowledge graphs that power the next generation of AI applications.
@@ -89,25 +117,25 @@ graph TD
 
 **Without a semantic layer:**
 
-!!! failure "RAG Systems Fail"
-    - Vector search alone misses crucial relationships
-    - No graph traversal for context expansion
-    - 30% lower accuracy than hybrid approaches
+<div class="grid cards" markdown>
 
-!!! failure "AI Agents Hallucinate"
-    - No ontological constraints to validate actions
-    - Missing semantic routing for intent understanding
-    - No persistent memory across conversations
+-   **RAG Systems Fail**
+    ---
+    Vector search alone misses crucial relationships. No graph traversal for context expansion leads to 30% lower accuracy than hybrid approaches.
 
-!!! failure "Multi-Agent Systems Can't Coordinate"
-    - No shared semantic models for collaboration
-    - Unable to validate actions against domain rules
-    - Conflicting knowledge representations
+-   **AI Agents Hallucinate**
+    ---
+    No ontological constraints to validate actions. Missing semantic routing for intent understanding and no persistent memory across conversations.
 
-!!! failure "Knowledge Is Untrusted"
-    - Duplicate entities pollute graphs
-    - Conflicting facts from different sources
-    - No provenance tracking or validation
+-   **Multi-Agent Coordination Fails**
+    ---
+    No shared semantic models for collaboration. Unable to validate actions against domain rules, leading to conflicting knowledge representations.
+
+-   **Knowledge Is Untrusted**
+    ---
+    Duplicate entities pollute graphs. Conflicting facts from different sources with no provenance tracking or validation.
+
+</div>
 
 ### The Semantica Solution
 

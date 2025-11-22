@@ -101,6 +101,8 @@ nav:
     - quickstart.md
   - Guides:
     - concepts.md
+    - modules.md
+    - use-cases.md
     - examples.md
     - learning-more.md
   - Cookbook:
