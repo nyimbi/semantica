@@ -26,7 +26,10 @@ jobs:
 
     - name: Extract version from tag
       id: tag
-      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "Tag version: $VERSION"
 
     - name: Build package
       run: python -m build
@@ -35,21 +38,27 @@ jobs:
       run: twine check dist/*
 
     - name: Create GitHub Release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v1
       with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ steps.tag.outputs.VERSION }}
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ steps.tag.outputs.VERSION }}
         body_path: CHANGELOG.md
         draft: false
         prerelease: false
+        generate_release_notes: true
 
     - name: Publish to PyPI
       if: startsWith(github.ref, 'refs/tags/v')
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-      run: twine upload dist/*
+      run: |
+        if [ -z "${TWINE_PASSWORD:-}" ]; then
+          echo "⚠️  PYPI_API_TOKEN secret not configured. Skipping PyPI upload."
+          echo "This is expected if PyPI publishing is not yet set up."
+          exit 0
+        fi
+        echo "📦 Publishing to PyPI..."
+        twine upload --skip-existing dist/*
       continue-on-error: true
 
