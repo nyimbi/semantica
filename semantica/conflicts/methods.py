@@ -112,16 +112,20 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional, Union, Callable
+from typing import Any, Callable, Dict, List, Optional, Union
 
-from ..utils.logging import get_logger
 from ..utils.exceptions import ProcessingError
-from .conflict_detector import ConflictDetector, Conflict, ConflictType
-from .conflict_resolver import ConflictResolver, ResolutionResult, ResolutionStrategy
+from ..utils.logging import get_logger
 from .conflict_analyzer import ConflictAnalyzer, ConflictPattern
-from .source_tracker import SourceTracker, SourceReference, PropertySource
-from .investigation_guide import InvestigationGuideGenerator, InvestigationGuide, InvestigationStep
+from .conflict_detector import Conflict, ConflictDetector, ConflictType
+from .conflict_resolver import ConflictResolver, ResolutionResult, ResolutionStrategy
+from .investigation_guide import (
+    InvestigationGuide,
+    InvestigationGuideGenerator,
+    InvestigationStep,
+)
 from .registry import method_registry
+from .source_tracker import PropertySource, SourceReference, SourceTracker
 
 logger = get_logger("conflicts_methods")
 

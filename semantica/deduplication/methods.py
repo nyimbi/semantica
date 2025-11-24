@@ -94,16 +94,16 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional, Union, Callable
+from typing import Any, Callable, Dict, List, Optional, Union
 
-from ..utils.logging import get_logger
 from ..utils.exceptions import ProcessingError
-from .duplicate_detector import DuplicateDetector, DuplicateCandidate, DuplicateGroup
+from ..utils.logging import get_logger
+from .cluster_builder import Cluster, ClusterBuilder, ClusterResult
+from .duplicate_detector import DuplicateCandidate, DuplicateDetector, DuplicateGroup
 from .entity_merger import EntityMerger, MergeOperation
-from .similarity_calculator import SimilarityCalculator, SimilarityResult
-from .cluster_builder import ClusterBuilder, Cluster, ClusterResult
 from .merge_strategy import MergeStrategy, MergeStrategyManager
 from .registry import method_registry
+from .similarity_calculator import SimilarityCalculator, SimilarityResult
 
 logger = get_logger("deduplication_methods")
 

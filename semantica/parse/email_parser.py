@@ -34,7 +34,7 @@ License: MIT
 
 import email
 from dataclasses import dataclass, field
-from email import message_from_string, message_from_bytes
+from email import message_from_bytes, message_from_string
 from email.header import decode_header
 from email.utils import parsedate_to_datetime
 from pathlib import Path

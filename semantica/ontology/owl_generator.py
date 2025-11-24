@@ -27,18 +27,18 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional, Union
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
-from ..utils.exceptions import ValidationError, ProcessingError
+from ..utils.exceptions import ProcessingError, ValidationError
+from ..utils.helpers import ensure_directory
 from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
-from ..utils.helpers import ensure_directory
 from .namespace_manager import NamespaceManager
 
 # Optional rdflib import
 try:
-    from rdflib import Graph, Namespace, URIRef, Literal, RDF, RDFS, OWL, XSD
+    from rdflib import OWL, RDF, RDFS, XSD, Graph, Literal, Namespace, URIRef
     from rdflib.namespace import NamespaceManager as RDFNamespaceManager
     HAS_RDFLIB = True
 except ImportError:

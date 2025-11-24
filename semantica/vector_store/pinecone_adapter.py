@@ -34,6 +34,7 @@ License: MIT
 """
 
 from typing import Any, Dict, List, Optional, Union
+
 import numpy as np
 
 from ..utils.exceptions import ProcessingError, ValidationError
@@ -43,7 +44,7 @@ from ..utils.progress_tracker import get_progress_tracker
 # Optional Pinecone import
 try:
     import pinecone
-    from pinecone import Pinecone, ServerlessSpec, PodSpec
+    from pinecone import Pinecone, PodSpec, ServerlessSpec
     PINECONE_AVAILABLE = True
 except ImportError:
     PINECONE_AVAILABLE = False

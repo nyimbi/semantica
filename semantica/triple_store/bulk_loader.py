@@ -28,15 +28,15 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional
+import time
 from dataclasses import dataclass, field
 from datetime import datetime
-import time
+from typing import Any, Dict, List, Optional
 
-from ..utils.exceptions import ValidationError, ProcessingError
+from ..semantic_extract.triple_extractor import Triple
+from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
-from ..semantic_extract.triple_extractor import Triple
 
 
 @dataclass

@@ -25,9 +25,9 @@ import importlib
 import importlib.util
 import inspect
 import time
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type, Union
-from dataclasses import dataclass, field
 
 from ..utils.exceptions import ConfigurationError, ValidationError
 from ..utils.logging import get_logger

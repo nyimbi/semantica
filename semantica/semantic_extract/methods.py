@@ -106,13 +106,13 @@ License: MIT
 """
 
 import re
-from typing import List, Dict, Any, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
-from ..utils.logging import get_logger
 from ..utils.exceptions import ProcessingError
-from .providers import create_provider, HuggingFaceModelLoader
-from .registry import method_registry
+from ..utils.logging import get_logger
 from .ner_extractor import Entity
+from .providers import HuggingFaceModelLoader, create_provider
+from .registry import method_registry
 from .relation_extractor import Relation
 from .triple_extractor import Triple
 

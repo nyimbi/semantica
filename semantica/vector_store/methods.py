@@ -91,13 +91,15 @@ Example Usage:
 """
 
 from typing import Any, Dict, List, Optional, Union
+
 import numpy as np
-from .vector_store import VectorStore, VectorIndexer, VectorRetriever, VectorManager
-from .hybrid_search import HybridSearch, MetadataFilter, SearchRanker
-from .metadata_store import MetadataStore, MetadataIndex, MetadataSchema
-from .namespace_manager import NamespaceManager, Namespace
-from .registry import method_registry
+
 from .config import vector_store_config
+from .hybrid_search import HybridSearch, MetadataFilter, SearchRanker
+from .metadata_store import MetadataIndex, MetadataSchema, MetadataStore
+from .namespace_manager import Namespace, NamespaceManager
+from .registry import method_registry
+from .vector_store import VectorIndexer, VectorManager, VectorRetriever, VectorStore
 
 # Global manager instances
 _global_store: Optional[VectorStore] = None

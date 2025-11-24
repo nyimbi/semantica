@@ -121,20 +121,20 @@ Example Usage:
     >>> date = normalize_date("2023-01-15", method="default")
 """
 
-from typing import Any, Dict, List, Optional, Callable, Union, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
+from ..utils.exceptions import ConfigurationError, ProcessingError
 from ..utils.logging import get_logger
-from ..utils.exceptions import ProcessingError, ConfigurationError
-from .text_normalizer import TextNormalizer
-from .text_cleaner import TextCleaner
-from .entity_normalizer import EntityNormalizer
-from .date_normalizer import DateNormalizer
-from .number_normalizer import NumberNormalizer
-from .data_cleaner import DataCleaner
-from .language_detector import LanguageDetector
-from .encoding_handler import EncodingHandler
-from .registry import method_registry
 from .config import normalize_config
+from .data_cleaner import DataCleaner
+from .date_normalizer import DateNormalizer
+from .encoding_handler import EncodingHandler
+from .entity_normalizer import EntityNormalizer
+from .language_detector import LanguageDetector
+from .number_normalizer import NumberNormalizer
+from .registry import method_registry
+from .text_cleaner import TextCleaner
+from .text_normalizer import TextNormalizer
 
 logger = get_logger("normalize_methods")
 

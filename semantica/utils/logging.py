@@ -46,10 +46,10 @@ License: MIT
 
 import logging
 import sys
+from datetime import datetime
 from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
-from datetime import datetime
 
 from .constants import DEFAULT_CONFIG
 

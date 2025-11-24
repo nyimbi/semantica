@@ -35,9 +35,9 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional, Set, Union
-from collections import defaultdict
 import json
+from collections import defaultdict
+from typing import Any, Dict, List, Optional, Set, Union
 
 from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger

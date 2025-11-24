@@ -86,19 +86,20 @@ Example Usage:
     >>> fig = visualize_embeddings(embeddings, labels, method="2d_projection", output="interactive")
 """
 
-from typing import Any, Dict, List, Optional, Union
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+
 import numpy as np
 
+from .analytics_visualizer import AnalyticsVisualizer
+from .config import visualization_config
+from .embedding_visualizer import EmbeddingVisualizer
 from .kg_visualizer import KGVisualizer
 from .ontology_visualizer import OntologyVisualizer
-from .embedding_visualizer import EmbeddingVisualizer
-from .semantic_network_visualizer import SemanticNetworkVisualizer
 from .quality_visualizer import QualityVisualizer
-from .analytics_visualizer import AnalyticsVisualizer
-from .temporal_visualizer import TemporalVisualizer
 from .registry import method_registry
-from .config import visualization_config
+from .semantic_network_visualizer import SemanticNetworkVisualizer
+from .temporal_visualizer import TemporalVisualizer
 
 # Global visualizer instances
 _global_kg_visualizer: Optional[KGVisualizer] = None

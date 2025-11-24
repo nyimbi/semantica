@@ -39,8 +39,8 @@ Author: Semantica Contributors
 License: MIT
 """
 
-import traceback
 import sys
+import traceback
 from typing import Any, Dict, Optional, Type
 
 

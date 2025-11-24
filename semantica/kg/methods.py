@@ -149,22 +149,22 @@ Example Usage:
     >>> centrality = calculate_centrality(kg, method="degree")
 """
 
-from typing import Any, Dict, List, Optional, Callable, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
+from ..utils.exceptions import ConfigurationError, ProcessingError
 from ..utils.logging import get_logger
-from ..utils.exceptions import ProcessingError, ConfigurationError
-from .graph_builder import GraphBuilder
-from .graph_analyzer import GraphAnalyzer
-from .entity_resolver import EntityResolver
-from .graph_validator import GraphValidator
-from .conflict_detector import ConflictDetector
 from .centrality_calculator import CentralityCalculator
 from .community_detector import CommunityDetector
+from .config import kg_config
+from .conflict_detector import ConflictDetector
 from .connectivity_analyzer import ConnectivityAnalyzer
 from .deduplicator import Deduplicator
-from .temporal_query import TemporalGraphQuery
+from .entity_resolver import EntityResolver
+from .graph_analyzer import GraphAnalyzer
+from .graph_builder import GraphBuilder
+from .graph_validator import GraphValidator
 from .registry import method_registry
-from .config import kg_config
+from .temporal_query import TemporalGraphQuery
 
 logger = get_logger("kg_methods")
 

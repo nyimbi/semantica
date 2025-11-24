@@ -49,22 +49,22 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional, Union
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
-from .orchestrator import Semantica
 from .config_manager import Config, ConfigManager
-from .lifecycle import LifecycleManager, SystemState, HealthStatus
-from .plugin_registry import PluginRegistry, PluginInfo, LoadedPlugin
-from .registry import MethodRegistry, method_registry
+from .lifecycle import HealthStatus, LifecycleManager, SystemState
 from .methods import (
     build_knowledge_base,
-    run_pipeline,
-    initialize_framework,
-    get_status,
     get_orchestration_method,
-    list_available_methods
+    get_status,
+    initialize_framework,
+    list_available_methods,
+    run_pipeline,
 )
+from .orchestrator import Semantica
+from .plugin_registry import LoadedPlugin, PluginInfo, PluginRegistry
+from .registry import MethodRegistry, method_registry
 
 __all__ = [
     # Main orchestrator

@@ -96,51 +96,29 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from .inference_engine import (
-    InferenceEngine,
-    InferenceResult,
-    InferenceStrategy
+from .abductive_reasoner import AbductiveReasoner
+from .abductive_reasoner import Explanation as AbductiveExplanation
+from .abductive_reasoner import Hypothesis, HypothesisRanking, Observation
+from .deductive_reasoner import Argument, Conclusion, DeductiveReasoner, Premise, Proof
+from .explanation_generator import (
+    Explanation,
+    ExplanationGenerator,
+    Justification,
+    ReasoningPath,
+    ReasoningStep,
 )
-from .sparql_reasoner import (
-    SPARQLReasoner,
-    SPARQLQueryResult
-)
+from .inference_engine import InferenceEngine, InferenceResult, InferenceStrategy
 from .rete_engine import (
-    ReteEngine,
-    Fact,
-    Match,
-    ReteNode,
     AlphaNode,
     BetaNode,
-    TerminalNode
+    Fact,
+    Match,
+    ReteEngine,
+    ReteNode,
+    TerminalNode,
 )
-from .abductive_reasoner import (
-    AbductiveReasoner,
-    Observation,
-    Hypothesis,
-    Explanation as AbductiveExplanation,
-    HypothesisRanking
-)
-from .deductive_reasoner import (
-    DeductiveReasoner,
-    Premise,
-    Conclusion,
-    Proof,
-    Argument
-)
-from .rule_manager import (
-    RuleManager,
-    Rule,
-    RuleExecution,
-    RuleType
-)
-from .explanation_generator import (
-    ExplanationGenerator,
-    Explanation,
-    ReasoningStep,
-    ReasoningPath,
-    Justification
-)
+from .rule_manager import Rule, RuleExecution, RuleManager, RuleType
+from .sparql_reasoner import SPARQLQueryResult, SPARQLReasoner
 
 __all__ = [
     # Inference

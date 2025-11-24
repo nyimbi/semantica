@@ -28,8 +28,8 @@ from typing import Any, Dict, List, Optional, Union
 
 from ..utils.exceptions import ProcessingError
 from ..utils.logging import get_logger
-from .structured_data_parser import StructuredDataParser
 from .document_parser import DocumentParser
+from .structured_data_parser import StructuredDataParser
 
 
 class MCPParser:

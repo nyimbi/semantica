@@ -106,12 +106,13 @@ Example Usage:
 """
 
 from typing import Any, Dict, List, Optional, Union
+
 from ..semantic_extract.triple_extractor import Triple
-from .triple_manager import TripleManager, TripleStore
-from .query_engine import QueryEngine, QueryResult, QueryPlan
 from .bulk_loader import BulkLoader, LoadProgress
-from .registry import method_registry
 from .config import triple_store_config
+from .query_engine import QueryEngine, QueryPlan, QueryResult
+from .registry import method_registry
+from .triple_manager import TripleManager, TripleStore
 
 # Global manager instances
 _global_manager: Optional[TripleManager] = None

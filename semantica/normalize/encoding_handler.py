@@ -27,9 +27,10 @@ Author: Semantica Contributors
 License: MIT
 """
 
-import chardet
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
+
+import chardet
 
 from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger

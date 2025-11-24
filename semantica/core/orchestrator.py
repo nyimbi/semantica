@@ -24,15 +24,15 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional, Union
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
-from .config_manager import Config, ConfigManager
-from .lifecycle import LifecycleManager, SystemState
-from .plugin_registry import PluginRegistry
 from ..utils.exceptions import ConfigurationError, ProcessingError
 from ..utils.logging import get_logger, log_execution_time
 from ..utils.progress_tracker import get_progress_tracker
+from .config_manager import Config, ConfigManager
+from .lifecycle import LifecycleManager, SystemState
+from .plugin_registry import PluginRegistry
 
 
 class Semantica:
@@ -426,10 +426,10 @@ class Semantica:
         try:
             # Import key modules to verify they're available
             # These imports don't create instances, just verify module availability
-            from ..kg import GraphBuilder
-            from ..pipeline import PipelineBuilder
             from ..ingest import FileIngestor
+            from ..kg import GraphBuilder
             from ..parse import DocumentParser
+            from ..pipeline import PipelineBuilder
             
             self.logger.debug("Framework modules verified and available")
         except ImportError as e:
@@ -569,7 +569,7 @@ class Semantica:
         """
         try:
             from ..kg import GraphBuilder
-            
+
             # Extract entities and relationships from results
             graph_sources = []
             for result in results:
@@ -622,7 +622,7 @@ class Semantica:
         """
         try:
             from ..embeddings import EmbeddingGenerator
-            
+
             # Extract text content from results
             texts_to_embed = []
             for result in results:
@@ -759,8 +759,9 @@ class Semantica:
         
         # Try to get system metrics using psutil (optional dependency)
         try:
-            import psutil
             import os
+
+            import psutil
             
             process = psutil.Process(os.getpid())
             memory_info = process.memory_info()

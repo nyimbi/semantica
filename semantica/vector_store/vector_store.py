@@ -38,6 +38,7 @@ License: MIT
 """
 
 from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
 
 from ..utils.exceptions import ProcessingError, ValidationError

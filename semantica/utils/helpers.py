@@ -55,13 +55,13 @@ Author: Semantica Contributors
 License: MIT
 """
 
+import hashlib
+import json
 import os
 import re
-import json
-import hashlib
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Union, Tuple
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 
 def format_data(data: Any, format_type: str = "json") -> str:
@@ -489,8 +489,8 @@ def retry_on_error(
     Returns:
         Decorator function
     """
-    import time
     import functools
+    import time
     
     def decorator(func):
         @functools.wraps(func)

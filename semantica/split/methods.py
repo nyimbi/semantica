@@ -86,11 +86,11 @@ License: MIT
 """
 
 import re
-from typing import List, Dict, Any, Optional, Union, Callable
 from dataclasses import dataclass
+from typing import Any, Callable, Dict, List, Optional, Union
 
-from ..utils.logging import get_logger
 from ..utils.exceptions import ProcessingError
+from ..utils.logging import get_logger
 from .semantic_chunker import Chunk
 
 logger = get_logger("split_methods")
@@ -144,8 +144,8 @@ except ImportError:
 
 # Import from semantic_extract for entity/relation extraction
 try:
-    from ..semantic_extract.providers import create_provider
     from ..semantic_extract.ner_extractor import NERExtractor
+    from ..semantic_extract.providers import create_provider
     from ..semantic_extract.relation_extractor import RelationExtractor
     SEMANTIC_EXTRACT_AVAILABLE = True
 except ImportError:

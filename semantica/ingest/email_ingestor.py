@@ -848,7 +848,7 @@ class EmailIngestor:
         
         addresses = []
         try:
-            from email.utils import parseaddr, getaddresses
+            from email.utils import getaddresses, parseaddr
             parsed_addresses = getaddresses([address_string])
             addresses = [addr[1] for addr in parsed_addresses if addr[1]]
         except Exception:

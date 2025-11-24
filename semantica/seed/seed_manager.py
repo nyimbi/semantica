@@ -31,18 +31,18 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional, Union
-from dataclasses import dataclass, field
-from pathlib import Path
-import json
 import csv
+import json
+from dataclasses import dataclass, field
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
-from ..utils.exceptions import ValidationError, ProcessingError
-from ..utils.logging import get_logger
+from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.helpers import read_json_file, write_json_file
-from ..utils.types import EntityDict, RelationshipDict
+from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
+from ..utils.types import EntityDict, RelationshipDict
 
 
 @dataclass
@@ -362,7 +362,7 @@ class SeedDataManager:
         """
         try:
             from ..ingest.db_ingestor import DBIngestor
-            
+
             # Initialize DB ingestor
             db_ingestor = DBIngestor(config={"connection_string": connection_string})
             
@@ -439,7 +439,7 @@ class SeedDataManager:
         """
         try:
             import requests
-            
+
             # Build full URL
             if endpoint:
                 full_url = f"{api_url.rstrip('/')}/{endpoint.lstrip('/')}"

@@ -30,11 +30,11 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Optional, Union
 from pathlib import Path
+from typing import Optional, Union
 
-from ...utils.logging import get_logger
 from ...utils.exceptions import ProcessingError
+from ...utils.logging import get_logger
 
 
 def export_plotly_figure(fig, file_path: Union[str, Path], format: str = "html", **options) -> None:

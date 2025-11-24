@@ -30,16 +30,16 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from ..utils.exceptions import ValidationError, ProcessingError
+from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
 from .class_inferrer import ClassInferrer
-from .property_generator import PropertyGenerator
 from .namespace_manager import NamespaceManager
 from .naming_conventions import NamingConventions
+from .property_generator import PropertyGenerator
 
 
 class OntologyGenerator:

@@ -339,9 +339,9 @@ class JavaScriptRenderer:
             
             # Wait for specific selector if requested
             if options.get("wait_for_selector"):
-                from selenium.webdriver.support.ui import WebDriverWait
-                from selenium.webdriver.support import expected_conditions as EC
                 from selenium.webdriver.common.by import By
+                from selenium.webdriver.support import expected_conditions as EC
+                from selenium.webdriver.support.ui import WebDriverWait
                 
                 WebDriverWait(self.driver, wait_time).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, options["wait_for_selector"]))
@@ -391,8 +391,8 @@ class JavaScriptRenderer:
             return False
         
         try:
-            from selenium.webdriver.support.ui import WebDriverWait
             from selenium.webdriver.support import expected_conditions as EC
+            from selenium.webdriver.support.ui import WebDriverWait
             
             WebDriverWait(self.driver, timeout).until(
                 lambda driver: driver.execute_script('return document.readyState') == 'complete'

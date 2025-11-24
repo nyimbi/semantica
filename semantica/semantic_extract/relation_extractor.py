@@ -69,8 +69,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from ..utils.exceptions import ProcessingError
 from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
-from .ner_extractor import Entity
 from .methods import get_relation_method
+from .ner_extractor import Entity
 
 
 @dataclass

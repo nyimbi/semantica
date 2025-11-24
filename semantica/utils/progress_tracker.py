@@ -31,23 +31,23 @@ Author: Semantica Contributors
 License: MIT
 """
 
-import sys
 import inspect
+import sys
 import threading
 import time
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Callable, Union, Tuple
 from pathlib import Path
-from contextlib import contextmanager
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from .logging import get_logger
 
 # Try to import IPython for Jupyter support
 try:
-    from IPython.display import display, clear_output, HTML
     from IPython import get_ipython
+    from IPython.display import HTML, clear_output, display
     IPYTHON_AVAILABLE = True
 except ImportError:
     IPYTHON_AVAILABLE = False

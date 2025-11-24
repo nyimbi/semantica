@@ -28,8 +28,8 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import List, Dict, Optional
 from enum import Enum
+from typing import Dict, List, Optional
 
 
 class ColorScheme(Enum):

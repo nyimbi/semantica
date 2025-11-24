@@ -31,8 +31,8 @@ Author: Semantica Contributors
 License: MIT
 """
 
-import time
 import re
+import time
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from datetime import datetime

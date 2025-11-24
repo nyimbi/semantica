@@ -93,15 +93,15 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional, Callable, Union
 from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Union
 
+from ..utils.exceptions import ConfigurationError, ProcessingError
 from ..utils.logging import get_logger
-from ..utils.exceptions import ProcessingError, ConfigurationError
-from .context_graph import ContextGraphBuilder, ContextNode, ContextEdge
 from .agent_memory import AgentMemory, MemoryItem
+from .context_graph import ContextEdge, ContextGraphBuilder, ContextNode
 from .context_retriever import ContextRetriever, RetrievedContext
-from .entity_linker import EntityLinker, EntityLink, LinkedEntity
+from .entity_linker import EntityLink, EntityLinker, LinkedEntity
 from .registry import method_registry
 
 logger = get_logger("context_methods")

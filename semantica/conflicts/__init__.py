@@ -82,26 +82,26 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from .conflict_detector import ConflictDetector, Conflict, ConflictType
-from .source_tracker import SourceTracker, SourceReference, PropertySource
+from .config import ConflictsConfig, conflicts_config
+from .conflict_analyzer import ConflictAnalyzer, ConflictPattern
+from .conflict_detector import Conflict, ConflictDetector, ConflictType
 from .conflict_resolver import ConflictResolver, ResolutionResult, ResolutionStrategy
 from .investigation_guide import (
-    InvestigationGuideGenerator,
     InvestigationGuide,
+    InvestigationGuideGenerator,
     InvestigationStep,
 )
-from .conflict_analyzer import ConflictAnalyzer, ConflictPattern
-from .registry import MethodRegistry, method_registry
 from .methods import (
-    detect_conflicts,
-    resolve_conflicts,
     analyze_conflicts,
-    track_sources,
+    detect_conflicts,
     generate_investigation_guide,
     get_conflict_method,
     list_available_methods,
+    resolve_conflicts,
+    track_sources,
 )
-from .config import ConflictsConfig, conflicts_config
+from .registry import MethodRegistry, method_registry
+from .source_tracker import PropertySource, SourceReference, SourceTracker
 
 
 def detect_and_resolve(

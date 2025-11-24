@@ -225,7 +225,7 @@ class TextEmbedder:
             np.ndarray: 128-dimensional hash-based embedding vector
         """
         import hashlib
-        
+
         # Generate hash from text
         hash_obj = hashlib.sha256(text.encode('utf-8'))
         hash_bytes = hash_obj.digest()

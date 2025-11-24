@@ -106,17 +106,21 @@ Example Usage:
     >>> report = generate_quality_report(knowledge_graph, schema, method="default")
 """
 
-from typing import Any, Dict, List, Optional, Callable, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
+from ..utils.exceptions import ConfigurationError, ProcessingError
 from ..utils.logging import get_logger
-from ..utils.exceptions import ProcessingError, ConfigurationError
-from .kg_quality_assessor import KGQualityAssessor, ConsistencyChecker, CompletenessValidator
-from .quality_metrics import QualityMetrics, CompletenessMetrics, ConsistencyMetrics
-from .validation_engine import ValidationEngine
-from .reporting import QualityReporter, QualityReport
 from .automated_fixes import AutomatedFixer, FixResult
-from .registry import method_registry
 from .config import kg_qa_config
+from .kg_quality_assessor import (
+    CompletenessValidator,
+    ConsistencyChecker,
+    KGQualityAssessor,
+)
+from .quality_metrics import CompletenessMetrics, ConsistencyMetrics, QualityMetrics
+from .registry import method_registry
+from .reporting import QualityReport, QualityReporter
+from .validation_engine import ValidationEngine
 
 logger = get_logger("kg_qa_methods")
 

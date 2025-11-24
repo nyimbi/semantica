@@ -32,7 +32,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from PIL import Image, ExifTags
+from PIL import ExifTags, Image
 from PIL.Image import Image as PILImage
 
 from ..utils.exceptions import ProcessingError, ValidationError

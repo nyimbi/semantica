@@ -28,13 +28,14 @@ License: MIT
 """
 
 from typing import Any, Dict, List, Optional
-import requests
 from urllib.parse import urljoin
 
-from ..utils.exceptions import ValidationError, ProcessingError
+import requests
+
+from ..semantic_extract.triple_extractor import Triple
+from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
-from ..semantic_extract.triple_extractor import Triple
 
 
 class BlazegraphAdapter:

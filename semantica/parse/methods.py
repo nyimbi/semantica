@@ -119,25 +119,25 @@ Example Usage:
     >>> data = parse_json("data.json", method="default")
 """
 
-from typing import Any, Dict, List, Optional, Callable, Union
 from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Union
 
+from ..utils.exceptions import ConfigurationError, ProcessingError
 from ..utils.logging import get_logger
-from ..utils.exceptions import ProcessingError, ConfigurationError
-from .document_parser import DocumentParser
-from .web_parser import WebParser
-from .structured_data_parser import StructuredDataParser
-from .email_parser import EmailParser
 from .code_parser import CodeParser
+from .config import parse_config
+from .csv_parser import CSVParser
+from .document_parser import DocumentParser
+from .docx_parser import DOCXParser
+from .email_parser import EmailParser
+from .image_parser import ImageParser
+from .json_parser import JSONParser
 from .media_parser import MediaParser
 from .pdf_parser import PDFParser
-from .docx_parser import DOCXParser
-from .json_parser import JSONParser
-from .csv_parser import CSVParser
-from .xml_parser import XMLParser
-from .image_parser import ImageParser
 from .registry import method_registry
-from .config import parse_config
+from .structured_data_parser import StructuredDataParser
+from .web_parser import WebParser
+from .xml_parser import XMLParser
 
 logger = get_logger("parse_methods")
 

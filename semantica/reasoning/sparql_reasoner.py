@@ -29,14 +29,14 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional, Set
-from dataclasses import dataclass, field
 import re
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Set
 
-from ..utils.exceptions import ValidationError, ProcessingError
+from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
-from .rule_manager import RuleManager, Rule
+from .rule_manager import Rule, RuleManager
 
 
 @dataclass

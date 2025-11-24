@@ -140,34 +140,38 @@ License: MIT
 
 from typing import Any, Dict, List, Optional, Union
 
-from .graph_builder import GraphBuilder
-from .entity_resolver import EntityResolver
-from .graph_analyzer import GraphAnalyzer
-from .temporal_query import TemporalGraphQuery, TemporalPatternDetector, TemporalVersionManager
-from .conflict_detector import ConflictDetector
-from .provenance_tracker import ProvenanceTracker
 from .centrality_calculator import CentralityCalculator
 from .community_detector import CommunityDetector
+from .config import KGConfig, kg_config
+from .conflict_detector import ConflictDetector
 from .connectivity_analyzer import ConnectivityAnalyzer
 from .deduplicator import Deduplicator
+from .entity_resolver import EntityResolver
+from .graph_analyzer import GraphAnalyzer
+from .graph_builder import GraphBuilder
 from .graph_validator import GraphValidator
-from .seed_manager import SeedManager
-from .registry import MethodRegistry, method_registry
 from .methods import (
-    build_kg,
-    analyze_graph,
-    resolve_entities,
-    validate_graph,
-    detect_conflicts,
-    calculate_centrality,
-    detect_communities,
     analyze_connectivity,
+    analyze_graph,
+    build_kg,
+    calculate_centrality,
     deduplicate_graph,
-    query_temporal,
+    detect_communities,
+    detect_conflicts,
     get_kg_method,
     list_available_methods,
+    query_temporal,
+    resolve_entities,
+    validate_graph,
 )
-from .config import KGConfig, kg_config
+from .provenance_tracker import ProvenanceTracker
+from .registry import MethodRegistry, method_registry
+from .seed_manager import SeedManager
+from .temporal_query import (
+    TemporalGraphQuery,
+    TemporalPatternDetector,
+    TemporalVersionManager,
+)
 
 __all__ = [
     # Core Classes

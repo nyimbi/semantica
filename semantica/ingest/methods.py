@@ -139,21 +139,21 @@ Example Usage:
     >>> content = ingest_web("https://example.com", method="url")
 """
 
-from typing import Any, Dict, List, Optional, Callable, Union
 from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Union
 
+from ..utils.exceptions import ConfigurationError, ProcessingError
 from ..utils.logging import get_logger
-from ..utils.exceptions import ProcessingError, ConfigurationError
-from .file_ingestor import FileIngestor, FileObject
-from .web_ingestor import WebIngestor, WebContent
-from .feed_ingestor import FeedIngestor, FeedData
-from .stream_ingestor import StreamIngestor, StreamProcessor
-from .repo_ingestor import RepoIngestor
-from .email_ingestor import EmailIngestor, EmailData
-from .db_ingestor import DBIngestor, TableData
-from .mcp_ingestor import MCPIngestor, MCPData
-from .registry import method_registry
 from .config import ingest_config
+from .db_ingestor import DBIngestor, TableData
+from .email_ingestor import EmailData, EmailIngestor
+from .feed_ingestor import FeedData, FeedIngestor
+from .file_ingestor import FileIngestor, FileObject
+from .mcp_ingestor import MCPData, MCPIngestor
+from .registry import method_registry
+from .repo_ingestor import RepoIngestor
+from .stream_ingestor import StreamIngestor, StreamProcessor
+from .web_ingestor import WebContent, WebIngestor
 
 logger = get_logger("ingest_methods")
 

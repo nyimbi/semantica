@@ -34,6 +34,7 @@ License: MIT
 """
 
 from typing import Any, Dict, List, Optional, Union
+
 import numpy as np
 
 from ..utils.exceptions import ProcessingError, ValidationError
@@ -44,8 +45,13 @@ from ..utils.progress_tracker import get_progress_tracker
 try:
     from qdrant_client import QdrantClient as QdrantClientLib
     from qdrant_client.models import (
-        Distance, VectorParams, PointStruct, Filter, FieldCondition,
-        MatchValue, CollectionStatus
+        CollectionStatus,
+        Distance,
+        FieldCondition,
+        Filter,
+        MatchValue,
+        PointStruct,
+        VectorParams,
     )
     QDRANT_AVAILABLE = True
 except ImportError:

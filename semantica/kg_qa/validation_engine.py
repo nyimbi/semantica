@@ -25,8 +25,8 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional, Callable
 from dataclasses import dataclass, field
+from typing import Any, Callable, Dict, List, Optional
 
 from ..utils.exceptions import ValidationError
 from ..utils.logging import get_logger

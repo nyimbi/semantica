@@ -28,13 +28,13 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional
-from dataclasses import dataclass, field
-from enum import Enum
 import threading
 import time
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any, Dict, List, Optional
 
-from ..utils.exceptions import ValidationError, ProcessingError
+from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
 from .pipeline_builder import Pipeline
@@ -111,7 +111,7 @@ class ResourceScheduler:
         """Initialize available resources."""
         try:
             import psutil
-            
+
             # CPU resources
             cpu_count = psutil.cpu_count(logical=False) or 1
             self.resources["cpu"] = Resource(

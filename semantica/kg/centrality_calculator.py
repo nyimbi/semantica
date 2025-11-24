@@ -21,8 +21,8 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional
 from collections import defaultdict, deque
+from typing import Any, Dict, List, Optional
 
 from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker

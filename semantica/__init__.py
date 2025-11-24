@@ -15,54 +15,54 @@ __version__ = "0.0.1"
 __author__ = "Semantica Contributors"
 __license__ = "MIT"
 
-from typing import Any, Dict, List, Optional, Union
+# Import submodules for dot notation access
+import importlib
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
 # Core imports
-from .core import Semantica, Config, ConfigManager, LifecycleManager, PluginRegistry
-
-# Pipeline imports
-from .pipeline import (
-    PipelineBuilder,
-    ExecutionEngine,
-    FailureHandler,
-    ParallelismManager,
-    ResourceScheduler,
-    PipelineValidator,
-)
+from .core import Config, ConfigManager, LifecycleManager, PluginRegistry, Semantica
 
 # KG Quality Assurance
 from .kg_qa import (
-    KGQualityAssessor,
-    ConsistencyChecker,
-    CompletenessValidator,
-    QualityMetrics,
-    CompletenessMetrics,
-    ConsistencyMetrics,
-    ValidationEngine,
-    RuleValidator,
-    ConstraintValidator,
-    QualityReporter,
-    IssueTracker,
-    ImprovementSuggestions,
     AutomatedFixer,
     AutoMerger,
     AutoResolver,
+    CompletenessMetrics,
+    CompletenessValidator,
+    ConsistencyChecker,
+    ConsistencyMetrics,
+    ConstraintValidator,
+    ImprovementSuggestions,
+    IssueTracker,
+    KGQualityAssessor,
+    QualityMetrics,
+    QualityReporter,
+    RuleValidator,
+    ValidationEngine,
+)
+
+# Pipeline imports
+from .pipeline import (
+    ExecutionEngine,
+    FailureHandler,
+    ParallelismManager,
+    PipelineBuilder,
+    PipelineValidator,
+    ResourceScheduler,
 )
 
 # Visualization
 from .visualization import (
+    AnalyticsVisualizer,
+    EmbeddingVisualizer,
     KGVisualizer,
     OntologyVisualizer,
-    EmbeddingVisualizer,
-    SemanticNetworkVisualizer,
     QualityVisualizer,
-    AnalyticsVisualizer,
+    SemanticNetworkVisualizer,
     TemporalVisualizer,
 )
 
-# Import submodules for dot notation access
-import importlib
 
 # Module proxy class for submodule access
 class _ModuleProxy:

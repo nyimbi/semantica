@@ -37,7 +37,7 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Dict, Callable, Any, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 
 class MethodRegistry:

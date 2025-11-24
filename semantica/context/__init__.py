@@ -89,23 +89,23 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional, Union
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
-from .context_graph import ContextGraphBuilder, ContextNode, ContextEdge
-from .entity_linker import EntityLinker, EntityLink, LinkedEntity
 from .agent_memory import AgentMemory, MemoryItem
+from .config import ContextConfig, context_config
+from .context_graph import ContextEdge, ContextGraphBuilder, ContextNode
 from .context_retriever import ContextRetriever, RetrievedContext
-from .registry import MethodRegistry, method_registry
+from .entity_linker import EntityLink, EntityLinker, LinkedEntity
 from .methods import (
     build_context_graph,
-    store_memory,
-    retrieve_context,
-    link_entities,
     get_context_method,
+    link_entities,
     list_available_methods,
+    retrieve_context,
+    store_memory,
 )
-from .config import ContextConfig, context_config
+from .registry import MethodRegistry, method_registry
 
 __all__ = [
     # Main classes

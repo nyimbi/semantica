@@ -51,23 +51,23 @@ Author: Semantica Contributors
 License: MIT
 """
 
-import os
 import json
+import os
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
 import yaml
 
+from ..utils.constants import DEFAULT_CONFIG
 from ..utils.exceptions import ConfigurationError
 from ..utils.helpers import (
+    get_nested_value,
     merge_dicts,
     read_json_file,
-    get_nested_value,
     set_nested_value,
 )
-from ..utils.validators import validate_config
-from ..utils.constants import DEFAULT_CONFIG
 from ..utils.progress_tracker import get_progress_tracker
+from ..utils.validators import validate_config
 
 
 class Config:

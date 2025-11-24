@@ -55,12 +55,12 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional, Union
+from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from collections import deque
+from typing import Any, Dict, List, Optional, Union
 
-from ..utils.exceptions import ValidationError, ProcessingError
+from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
 from ..utils.types import EntityDict, RelationshipDict
 

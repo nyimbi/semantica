@@ -32,9 +32,9 @@ from typing import Any, Dict, List, Optional
 
 from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
-from .quality_metrics import QualityMetrics, CompletenessMetrics, ConsistencyMetrics
+from .quality_metrics import CompletenessMetrics, ConsistencyMetrics, QualityMetrics
+from .reporting import QualityReport, QualityReporter
 from .validation_engine import ValidationEngine
-from .reporting import QualityReporter, QualityReport
 
 
 class KGQualityAssessor:

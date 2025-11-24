@@ -29,12 +29,12 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional, Set, Union
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Set, Union
 
-from ..utils.exceptions import ValidationError, ProcessingError
-from ..utils.logging import get_logger
+from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.helpers import ensure_directory
+from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
 
 
@@ -417,7 +417,7 @@ class RDFSerializer:
             >>> jsonld = serializer.serialize_to_jsonld(rdf_data)
         """
         import json
-        
+
         # Initialize JSON-LD structure with context
         jsonld = {
             "@context": {

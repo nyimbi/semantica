@@ -22,10 +22,10 @@ Author: Semantica Contributors
 License: MIT
 """
 
+from ..utils.progress_tracker import get_progress_tracker
 from .centrality_calculator import CentralityCalculator
 from .community_detector import CommunityDetector
 from .connectivity_analyzer import ConnectivityAnalyzer
-from ..utils.progress_tracker import get_progress_tracker
 
 
 class GraphAnalyzer:

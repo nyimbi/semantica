@@ -116,22 +116,22 @@ Example Usage:
     >>> method = get_embedding_method("text", "custom_method")
 """
 
-from typing import Any, Dict, List, Optional, Callable, Union
 from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import numpy as np
 
+from ..utils.exceptions import ConfigurationError, ProcessingError
 from ..utils.logging import get_logger
-from ..utils.exceptions import ProcessingError, ConfigurationError
-from .embedding_generator import EmbeddingGenerator
-from .text_embedder import TextEmbedder
-from .image_embedder import ImageEmbedder
 from .audio_embedder import AudioEmbedder
-from .multimodal_embedder import MultimodalEmbedder
+from .config import embeddings_config
+from .embedding_generator import EmbeddingGenerator
 from .embedding_optimizer import EmbeddingOptimizer
+from .image_embedder import ImageEmbedder
+from .multimodal_embedder import MultimodalEmbedder
 from .pooling_strategies import PoolingStrategyFactory
 from .registry import method_registry
-from .config import embeddings_config
+from .text_embedder import TextEmbedder
 
 logger = get_logger("embeddings_methods")
 

@@ -30,18 +30,18 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional, Union
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
-import plotly.graph_objects as go
 import plotly.express as px
+import plotly.graph_objects as go
 
-from ..utils.logging import get_logger
 from ..utils.exceptions import ProcessingError
+from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
-from .utils.layout_algorithms import ForceDirectedLayout
 from .utils.color_schemes import ColorPalette, ColorScheme
 from .utils.export_formats import export_plotly_figure
+from .utils.layout_algorithms import ForceDirectedLayout
 
 
 class SemanticNetworkVisualizer:

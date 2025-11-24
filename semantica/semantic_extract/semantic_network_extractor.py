@@ -150,7 +150,7 @@ class SemanticNetworkExtractor:
         try:
             from .ner_extractor import NERExtractor
             from .relation_extractor import RelationExtractor
-            
+
             # Extract entities if not provided
             if entities is None:
                 self.progress_tracker.update_tracking(tracking_id, message="Extracting entities...")

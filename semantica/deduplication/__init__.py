@@ -79,21 +79,26 @@ License: MIT
 
 from typing import Any, Dict, List, Optional, Union
 
-from .entity_merger import EntityMerger, MergeOperation
-from .similarity_calculator import SimilarityCalculator, SimilarityResult
-from .duplicate_detector import DuplicateDetector, DuplicateCandidate, DuplicateGroup
-from .merge_strategy import MergeStrategyManager, MergeStrategy, MergeResult, PropertyMergeRule
-from .cluster_builder import ClusterBuilder, Cluster, ClusterResult
-from .registry import MethodRegistry, method_registry
-from .methods import (
-    detect_duplicates,
-    merge_entities,
-    calculate_similarity,
-    build_clusters,
-    get_deduplication_method,
-    list_available_methods
-)
+from .cluster_builder import Cluster, ClusterBuilder, ClusterResult
 from .config import DeduplicationConfig, dedup_config
+from .duplicate_detector import DuplicateCandidate, DuplicateDetector, DuplicateGroup
+from .entity_merger import EntityMerger, MergeOperation
+from .merge_strategy import (
+    MergeResult,
+    MergeStrategy,
+    MergeStrategyManager,
+    PropertyMergeRule,
+)
+from .methods import (
+    build_clusters,
+    calculate_similarity,
+    detect_duplicates,
+    get_deduplication_method,
+    list_available_methods,
+    merge_entities,
+)
+from .registry import MethodRegistry, method_registry
+from .similarity_calculator import SimilarityCalculator, SimilarityResult
 
 __all__ = [
     # Main classes

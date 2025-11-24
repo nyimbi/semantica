@@ -23,10 +23,10 @@ License: MIT
 """
 
 import time
+from collections import defaultdict
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple
-from dataclasses import dataclass, field
-from collections import defaultdict
 
 from ..utils.exceptions import SemanticaError
 from ..utils.logging import get_logger

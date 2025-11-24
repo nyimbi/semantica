@@ -28,15 +28,15 @@ Author: Semantica Contributors
 License: MIT
 """
 
-import time
 import threading
+import time
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from urllib.parse import urljoin, urlparse
 
 import requests
-import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
 
 from ..utils.exceptions import ProcessingError, ValidationError
@@ -333,7 +333,7 @@ class FeedParser:
     def _parse_date(self, date_string: str) -> Optional[datetime]:
         """Parse date string to datetime."""
         from datetime import datetime as dt
-        
+
         # Try common date formats
         formats = [
             "%a, %d %b %Y %H:%M:%S %z",  # RFC 822

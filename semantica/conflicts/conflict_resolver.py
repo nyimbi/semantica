@@ -55,16 +55,16 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional, Callable, Union
+from collections import Counter
 from dataclasses import dataclass, field
 from enum import Enum
-from collections import Counter
+from typing import Any, Callable, Dict, List, Optional, Union
 
-from .conflict_detector import Conflict, ConflictType
-from .source_tracker import SourceTracker
-from ..utils.exceptions import ValidationError, ProcessingError
+from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
+from .conflict_detector import Conflict, ConflictType
+from .source_tracker import SourceTracker
 
 
 class ResolutionStrategy(str, Enum):

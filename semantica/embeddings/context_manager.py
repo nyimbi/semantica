@@ -154,7 +154,7 @@ class ContextManager:
             >>> print(window.context_id)
         """
         import uuid
-        
+
         # Generate unique context ID
         context_id = str(uuid.uuid4())
         end_index = start_index + len(text)

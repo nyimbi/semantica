@@ -302,8 +302,8 @@ class StructuredDataParser:
     
     def _convert_to_xml(self, data: Any, root_tag: str = "root") -> str:
         """Convert data to XML format."""
-        from xml.etree.ElementTree import Element, tostring
         import xml.dom.minidom
+        from xml.etree.ElementTree import Element, tostring
         
         def dict_to_xml(d: Dict[str, Any], parent: Element):
             for key, value in d.items():

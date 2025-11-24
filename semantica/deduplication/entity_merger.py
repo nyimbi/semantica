@@ -42,14 +42,14 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
 from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
 from .duplicate_detector import DuplicateDetector, DuplicateGroup
-from .merge_strategy import MergeStrategyManager, MergeStrategy, MergeResult
+from .merge_strategy import MergeResult, MergeStrategy, MergeStrategyManager
 
 
 @dataclass

@@ -69,9 +69,10 @@ Author: Semantica Contributors
 License: MIT
 """
 
-import os
 import json
+import os
 from typing import Any, Dict, List, Optional
+
 import torch
 
 from ..utils.exceptions import ProcessingError
@@ -412,7 +413,7 @@ class HuggingFaceLLMProvider(BaseProvider):
     def _init_model(self):
         """Initialize HuggingFace model."""
         try:
-            from transformers import AutoTokenizer, AutoModelForCausalLM
+            from transformers import AutoModelForCausalLM, AutoTokenizer
             
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
             self.model = AutoModelForCausalLM.from_pretrained(self.model_name)
@@ -518,7 +519,7 @@ class HuggingFaceModelLoader:
             return self._cache[cache_key]
         
         try:
-            from transformers import pipeline, AutoTokenizer, AutoModelForSeq2SeqLM
+            from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, pipeline
             
             tokenizer = AutoTokenizer.from_pretrained(model_name)
             model = AutoModelForSeq2SeqLM.from_pretrained(model_name)

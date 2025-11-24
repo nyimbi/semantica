@@ -126,24 +126,24 @@ Example Usage:
     >>> result = validate_ontology(ontology, method="default")
 """
 
-from typing import Any, Dict, List, Optional, Callable, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
+from ..utils.exceptions import ConfigurationError, ProcessingError
 from ..utils.logging import get_logger
-from ..utils.exceptions import ProcessingError, ConfigurationError
-from .ontology_generator import OntologyGenerator
+from .associative_class import AssociativeClassBuilder
 from .class_inferrer import ClassInferrer
-from .property_generator import PropertyGenerator
+from .competency_questions import CompetencyQuestionsManager
+from .config import ontology_config
+from .namespace_manager import NamespaceManager
+from .ontology_evaluator import OntologyEvaluator
+from .ontology_generator import OntologyGenerator
 from .ontology_validator import OntologyValidator
 from .owl_generator import OWLGenerator
-from .ontology_evaluator import OntologyEvaluator
+from .property_generator import PropertyGenerator
+from .registry import method_registry
 from .requirements_spec import RequirementsSpecManager
-from .competency_questions import CompetencyQuestionsManager
 from .reuse_manager import ReuseManager
 from .version_manager import VersionManager
-from .namespace_manager import NamespaceManager
-from .associative_class import AssociativeClassBuilder
-from .registry import method_registry
-from .config import ontology_config
 
 logger = get_logger("ontology_methods")
 

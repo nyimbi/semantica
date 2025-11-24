@@ -34,9 +34,9 @@ from typing import Any, Dict, List, Optional, Union
 from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
-from .pdf_parser import PDFParser
 from .docx_parser import DOCXParser
 from .html_parser import HTMLParser
+from .pdf_parser import PDFParser
 
 
 class DocumentParser:

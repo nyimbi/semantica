@@ -1,20 +1,28 @@
-name: Discussion Helper Bot
+name: Mark Discussion as Answered
+
+# Marks a discussion as answered when a maintainer comments /answered
+# Only works for members, owners, and collaborators
 
 on:
   discussion_comment:
     types: [created]
 
-jobs:
+permissions:
+  contents: read
+  discussions: write
 
+jobs:
   mark-answered:
-    name: Mark Discussions as Answered
+    name: Mark Discussion as Answered
     runs-on: ubuntu-latest
     if: |
       github.event.action == 'created' && 
       contains(github.event.comment.body, '/answered') && 
-      (github.event.comment.author_association == 'MEMBER' || github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'COLLABORATOR')
+      (github.event.comment.author_association == 'MEMBER' || 
+       github.event.comment.author_association == 'OWNER' || 
+       github.event.comment.author_association == 'COLLABORATOR')
     steps:
-      - name: Mark as answered
+      - name: Mark discussion as answered
         uses: actions/github-script@v7
         with:
           script: |
@@ -38,6 +46,6 @@ jobs:
                 repo: context.repo.repo
               });
             } catch (error) {
-              console.log('Could not mark as answered (may require manual action):', error.message);
+              console.log('Could not mark as answered:', error.message);
             }
 

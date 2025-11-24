@@ -35,6 +35,7 @@ License: MIT
 """
 
 from typing import Any, Dict, List, Optional, Union
+
 import numpy as np
 
 from ..utils.exceptions import ProcessingError, ValidationError

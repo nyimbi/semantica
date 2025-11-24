@@ -36,6 +36,7 @@ License: MIT
 """
 
 from typing import Any, Dict, List, Optional, Union
+
 import numpy as np
 
 from ..utils.exceptions import ProcessingError, ValidationError
@@ -45,8 +46,13 @@ from ..utils.progress_tracker import get_progress_tracker
 # Optional Milvus import
 try:
     from pymilvus import (
-        connections, Collection, FieldSchema, CollectionSchema, DataType,
-        utility, MilvusException
+        Collection,
+        CollectionSchema,
+        DataType,
+        FieldSchema,
+        MilvusException,
+        connections,
+        utility,
     )
     MILVUS_AVAILABLE = True
 except ImportError:

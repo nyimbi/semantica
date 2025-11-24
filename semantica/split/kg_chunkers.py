@@ -43,17 +43,18 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import List, Dict, Any, Optional, Union
-from .semantic_chunker import Chunk
-from .methods import (
-    split_entity_aware,
-    split_relation_aware,
-    split_graph_based,
-    split_ontology_aware,
-    split_hierarchical
-)
+from typing import Any, Dict, List, Optional, Union
+
 from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
+from .methods import (
+    split_entity_aware,
+    split_graph_based,
+    split_hierarchical,
+    split_ontology_aware,
+    split_relation_aware,
+)
+from .semantic_chunker import Chunk
 
 logger = get_logger("kg_chunkers")
 

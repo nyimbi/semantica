@@ -39,12 +39,13 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import List, Optional, Union, Dict, Any
-from .semantic_chunker import Chunk
-from .methods import get_split_method, list_available_methods
-from .config import split_config
-from ..utils.logging import get_logger
+from typing import Any, Dict, List, Optional, Union
+
 from ..utils.exceptions import ProcessingError
+from ..utils.logging import get_logger
+from .config import split_config
+from .methods import get_split_method, list_available_methods
+from .semantic_chunker import Chunk
 
 logger = get_logger("text_splitter")
 

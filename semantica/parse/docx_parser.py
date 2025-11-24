@@ -34,8 +34,8 @@ from typing import Any, Dict, List, Optional, Union
 
 from docx import Document
 from docx.document import Document as DocxDocument
-from docx.oxml.text.paragraph import CT_P
 from docx.oxml.table import CT_Tbl
+from docx.oxml.text.paragraph import CT_P
 from docx.table import Table
 from docx.text.paragraph import Paragraph
 

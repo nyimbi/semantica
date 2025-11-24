@@ -58,10 +58,10 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional, Set
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
-from collections import defaultdict
+from typing import Any, Dict, List, Optional, Set
 
 from ..utils.exceptions import ValidationError
 from ..utils.logging import get_logger

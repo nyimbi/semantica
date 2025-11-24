@@ -31,8 +31,8 @@ from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
 
 try:
-    import torch
     import clip
+    import torch
     CLIP_AVAILABLE = True
 except ImportError:
     CLIP_AVAILABLE = False

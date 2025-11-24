@@ -58,15 +58,15 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional, Set, Union
-from dataclasses import dataclass, field
 from collections import defaultdict
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Set, Union
 
-from .entity_linker import EntityLinker
-from ..utils.exceptions import ValidationError, ProcessingError
+from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
 from ..utils.types import EntityDict, RelationshipDict
+from .entity_linker import EntityLinker
 
 
 @dataclass
@@ -501,8 +501,9 @@ class ContextGraphBuilder:
     
     def _load_conversation(self, file_path: str) -> Dict[str, Any]:
         """Load conversation from file."""
-        from ..utils.helpers import read_json_file
         from pathlib import Path
+
+        from ..utils.helpers import read_json_file
         
         path = Path(file_path)
         if not path.exists():

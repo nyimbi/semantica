@@ -27,10 +27,11 @@ License: MIT
 
 from typing import Any, Dict, List, Optional
 
+from ..conflicts.conflict_detector import Conflict
+from ..conflicts.conflict_detector import ConflictDetector as BaseConflictDetector
+from ..conflicts.conflict_resolver import ConflictResolver
 from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
-from ..conflicts.conflict_detector import ConflictDetector as BaseConflictDetector, Conflict
-from ..conflicts.conflict_resolver import ConflictResolver
 
 
 class ConflictDetector:

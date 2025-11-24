@@ -63,14 +63,14 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
-from collections import defaultdict, Counter
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from .conflict_detector import Conflict, ConflictType
 from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
+from .conflict_detector import Conflict, ConflictType
 
 
 @dataclass

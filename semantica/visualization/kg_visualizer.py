@@ -30,22 +30,30 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional, Union, Tuple
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-import numpy as np
-import plotly.graph_objects as go
-import plotly.express as px
-from plotly.subplots import make_subplots
-import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
-from ..utils.logging import get_logger
 from ..utils.exceptions import ProcessingError
+from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
-from .utils.layout_algorithms import ForceDirectedLayout, HierarchicalLayout, CircularLayout
 from .utils.color_schemes import ColorPalette, ColorScheme
-from .utils.export_formats import export_plotly_figure, export_matplotlib_figure, save_html
+from .utils.export_formats import (
+    export_matplotlib_figure,
+    export_plotly_figure,
+    save_html,
+)
+from .utils.layout_algorithms import (
+    CircularLayout,
+    ForceDirectedLayout,
+    HierarchicalLayout,
+)
 
 
 class KGVisualizer:

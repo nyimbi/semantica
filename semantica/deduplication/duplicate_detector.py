@@ -40,8 +40,8 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional, Set, Tuple
 from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from ..utils.exceptions import ProcessingError
 from ..utils.logging import get_logger

@@ -70,9 +70,9 @@ from urllib.parse import quote
 from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
+from .methods import get_triple_method
 from .ner_extractor import Entity
 from .relation_extractor import Relation
-from .methods import get_triple_method
 
 
 @dataclass
@@ -154,7 +154,7 @@ class TripleExtractor:
         try:
             from .ner_extractor import NERExtractor
             from .relation_extractor import RelationExtractor
-            
+
             # Extract entities if not provided
             if entities is None:
                 self.progress_tracker.update_tracking(tracking_id, message="Extracting entities...")

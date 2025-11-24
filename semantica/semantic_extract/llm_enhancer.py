@@ -67,8 +67,8 @@ from ..utils.exceptions import ProcessingError
 from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
 from .ner_extractor import Entity
-from .relation_extractor import Relation
 from .providers import create_provider
+from .relation_extractor import Relation
 
 
 @dataclass

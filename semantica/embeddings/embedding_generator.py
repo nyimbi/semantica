@@ -31,11 +31,11 @@ import numpy as np
 
 from ..utils.exceptions import ProcessingError
 from ..utils.logging import get_logger
-from .text_embedder import TextEmbedder
-from .image_embedder import ImageEmbedder
 from .audio_embedder import AudioEmbedder
-from .multimodal_embedder import MultimodalEmbedder
 from .embedding_optimizer import EmbeddingOptimizer
+from .image_embedder import ImageEmbedder
+from .multimodal_embedder import MultimodalEmbedder
+from .text_embedder import TextEmbedder
 
 
 class EmbeddingGenerator:
@@ -324,10 +324,11 @@ class EmbeddingGenerator:
             raise
 
 
+from .embedding_optimizer import EmbeddingOptimizer as EmbeddingOptimizerImpl
+from .multimodal_embedder import MultimodalEmbedder as MultimodalEmbedderImpl
+
 # Re-export classes from other modules for convenience
 from .text_embedder import TextEmbedder as TextEmbedderImpl
-from .multimodal_embedder import MultimodalEmbedder as MultimodalEmbedderImpl
-from .embedding_optimizer import EmbeddingOptimizer as EmbeddingOptimizerImpl
 
 # Make classes available with same names
 TextEmbedder = TextEmbedderImpl

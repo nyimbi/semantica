@@ -51,11 +51,11 @@ License: MIT
 """
 
 import re
-from typing import Any, Dict, List, Optional, Tuple, Union, Callable
 from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from .exceptions import ValidationError
-from .types import EntityDict, RelationshipDict, Entity, Relationship
+from .types import Entity, EntityDict, Relationship, RelationshipDict
 
 
 def validate_data(

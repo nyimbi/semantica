@@ -35,11 +35,11 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional, Tuple
 from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Optional, Tuple
 
-import numpy as np
 import networkx as nx
+import numpy as np
 
 from ...utils.logging import get_logger
 

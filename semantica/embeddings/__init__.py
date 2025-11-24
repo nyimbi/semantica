@@ -105,47 +105,48 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Dict, List, Optional, Union
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+
 import numpy as np
 
-from .embedding_generator import EmbeddingGenerator
-from .text_embedder import TextEmbedder
-from .image_embedder import ImageEmbedder
 from .audio_embedder import AudioEmbedder
-from .multimodal_embedder import MultimodalEmbedder
-from .embedding_optimizer import EmbeddingOptimizer
+from .config import EmbeddingsConfig, embeddings_config
 from .context_manager import ContextManager, ContextWindow
-from .provider_adapters import (
-    ProviderAdapter,
-    OpenAIAdapter,
-    BGEAdapter,
-    LlamaAdapter,
-    ProviderAdapterFactory,
-)
-from .pooling_strategies import (
-    PoolingStrategy,
-    MeanPooling,
-    MaxPooling,
-    CLSPooling,
-    AttentionPooling,
-    HierarchicalPooling,
-    PoolingStrategyFactory,
-)
-from .registry import MethodRegistry, method_registry
+from .embedding_generator import EmbeddingGenerator
+from .embedding_optimizer import EmbeddingOptimizer
+from .image_embedder import ImageEmbedder
 from .methods import (
-    generate_embeddings,
-    embed_text,
-    embed_image,
-    embed_audio,
-    embed_multimodal,
-    optimize_embeddings,
     calculate_similarity,
-    pool_embeddings,
+    embed_audio,
+    embed_image,
+    embed_multimodal,
+    embed_text,
+    generate_embeddings,
     get_embedding_method,
     list_available_methods,
+    optimize_embeddings,
+    pool_embeddings,
 )
-from .config import EmbeddingsConfig, embeddings_config
+from .multimodal_embedder import MultimodalEmbedder
+from .pooling_strategies import (
+    AttentionPooling,
+    CLSPooling,
+    HierarchicalPooling,
+    MaxPooling,
+    MeanPooling,
+    PoolingStrategy,
+    PoolingStrategyFactory,
+)
+from .provider_adapters import (
+    BGEAdapter,
+    LlamaAdapter,
+    OpenAIAdapter,
+    ProviderAdapter,
+    ProviderAdapterFactory,
+)
+from .registry import MethodRegistry, method_registry
+from .text_embedder import TextEmbedder
 
 __all__ = [
     # Core Classes
