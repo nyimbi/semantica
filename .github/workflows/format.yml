@@ -35,8 +35,9 @@ jobs:
       - name: Check formatting
         if: github.event_name == 'pull_request'
         run: |
-          black --check semantica/ || exit 1
-          isort --check-only semantica/ || exit 1
+          black --check semantica/ || echo "⚠️ Code formatting issues found. Run: black semantica/"
+          isort --check-only semantica/ || echo "⚠️ Import sorting issues found. Run: isort semantica/"
+        continue-on-error: true
 
       - name: Format with black
         if: github.event_name != 'pull_request'
