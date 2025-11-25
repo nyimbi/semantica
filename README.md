@@ -15,7 +15,7 @@
 [![Issues](https://img.shields.io/github/issues/Hawksight-AI/semantica)](https://github.com/Hawksight-AI/semantica/issues)
 [![Pull Requests](https://img.shields.io/github/issues-pr/Hawksight-AI/semantica)](https://github.com/Hawksight-AI/semantica/pulls)
 
-**Open Source Framework for Semantic Intelligence & Knowledge Engineering**
+**Open Source Framework for Semantic Layer & Knowledge Engineering**
 
 > **Transform chaotic data into intelligent knowledge.**
 
