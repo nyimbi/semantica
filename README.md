@@ -227,21 +227,21 @@ It **closes the semantic gap** between real-world messy data and the structured 
 
 Semantica fills this gap with a **complete semantic intelligence framework** that transforms raw data into AI-ready knowledge:
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    SEMANTICA FRAMEWORK                          │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  📥 Input Layer          🧠 Semantic Layer       📤 Output Layer│
-│  ├─ 50+ data formats    ├─ Entity extraction    ├─ Knowledge   │
-│  ├─ Live feeds          ├─ Relationship mapping │   graphs     │
-│  ├─ APIs & streams      ├─ Ontology generation  ├─ Vector      │
-│  ├─ Archives            ├─ Context engineering  │   embeddings │
-│  └─ Multi-modal         └─ Quality assurance    └─ Ontologies  │
-│                                                                 │
-│               ✅ Powers: GraphRAG, AI Agents, Multi-Agent       │
-└─────────────────────────────────────────────────────────────────┘
-```
+<div align="center">
+
+# **SEMANTICA FRAMEWORK**
+
+| **📥 Input Layer** | **🧠 Semantic Layer** | **📤 Output Layer** |
+|:------------------:|:----------------------:|:--------------------:|
+| 50+ data formats | Entity extraction | Knowledge graphs |
+| Live feeds | Relationship mapping | Vector embeddings |
+| APIs & streams | Ontology generation | Ontologies |
+| Archives | Context engineering | — |
+| Multi-modal | Quality assurance | — |
+
+</div>
+
+### **✅ Powers: GraphRAG, AI Agents, Multi-Agent Systems**
 
 ### How Semantica Solves These Problems
 
