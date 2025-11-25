@@ -8,7 +8,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PyPI version](https://badge.fury.io/py/semantica.svg)](https://pypi.org/project/semantica/0.0.1/)
 [![Downloads](https://pepy.tech/badge/semantica)](https://pepy.tech/project/semantica)
-[![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://semantica.readthedocs.io/)
 [![Discord](https://img.shields.io/discord/semantica?color=7289da&label=discord)](https://discord.gg/semantica)
 [![CI](https://github.com/Hawksight-AI/semantica/workflows/CI/badge.svg)](https://github.com/Hawksight-AI/semantica/actions)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
@@ -24,7 +23,7 @@
 
 **🆓 100% Open Source** • **📜 MIT Licensed** • **🚀 Production Ready** • **🌍 Community Driven**
 
-[📚 **Documentation**](https://semantica.readthedocs.io/) • [🍳 **Cookbook**](https://semantica.readthedocs.io/cookbook/) • [💬 **Discord**](https://discord.gg/semantica) • [🐙 **GitHub**](https://github.com/Hawksight-AI/semantica)
+[💬 **Discord**](https://discord.gg/semantica) • [🐙 **GitHub**](https://github.com/Hawksight-AI/semantica)
 
 </div>
 
@@ -239,13 +238,14 @@ pip install -e ".[all]"
 pip install -e ".[dev]"
 ```
 
-## 📚 Documentation & Resources
+## 📚 Resources
 
-| **📖 Documentation** | **🍳 Cookbook** | **🎯 Use Cases** | **🚀 Quick Start** |
-|:--------------------:|:--------------:|:---------------:|:-----------------:|
-| [API Reference & Guides](https://semantica.readthedocs.io/) | [50+ Interactive Notebooks](https://semantica.readthedocs.io/cookbook/) | [Industry Applications](https://semantica.readthedocs.io/use-cases/) | [Get Started in Minutes](https://semantica.readthedocs.io/getting-started/) |
+> 💡 **New to Semantica?** Check out the [**Cookbook**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook) for hands-on examples!
 
-> 💡 **New to Semantica?** Start with the [**Cookbook**](https://semantica.readthedocs.io/cookbook/) for hands-on examples!
+- 🍳 [**Cookbook**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook) - 50+ interactive notebooks
+  - 📖 [Introduction](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction) - Getting started tutorials
+  - 🚀 [Advanced](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/advanced) - Advanced techniques
+  - 💼 [Use Cases](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/use_cases) - Real-world applications
 
 ## ✨ Core Capabilities
 
@@ -276,7 +276,7 @@ sources.extend(db_ingestor.ingest(query="SELECT * FROM articles"))
 print(f"✅ Ingested {len(sources)} sources")
 ```
 
-📖 [**Guide**](https://semantica.readthedocs.io/reference/ingest/) • 🍳 [**Cookbook**](https://semantica.readthedocs.io/cookbook/)
+🍳 [**Cookbook: Data Ingestion**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Data_Ingestion.ipynb)
 
 ### 🧠 Semantic Intelligence Engine
 
@@ -293,7 +293,7 @@ results = core.extract_semantics(text)
 print(f"Entities: {len(results.entities)}, Relationships: {len(results.relationships)}")
 ```
 
-📖 [**Guide**](https://semantica.readthedocs.io/reference/semantic_extract/) • 🍳 [**Cookbook**](https://semantica.readthedocs.io/cookbook/)
+🍳 [**Cookbook: Entity Extraction**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Entity_Extraction.ipynb) • [**Relation Extraction**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Relation_Extraction.ipynb)
 
 ### 🕸️ Knowledge Graph Construction
 
@@ -315,7 +315,7 @@ result = kg.query("Who founded the company?", return_format="structured")
 print(f"Nodes: {kg.node_count}, Answer: {result.answer}")
 ```
 
-📖 [**Guide**](https://semantica.readthedocs.io/reference/kg/) • 🍳 [**Cookbook**](https://semantica.readthedocs.io/cookbook/)
+🍳 [**Cookbook: Building Knowledge Graphs**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Building_Knowledge_Graphs.ipynb) • [**Graph Analytics**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Graph_Analytics.ipynb)
 
 ### 📚 Ontology Generation & Management
 
@@ -333,7 +333,7 @@ validation = validator.validate(ontology)
 print(f"Classes: {len(ontology.classes)}, Valid: {validation.is_consistent}")
 ```
 
-📖 [**Guide**](https://semantica.readthedocs.io/reference/ontology/) • 🍳 [**Cookbook**](https://semantica.readthedocs.io/cookbook/)
+🍳 [**Cookbook: Ontology**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Ontology.ipynb)
 
 ### 🔗 Context Engineering for AI Agents
 
@@ -350,7 +350,7 @@ retriever = ContextRetriever(memory_store=memory)
 context = retriever.retrieve("What are user preferences?", max_results=5)
 ```
 
-📖 [**Guide**](https://semantica.readthedocs.io/reference/context/) • 🍳 [**Cookbook**](https://semantica.readthedocs.io/cookbook/)
+🍳 [**Cookbook: Vector Store**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Vector_Store.ipynb)
 
 ### 🎯 Knowledge Graph-Powered RAG (GraphRAG)
 
@@ -368,7 +368,7 @@ result = graphrag.query("Who founded the company?", top_k=5, expand_graph=True)
 print(f"Answer: {result.answer} (Confidence: {result.confidence:.2f})")
 ```
 
-📖 [**Guide**](https://semantica.readthedocs.io/reference/qa_rag/) • 🍳 [**Cookbook**](https://semantica.readthedocs.io/cookbook/)
+🍳 [**Cookbook: GraphRAG**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/use_cases/advanced_rag/GraphRAG_Complete.ipynb)
 
 ### 🔄 Pipeline Orchestration & Parallel Processing
 
@@ -386,7 +386,7 @@ pipeline = PipelineBuilder() \
 result = ExecutionEngine().execute_pipeline(pipeline, parallel=True)
 ```
 
-📖 [**Guide**](https://semantica.readthedocs.io/reference/pipeline/) • 🍳 [**Cookbook**](https://semantica.readthedocs.io/cookbook/)
+🍳 [**Cookbook: Pipeline Orchestration**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/advanced/Pipeline_Orchestration.ipynb)
 
 ### 🔧 Production-Ready Quality Assurance
 
@@ -406,11 +406,11 @@ duplicates = detector.find_duplicates(entities=kg.entities, similarity_threshold
 print(f"Quality Score: {report.overall_score}/100, Duplicates: {len(duplicates)}")
 ```
 
-📖 [**Guide**](https://semantica.readthedocs.io/reference/quality/) • 🍳 [**Cookbook**](https://semantica.readthedocs.io/cookbook/)
+🍳 [**Cookbook: Conflict Detection**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Conflict_Detection.ipynb) • [**Deduplication**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Deduplication.ipynb) • [**Graph Quality**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Graph_Quality.ipynb)
 
 ## 🚀 Quick Start
 
-> 💡 **For comprehensive examples, see the [**Cookbook**](https://semantica.readthedocs.io/cookbook/) with 50+ interactive notebooks!**
+> 💡 **For comprehensive examples, see the [**Cookbook**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook) with 50+ interactive notebooks!**
 
 ```python
 from semantica import Semantica
@@ -425,7 +425,7 @@ result = kg.query("Who founded the company?", return_format="structured")
 print(f"Answer: {result.answer} | Nodes: {kg.node_count}, Edges: {kg.edge_count}")
 ```
 
-🍳 **[See 50+ examples →](https://semantica.readthedocs.io/cookbook/)**
+🍳 [**Cookbook: Your First Knowledge Graph**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Your_First_Knowledge_Graph.ipynb)
 
 ## 🎯 Use Cases
 
@@ -443,7 +443,7 @@ print(f"Answer: {result.answer} | Nodes: {kg.node_count}, Edges: {kg.edge_count}
 
 **🏥 Healthcare & Biomedical** — Clinical reports, drug discovery, medical literature analysis.
 
-🍳 **[Explore 50+ examples →](https://semantica.readthedocs.io/cookbook/)**
+🍳 [**Explore Use Case Examples**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/use_cases) — See real-world implementations in finance, healthcare, cybersecurity, trading, and more.
 
 ## 🔬 Advanced Features
 
@@ -461,7 +461,7 @@ print(f"Answer: {result.answer} | Nodes: {kg.node_count}, Edges: {kg.edge_count}
 
 **🔌 API Integration** — Integrate external APIs for entity enrichment.
 
-🍳 **[See advanced examples →](https://semantica.readthedocs.io/cookbook/)**
+🍳 [**See Advanced Examples**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/advanced) — Advanced extraction, graph analytics, reasoning, and more.
 
 ## 🗺️ Roadmap
 
@@ -492,11 +492,6 @@ print(f"Answer: {result.answer} | Nodes: {kg.node_count}, Edges: {kg.edge_count}
 
 ### 📚 Learning Resources
 
-- 📖 [Documentation](https://semantica.readthedocs.io/)
-- 🎯 [Tutorials](https://semantica.readthedocs.io/tutorials/)
-- 💡 [Examples](https://github.com/Hawksight-AI/semantica/tree/main/examples)
-- 🎓 [Academy](https://academy.semantica.io/)
-- 📝 [Blog](https://blog.semantica.io/)
 
 ### 🏢 Enterprise Support
 
@@ -538,8 +533,8 @@ git push origin feature/your-feature
 
 1. **Code** - New features, bug fixes
 2. **Documentation** - Improvements, tutorials
-3. **Bug Reports** - [Create issue](https://github.com/Hawksight-AI/semantica/issues/new?template=bug_report.md)
-4. **Feature Requests** - [Request feature](https://github.com/Hawksight-AI/semantica/issues/new?template=feature_request.md)
+3. **Bug Reports** - [Create issue](https://github.com/Hawksight-AI/semantica/issues/new)
+4. **Feature Requests** - [Request feature](https://github.com/Hawksight-AI/semantica/issues/new)
 
 ### Recognition
 
@@ -557,6 +552,6 @@ Semantica is licensed under the **MIT License** - see the [LICENSE](https://gith
 
 **Built with ❤️ by the Semantica Community**
 
-[Website](https://semantica.io) • [Documentation](https://semantica.readthedocs.io/) • [GitHub](https://github.com/Hawksight-AI/semantica) • [Discord](https://discord.gg/semantica)
+[GitHub](https://github.com/Hawksight-AI/semantica) • [Discord](https://discord.gg/semantica)
 
 </div>
