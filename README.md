@@ -251,9 +251,9 @@ pip install -e ".[dev]"
 
 | **📊 Data Ingestion** | **🧠 Semantic Extract** | **🕸️ Knowledge Graphs** | **📚 Ontology** |
 |:--------------------:|:----------------------:|:----------------------:|:--------------:|
-| [50+ Formats](#-universal-data-ingestion) | [Entity & Relations](#-semantic-intelligence-engine) | [Graph Analytics](#-knowledge-graph-construction) | [Auto Generation](#-ontology-generation--management) |
+| [50+ Formats](#universal-data-ingestion) | [Entity & Relations](#semantic-intelligence-engine) | [Graph Analytics](#knowledge-graph-construction) | [Auto Generation](#ontology-generation--management) |
 | **🔗 Context** | **🎯 GraphRAG** | **🔄 Pipeline** | **🔧 QA** |
-| [Agent Memory](#-context-engineering-for-ai-agents) | [Hybrid RAG](#-knowledge-graph-powered-rag-graphrag) | [Parallel Workers](#-pipeline-orchestration--parallel-processing) | [Conflict Resolution](#-production-ready-quality-assurance) |
+| [Agent Memory](#context-engineering-for-ai-agents) | [Hybrid RAG](#knowledge-graph-powered-rag-graphrag) | [Parallel Workers](#pipeline-orchestration--parallel-processing) | [Conflict Resolution](#production-ready-quality-assurance) |
 
 ---
 
@@ -503,15 +503,15 @@ print(f"Answer: {result.answer} | Nodes: {kg.node_count}, Edges: {kg.edge_count}
 | **Channel** | **Purpose** |
 |:-----------:|:-----------|
 | 💬 [**Discord**](https://discord.gg/semantica) | Real-time help, showcases |
-| 💡 [**GitHub Discussions**](https://github.com/semantica/semantica/discussions) | Q&A, feature requests |
+| 💡 [**GitHub Discussions**](https://github.com/Hawksight-AI/semantica/discussions) | Q&A, feature requests |
 | 🐦 [**Twitter**](https://twitter.com/semantica_ai) | Updates, tips |
-| 📺 [**YouTube**](https://youtube.com/semantica) | Tutorials, webinars |
+| 📺 [**YouTube**](https://youtube.com/@semantica) | Tutorials, webinars |
 
 ### 📚 Learning Resources
 
 - 📖 [Documentation](https://semantica.readthedocs.io/)
 - 🎯 [Tutorials](https://semantica.readthedocs.io/tutorials/)
-- 💡 [Examples](https://github.com/semantica/examples)
+- 💡 [Examples](https://github.com/Hawksight-AI/semantica/tree/main/examples)
 - 🎓 [Academy](https://academy.semantica.io/)
 - 📝 [Blog](https://blog.semantica.io/)
 
@@ -555,25 +555,25 @@ git push origin feature/your-feature
 
 1. **Code** - New features, bug fixes
 2. **Documentation** - Improvements, tutorials
-3. **Bug Reports** - [Create issue](https://github.com/semantica/semantica/issues/new?template=bug_report.md)
-4. **Feature Requests** - [Request feature](https://github.com/semantica/semantica/issues/new?template=feature_request.md)
+3. **Bug Reports** - [Create issue](https://github.com/Hawksight-AI/semantica/issues/new?template=bug_report.md)
+4. **Feature Requests** - [Request feature](https://github.com/Hawksight-AI/semantica/issues/new?template=feature_request.md)
 
 ### Recognition
 
 Contributors receive:
-- 📜 Recognition in [CONTRIBUTORS.md](CONTRIBUTORS.md)
+- 📜 Recognition in [CONTRIBUTORS.md](https://github.com/Hawksight-AI/semantica/blob/main/CONTRIBUTORS.md)
 - 🏆 GitHub badges
 - 🎁 Semantica swag
 - 🌟 Featured showcases
 
 ## 📜 License
 
-Semantica is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+Semantica is licensed under the **MIT License** - see the [LICENSE](https://github.com/Hawksight-AI/semantica/blob/main/LICENSE) file for details.
 
 <div align="center">
 
 **Built with ❤️ by the Semantica Community**
 
-[Website](https://semantica.io) • [Documentation](https://semantica.readthedocs.io/) • [GitHub](https://github.com/semantica/semantica) • [Discord](https://discord.gg/semantica)
+[Website](https://semantica.io) • [Documentation](https://semantica.readthedocs.io/) • [GitHub](https://github.com/Hawksight-AI/semantica) • [Discord](https://discord.gg/semantica)
 
 </div>
