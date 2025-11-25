@@ -72,24 +72,20 @@ Organizations today face a **fundamental mismatch** between how data exists and 
 | 📚 Formal ontologies | ✅ Validated entities | 🔗 Semantic connections |
 | 🕸️ Graphs & Networks | 📖 Domain Knowledge | 🧠 Context-Aware Reasoning |
 
-</div>
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    THE SEMANTIC GAP                             │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  📥 What You Have                    🤖 What AI Needs          │
-│  ├─ 📄 PDFs, emails, docs            ├─ 🏷️ Structured entities │
-│  ├─ 🗂️ Multiple formats              ├─ 🔗 Semantic relationships│
-│  ├─ ⚠️ Inconsistent schemas          ├─ 📚 Formal ontologies    │
-│  ├─ 🔒 Siloed sources                ├─ 🕸️ Connected knowledge  │
-│  ├─ ❌ No semantic meaning           ├─ 🧠 Context-aware reasoning│
-│  └─ ⚠️ Unvalidated content          └─ ✅ Quality-assured knowledge│
-│                                                                 │
-│               ❌ Missing: The Semantic Layer                    │
-└─────────────────────────────────────────────────────────────────┘
-```
+# **SEMANTICA FRAMEWORK**
+<div align="center">
+
+| **📥 Input Layer** | **🧠 Semantic Layer** | **📤 Output Layer** |
+|:------------------:|:----------------------:|:--------------------:|
+| 50+ data formats | Entity extraction | Knowledge graphs |
+| Live feeds | Relationship mapping | Vector embeddings |
+| APIs & streams | Ontology generation | Ontologies |
+| Archives | Context engineering | — |
+| Multi-modal | Quality assurance | — |
+
+</div>
+### **✅ Powers: GraphRAG, AI Agents, Multi-Agent Systems**
 
 ### 💥 The Core Problem
 
