@@ -34,6 +34,14 @@ The `parse` module provides comprehensive document parsing capabilities for extr
 
 ---
 
+## Quick Start
+
+```python
+from semantica.parse import DocumentParser
+
+# Initialize parser
+parser = DocumentParser()
+
 # Parse with options
 docs = parser.parse(
     sources=["documents/"],
