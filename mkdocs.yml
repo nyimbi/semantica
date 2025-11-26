@@ -105,21 +105,21 @@ nav:
     - quickstart.md
   - Docs:
     - Core: reference/core.md
-    - Ingest: reference/ingest.md
-    - Parse: reference/parse.md
-    - Normalize: reference/normalize.md
-    - Semantic Extract: reference/semantic_extract.md
-    - Knowledge Graph: reference/kg.md
     - Embeddings: reference/embeddings.md
-    - Vector Store: reference/vector_store.md
-    - Triple Store: reference/triple_store.md
-    - Ontology: reference/ontology.md
-    - Reasoning: reference/reasoning.md
-    - Pipeline: reference/pipeline.md
-    - Export: reference/export.md
-    - Visualization: reference/visualization.md
     - Evals: reference/evals.md
+    - Export: reference/export.md
+    - Ingest: reference/ingest.md
+    - Knowledge Graph: reference/kg.md
+    - Normalize: reference/normalize.md
+    - Ontology: reference/ontology.md
+    - Parse: reference/parse.md
+    - Pipeline: reference/pipeline.md
+    - Reasoning: reference/reasoning.md
+    - Semantic Extract: reference/semantic_extract.md
+    - Triple Store: reference/triple_store.md
     - Utils: reference/utils.md
+    - Vector Store: reference/vector_store.md
+    - Visualization: reference/visualization.md
   - Guides:
     - concepts.md
     - modules.md
