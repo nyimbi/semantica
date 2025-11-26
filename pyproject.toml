@@ -183,7 +183,22 @@ split-topic = [
 split-all = [
     "semantica[split-tiktoken,split-community,split-topic]"
 ]
-
+graph-neo4j = [
+    "neo4j>=5.0.0"
+]
+graph-kuzu = [
+    "kuzu>=0.4.0"
+]
+graph-falkordb = [
+    "falkordb>=1.0.0",
+    "redis>=4.3.0"
+]
+graph-all = [
+    "semantica[graph-neo4j,graph-kuzu,graph-falkordb]"
+]
+all = [
+    "semantica[dev,viz,gpu,cloud,monitoring,llm-all,models-huggingface,split-all,graph-all]"
+]
 
 [project.scripts]
 semantica = "semantica.cli:main"
