@@ -146,4 +146,5 @@ extra:
       link: https://pypi.org/project/semantica/
   version:
     provider: mike
+  generator: true
 
