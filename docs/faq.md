@@ -3,293 +3,263 @@
 Common questions and answers about Semantica.
 
 !!! tip "Can't find your question?"
-    Check our [GitHub Discussions](https://github.com/Hawksight-AI/semantica/discussions) or [open an issue](https://github.com/Hawksight-AI/semantica/issues)
+    Browse existing questions or [ask a new question on GitHub Issues](https://github.com/Hawksight-AI/semantica/issues/new)
 
 ---
 
-## 🎯 General Questions
+## General Questions
 
-<div class="grid cards" markdown>
+### What is Semantica?
 
--   **What is Semantica?**
-    ---
-    Semantica is an open-source framework for building semantic layers and knowledge graphs from unstructured data. It transforms raw data into structured, queryable knowledge that powers AI applications.
+Semantica is an open-source framework for building semantic layers and knowledge graphs from unstructured data. It transforms raw data into structured, queryable knowledge that powers AI applications.
 
--   **What can I use Semantica for?**
-    ---
-    - Building knowledge graphs from documents
-    - Creating semantic layers for AI applications
-    - Extracting entities and relationships
-    - Powering GraphRAG systems
-    - Integrating multi-source data
-    - Building AI agent memory
+### What can I use Semantica for?
 
--   **Is Semantica free?**
-    ---
-    Yes! Semantica is 100% open source and free to use under the MIT License.
+- Building knowledge graphs from documents
+- Creating semantic layers for AI applications
+- Extracting entities and relationships
+- Powering GraphRAG systems
+- Integrating multi-source data
+- Building AI agent memory
 
--   **What makes Semantica different?**
-    ---
-    - **Modular**: Use only what you need
-    - **Extensible**: Plug in custom models
-    - **Production-ready**: Built for scale
-    - **Open source**: Fully transparent
+### Is Semantica free?
 
-</div>
+Yes! Semantica is 100% open source and free to use under the MIT License.
+
+### What makes Semantica different?
+
+- **Modular**: Use only what you need
+- **Extensible**: Plug in custom models
+- **Production-ready**: Built for scale
+- **Open source**: Fully transparent
 
 ---
 
-## 💻 Installation & Setup
+## Installation & Setup
 
-<div class="grid cards" markdown>
+### How do I install Semantica?
 
--   **How do I install Semantica?**
-    ---
-    ```bash
-    pip install semantica
-    ```
-    See the [Installation Guide](installation.md) for details.
+```bash
+pip install semantica
+```
 
--   **What Python version do I need?**
-    ---
-    Python 3.8 or higher. Python 3.11+ is recommended for best performance.
+See the [Installation Guide](installation.md) for details.
 
--   **Do I need a GPU?**
-    ---
-    No, GPU is optional. Semantica works on CPU, but GPU acceleration is available for faster processing.
+### What Python version do I need?
 
--   **How do I get started?**
-    ---
-    1. Install: `pip install semantica`
-    2. Follow the [Quick Start Guide](quickstart.md)
-    3. Try the [Examples](examples.md)
+Python 3.8 or higher. Python 3.11+ is recommended for best performance.
 
-</div>
+### Do I need a GPU?
+
+No, GPU is optional. Semantica works on CPU, but GPU acceleration is available for faster processing.
+
+### How do I get started?
+
+1. Install: `pip install semantica`
+2. Follow the [Quick Start Guide](quickstart.md)
+3. Try the [Examples](examples.md)
 
 ---
 
-## 📊 Knowledge Graphs
+## Knowledge Graphs
 
-<div class="grid cards" markdown>
+### What is a knowledge graph?
 
--   **What is a knowledge graph?**
-    ---
-    A structured representation where entities (nodes) are connected by relationships (edges). It captures semantic meaning and relationships in data.
+A structured representation where entities (nodes) are connected by relationships (edges). It captures semantic meaning and relationships in data.
 
--   **How do I build a knowledge graph?**
-    ---
-    ```python
-    from semantica import Semantica
-    
-    semantica = Semantica()
-    result = semantica.build_knowledge_base(["document.pdf"])
-    kg = result["knowledge_graph"]
-    ```
+### How do I build a knowledge graph?
 
--   **Can I merge multiple knowledge graphs?**
-    ---
-    Yes! Use the `merge` method:
-    ```python
-    merged = semantica.kg.merge([kg1, kg2, kg3])
-    ```
+```python
+from semantica import Semantica
 
--   **How do I visualize a knowledge graph?**
-    ---
-    ```python
-    semantica.kg.visualize(kg, output_path="graph.html")
-    ```
+semantica = Semantica()
+result = semantica.build_knowledge_base(["document.pdf"])
+kg = result["knowledge_graph"]
+```
 
-</div>
+### Can I merge multiple knowledge graphs?
+
+Yes! Use the `merge` method:
+
+```python
+merged = semantica.kg.merge([kg1, kg2, kg3])
+```
+
+### How do I visualize a knowledge graph?
+
+```python
+semantica.kg.visualize(kg, output_path="graph.html")
+```
 
 ---
 
-## 🔧 Usage & Features
+## Usage & Features
 
-<div class="grid cards" markdown>
+### Can I process PDF files?
 
--   **Can I process PDF files?**
-    ---
-    Yes! Semantica supports PDF, DOCX, HTML, JSON, CSV, and many other formats.
+Yes! Semantica supports PDF, DOCX, HTML, JSON, CSV, and many other formats.
 
--   **How do I extract entities from text?**
-    ---
-    ```python
-    from semantica import Semantica
-    
-    semantica = Semantica()
-    result = semantica.semantic_extract.extract_entities("Your text")
-    entities = result["entities"]
-    ```
+### How do I extract entities from text?
 
--   **Can I use my own models?**
-    ---
-    Yes, Semantica is extensible. You can plug in custom models for entity extraction, embeddings, and more.
+```python
+from semantica import Semantica
 
--   **What export formats are supported?**
-    ---
-    - RDF/XML
-    - OWL (Ontology)
-    - JSON
-    - CSV
-    - YAML
-    - And more
+semantica = Semantica()
+result = semantica.semantic_extract.extract_entities("Your text")
+entities = result["entities"]
+```
 
-</div>
+### Can I use my own models?
+
+Yes, Semantica is extensible. You can plug in custom models for entity extraction, embeddings, and more.
+
+### What export formats are supported?
+
+- RDF/XML
+- OWL (Ontology)
+- JSON
+- CSV
+- YAML
+- And more
 
 ---
 
-## ⚖️ Conflict Resolution
+## Conflict Resolution
 
-<div class="grid cards" markdown>
+### What is conflict resolution?
 
--   **What is conflict resolution?**
-    ---
-    When the same entity appears in multiple sources with different information, conflict resolution determines which information to use.
+When the same entity appears in multiple sources with different information, conflict resolution determines which information to use.
 
--   **What strategies are available?**
-    ---
-    - **Voting**: Majority wins
-    - **Credibility Weighted**: Weight by source credibility
-    - **Most Recent**: Use latest information
-    - **Highest Confidence**: Use highest confidence score
+### What strategies are available?
 
--   **How do I set a resolution strategy?**
-    ---
-    ```python
-    from semantica.conflicts import ConflictResolver
-    
-    resolver = ConflictResolver(default_strategy="voting")
-    ```
+- **Voting**: Majority wins
+- **Credibility Weighted**: Weight by source credibility
+- **Most Recent**: Use latest information
+- **Highest Confidence**: Use highest confidence score
 
-</div>
+### How do I set a resolution strategy?
+
+```python
+from semantica.conflicts import ConflictResolver
+
+resolver = ConflictResolver(default_strategy="voting")
+```
 
 ---
 
-## 🔌 Integration
+## Integration
 
-<div class="grid cards" markdown>
+### Can I use Semantica with other tools?
 
--   **Can I use Semantica with other tools?**
-    ---
-    Yes! Semantica exports to standard formats that work with:
-    - Neo4j
-    - Graph databases
-    - RDF stores
-    - Vector databases
-    - Any tool that accepts RDF/JSON/CSV
+Yes! Semantica exports to standard formats that work with:
 
--   **Does it work with LangChain?**
-    ---
-    Yes, Semantica can be integrated with LangChain for RAG applications.
+- Neo4j
+- Graph databases
+- RDF stores
+- Vector databases
+- Any tool that accepts RDF/JSON/CSV
 
--   **Can I connect to databases?**
-    ---
-    Yes, Semantica supports connections to Neo4j, KuzuDB, FalkorDB, and other graph databases.
+### Does it work with LangChain?
 
-</div>
+Yes, Semantica can be integrated with LangChain for RAG applications.
+
+### Can I connect to databases?
+
+Yes, Semantica supports connections to Neo4j, KuzuDB, FalkorDB, and other graph databases.
 
 ---
 
-## ⚡ Performance
+## Performance
 
-<div class="grid cards" markdown>
+### How fast is Semantica?
 
--   **How fast is Semantica?**
-    ---
-    Performance depends on:
-    - Document size
-    - Number of documents
-    - Hardware (CPU/GPU)
-    - Configuration options
-    
-    For typical documents, processing takes seconds to minutes.
+Performance depends on:
 
--   **Can I process large datasets?**
-    ---
-    Yes, but consider:
-    - Processing in batches
-    - Using GPU acceleration
-    - Incremental building
-    - Optimizing configuration
+- Document size
+- Number of documents
+- Hardware (CPU/GPU)
+- Configuration options
 
--   **How can I improve performance?**
-    ---
-    - Enable GPU if available
-    - Process in smaller batches
-    - Use faster models
-    - Optimize configuration
-    - Cache embeddings
+For typical documents, processing takes seconds to minutes.
 
-</div>
+### Can I process large datasets?
+
+Yes, but consider:
+
+- Processing in batches
+- Using GPU acceleration
+- Incremental building
+- Optimizing configuration
+
+### How can I improve performance?
+
+- Enable GPU if available
+- Process in smaller batches
+- Use faster models
+- Optimize configuration
+- Cache embeddings
 
 ---
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
-<div class="grid cards" markdown>
+### Installation fails
 
--   **Installation fails**
-    ---
-    - Upgrade pip: `pip install --upgrade pip`
-    - Use virtual environment
-    - Check Python version: `python --version`
+- Upgrade pip: `pip install --upgrade pip`
+- Use virtual environment
+- Check Python version: `python --version`
 
--   **No entities extracted**
-    ---
-    - Verify document contains text (not just images)
-    - Check document format is supported
-    - Review extraction configuration
+### No entities extracted
 
--   **Memory errors**
-    ---
-    - Process documents one at a time
-    - Reduce batch sizes
-    - Use smaller models
-    - Increase available RAM
+- Verify document contains text (not just images)
+- Check document format is supported
+- Review extraction configuration
 
--   **Slow processing**
-    ---
-    - Enable GPU if available
-    - Process in smaller batches
-    - Optimize configuration
-    - Use faster models
+### Memory errors
 
-</div>
+- Process documents one at a time
+- Reduce batch sizes
+- Use smaller models
+- Increase available RAM
+
+### Slow processing
+
+- Enable GPU if available
+- Process in smaller batches
+- Optimize configuration
+- Use faster models
 
 ---
 
-## 🤝 Getting Help
+## Getting Help
 
-<div class="grid cards" markdown>
+### Where can I get help?
 
--   **Where can I get help?**
-    ---
-    - **Documentation**: This site
-    - **GitHub Issues**: [Report bugs](https://github.com/Hawksight-AI/semantica/issues)
-    - **Discussions**: [Ask questions](https://github.com/Hawksight-AI/semantica/discussions)
+- **Documentation**: This site
+- **GitHub Issues**: [Report bugs or ask questions](https://github.com/Hawksight-AI/semantica/issues)
 
--   **How do I report a bug?**
-    ---
-    Open an issue on [GitHub](https://github.com/Hawksight-AI/semantica/issues) with:
-    - Description of the problem
-    - Steps to reproduce
-    - Expected vs actual behavior
-    - Environment details
+### How do I report a bug?
 
--   **Can I contribute?**
-    ---
-    Yes! We welcome contributions. See our [Contributing Guide](https://github.com/Hawksight-AI/semantica/blob/main/CONTRIBUTING.md).
+Open an issue on [GitHub](https://github.com/Hawksight-AI/semantica/issues) with:
 
--   **How do I request a feature?**
-    ---
-    Open a feature request on [GitHub Issues](https://github.com/Hawksight-AI/semantica/issues) with:
-    - Use case description
-    - Proposed solution
-    - Benefits to the community
+- Description of the problem
+- Steps to reproduce
+- Expected vs actual behavior
+- Environment details
 
-</div>
+### Can I contribute?
+
+Yes! We welcome contributions. See our [Contributing Guide](https://github.com/Hawksight-AI/semantica/blob/main/CONTRIBUTING.md).
+
+### How do I request a feature?
+
+Open a feature request on [GitHub Issues](https://github.com/Hawksight-AI/semantica/issues) with:
+
+- Use case description
+- Proposed solution
+- Benefits to the community
 
 ---
 
 !!! question "Still have questions?"
-    Check the [API Reference](reference/core.md), browse the [Cookbook](cookbook.md), or [open a discussion](https://github.com/Hawksight-AI/semantica/discussions)
+    Check the [API Reference](reference/core.md), browse the [Cookbook](cookbook.md), or [ask on GitHub Issues](https://github.com/Hawksight-AI/semantica/issues/new)
