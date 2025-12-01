@@ -21,13 +21,13 @@
 
 *The missing fabric between raw data and AI engineering. A comprehensive open-source framework for building semantic layers and knowledge engineering systems that transform unstructured data into AI-ready knowledge — powering Knowledge Graph-Powered RAG (GraphRAG), AI Agents, Multi-Agent Systems, and AI applications with structured semantic knowledge.*
 
-**🆓 100% Open Source** • **📜 MIT Licensed** • **🚀 Production Ready** • **🌍 Community Driven**
+**100% Open Source** • **MIT Licensed** • **Production Ready** • **Community Driven**
 
-[💬 **Discord**](https://discord.gg/semantica) • [🐙 **GitHub**](https://github.com/Hawksight-AI/semantica)
+[**Discord**](https://discord.gg/semantica) • [**GitHub**](https://github.com/Hawksight-AI/semantica)
 
 </div>
 
-## 🌟 What is Semantica?
+## What is Semantica?
 
 Semantica bridges the gap between raw data chaos and AI-ready knowledge. It's a **semantic intelligence platform** that transforms unstructured data into structured, queryable knowledge graphs powering GraphRAG, AI agents, and multi-agent systems.
 
@@ -37,56 +37,56 @@ Unlike traditional approaches that process isolated documents and extract text i
 
 | **Traditional Approaches** | **Semantica's Approach** |
 |:---------------------------|:-------------------------|
-| 🔸 Process data as isolated documents | ✅ Understands semantic relationships across all content |
-| 🔸 Extract text and store vectors | ✅ Builds knowledge graphs with meaningful connections |
-| 🔸 Generic entity recognition | ✅ General-purpose ontology generation and validation |
-| 🔸 Manual schema definition | ✅ Automatic semantic modeling from content patterns |
-| 🔸 Disconnected data silos | ✅ Unified semantic layer across all data sources |
-| 🔸 Basic quality checks | ✅ Production-grade QA with conflict detection & resolution |
+| Process data as isolated documents | Understands semantic relationships across all content |
+| Extract text and store vectors | Builds knowledge graphs with meaningful connections |
+| Generic entity recognition | General-purpose ontology generation and validation |
+| Manual schema definition | Automatic semantic modeling from content patterns |
+| Disconnected data silos | Unified semantic layer across all data sources |
+| Basic quality checks | Production-grade QA with conflict detection & resolution |
 
 ---
 
 ## 🎯 The Problem We Solve
 
-### 🔴 The Semantic Gap
+### The Semantic Gap
 
 Organizations today face a **fundamental mismatch** between how data exists and how AI systems need it.
 
-#### 📊 The Semantic Gap: Problem vs. Solution
+#### The Semantic Gap: Problem vs. Solution
 
 Organizations have **unstructured data** (PDFs, emails, logs), **messy data** (inconsistent formats, duplicates, conflicts), and **disconnected silos** (no shared context, missing relationships). AI systems need **clear rules** (formal ontologies), **structured entities** (validated, consistent), and **relationships** (semantic connections, context-aware reasoning).
 
-| **📊 What Organizations Have** | **🤖 What AI Systems Require** |
+| **What Organizations Have** | **What AI Systems Require** |
 |:------------------------------|:------------------------------|
-| **🗂️ Unstructured Data** | **📋 Clear Rules** |
-| 📄 PDFs, emails, logs | 📚 Formal ontologies |
-| 📋 Mixed schemas | 🕸️ Graphs & Networks |
-| ⚔️ Conflicting facts | |
-| **🧹 Messy, Noisy Data** | **🏷️ Structured Entities** |
-| ⚠️ Inconsistent formats | ✅ Validated entities |
-| 🔁 Duplicate records | 📖 Domain Knowledge |
-| 🔗 Missing relationships | |
-| **🔗 Disconnected, Siloed Data** | **🔗 Relationships** |
-| 🔒 Data in separate systems | 🔗 Semantic connections |
-| ❌ No shared context | 🧠 Context-Aware Reasoning |
-| 🏝️ Isolated knowledge | |
+| **Unstructured Data** | **Clear Rules** |
+| PDFs, emails, logs | Formal ontologies |
+| Mixed schemas | Graphs & Networks |
+| Conflicting facts | |
+| **Messy, Noisy Data** | **Structured Entities** |
+| Inconsistent formats | Validated entities |
+| Duplicate records | Domain Knowledge |
+| Missing relationships | |
+| **Disconnected, Siloed Data** | **Relationships** |
+| Data in separate systems | Semantic connections |
+| No shared context | Context-Aware Reasoning |
+| Isolated knowledge | |
 
 ### **SEMANTICA FRAMEWORK**
 
 Semantica operates through three integrated layers that transform raw data into AI-ready knowledge:
 
-**📥 Input Layer** — Universal ingestion from 50+ data formats (PDFs, DOCX, HTML, JSON, CSV, databases, live feeds, APIs, streams, archives, multi-modal content) into a unified pipeline.
+**Input Layer** — Universal ingestion from 50+ data formats (PDFs, DOCX, HTML, JSON, CSV, databases, live feeds, APIs, streams, archives, multi-modal content) into a unified pipeline.
 
-**🧠 Semantic Layer** — Core intelligence engine performing entity extraction, relationship mapping, ontology generation, context engineering, and quality assurance. This is where unstructured data transforms into structured knowledge.
+**Semantic Layer** — Core intelligence engine performing entity extraction, relationship mapping, ontology generation, context engineering, and quality assurance. This is where unstructured data transforms into structured knowledge.
 
-**📤 Output Layer** — Production-ready knowledge graphs, vector embeddings, and validated ontologies that power GraphRAG systems, AI agents, and multi-agent systems.
+**Output Layer** — Production-ready knowledge graphs, vector embeddings, and validated ontologies that power GraphRAG systems, AI agents, and multi-agent systems.
 
-**✅ Powers: GraphRAG, AI Agents, Multi-Agent Systems**
+**Powers: GraphRAG, AI Agents, Multi-Agent Systems**
 
-#### 🔄 Semantica Processing Flow
+#### Semantica Processing Flow
 
 <details>
-<summary>📊 View Interactive Flowchart</summary>
+<summary>View Interactive Flowchart</summary>
 
 ```mermaid
 flowchart TD
@@ -129,13 +129,13 @@ flowchart TD
 </details>
 
 
-### ⚠️ What Happens Without Semantics?
+### What Happens Without Semantics?
 
-**💥 They Break** — Systems crash due to inconsistent formats and missing structure.
+**They Break** — Systems crash due to inconsistent formats and missing structure.
 
-**🎭 They Hallucinate** — AI models generate false information without semantic context to validate outputs.
+**They Hallucinate** — AI models generate false information without semantic context to validate outputs.
 
-**🔇 They Fail Silently** — Systems return wrong answers without warnings, leading to bad decisions.
+**They Fail Silently** — Systems return wrong answers without warnings, leading to bad decisions.
 
 **Why?** Systems have data — not semantics. They can't connect concepts, understand relationships, validate against domain rules, or detect conflicts.
 
@@ -147,34 +147,34 @@ flowchart TD
 
 ### How Semantica Solves These Problems
 
-**📥 Universal Data Ingestion** — Handles 50+ formats (PDF, DOCX, HTML, JSON, CSV, databases, APIs, streams) with unified pipeline, no custom parsers needed.
+**Universal Data Ingestion** — Handles 50+ formats (PDF, DOCX, HTML, JSON, CSV, databases, APIs, streams) with unified pipeline, no custom parsers needed.
 
-**🧠 Automated Semantic Extraction** — NER, relationship extraction, and triple generation with LLM enhancement discovers entities and relationships automatically.
+**Automated Semantic Extraction** — NER, relationship extraction, and triple generation with LLM enhancement discovers entities and relationships automatically.
 
-**🕸️ Knowledge Graph Construction** — Production-ready graphs with entity resolution, temporal support, and graph analytics. Queryable knowledge ready for AI applications.
+**Knowledge Graph Construction** — Production-ready graphs with entity resolution, temporal support, and graph analytics. Queryable knowledge ready for AI applications.
 
-**🎯 GraphRAG Engine** — Hybrid vector + graph retrieval achieves 91% accuracy (30% improvement) via semantic search + graph traversal for multi-hop reasoning.
+**GraphRAG Engine** — Hybrid vector + graph retrieval achieves 91% accuracy (30% improvement) via semantic search + graph traversal for multi-hop reasoning.
 
-**🔗 AI Agent Context Engineering** — Persistent memory with RAG + knowledge graphs enables context maintenance, action validation, and structured knowledge access.
+**AI Agent Context Engineering** — Persistent memory with RAG + knowledge graphs enables context maintenance, action validation, and structured knowledge access.
 
-**📚 Automated Ontology Generation** — 6-stage LLM pipeline generates validated OWL ontologies with HermiT/Pellet validation, eliminating manual engineering.
+**Automated Ontology Generation** — 6-stage LLM pipeline generates validated OWL ontologies with HermiT/Pellet validation, eliminating manual engineering.
 
-**🔧 Production-Grade QA** — Conflict detection, deduplication, quality scoring, and provenance tracking ensure trusted, production-ready knowledge graphs.
+**Production-Grade QA** — Conflict detection, deduplication, quality scoring, and provenance tracking ensure trusted, production-ready knowledge graphs.
 
-**🔄 Pipeline Orchestration** — Flexible pipeline builder with parallel execution enables scalable processing via orchestrator-worker pattern.
+**Pipeline Orchestration** — Flexible pipeline builder with parallel execution enables scalable processing via orchestrator-worker pattern.
 
 ### Core Features at a Glance
 
 | **Feature Category** | **Capabilities** | **Key Benefits** |
 |:---------------------|:-----------------|:------------------|
-| **📥 Data Ingestion** | 50+ formats (PDF, DOCX, HTML, JSON, CSV, databases, APIs, streams, archives) | Universal ingestion, no custom parsers needed |
-| **🧠 Semantic Extraction** | NER, relationship extraction, triple generation, LLM enhancement | Automated discovery of entities and relationships |
-| **🕸️ Knowledge Graphs** | Entity resolution, temporal support, graph analytics, query interface | Production-ready, queryable knowledge structures |
-| **📚 Ontology Generation** | 6-stage LLM pipeline, OWL generation, HermiT/Pellet validation | Automated ontology creation from documents |
-| **🎯 GraphRAG** | Hybrid vector + graph retrieval, multi-hop reasoning | 91% accuracy, 30% improvement over vector-only |
-| **🔗 Agent Memory** | Persistent memory, RAG integration, MCP-compatible tools | Context-aware agents with semantic understanding |
-| **🔄 Pipeline Orchestration** | Parallel execution, custom steps, orchestrator-worker pattern | Scalable, flexible data processing |
-| **🔧 Quality Assurance** | Conflict detection, deduplication, quality scoring, provenance | Trusted knowledge graphs ready for production |
+| **Data Ingestion** | 50+ formats (PDF, DOCX, HTML, JSON, CSV, databases, APIs, streams, archives) | Universal ingestion, no custom parsers needed |
+| **Semantic Extraction** | NER, relationship extraction, triple generation, LLM enhancement | Automated discovery of entities and relationships |
+| **Knowledge Graphs** | Entity resolution, temporal support, graph analytics, query interface | Production-ready, queryable knowledge structures |
+| **Ontology Generation** | 6-stage LLM pipeline, OWL generation, HermiT/Pellet validation | Automated ontology creation from documents |
+| **GraphRAG** | Hybrid vector + graph retrieval, multi-hop reasoning | 91% accuracy, 30% improvement over vector-only |
+| **Agent Memory** | Persistent memory, RAG integration, MCP-compatible tools | Context-aware agents with semantic understanding |
+| **Pipeline Orchestration** | Parallel execution, custom steps, orchestrator-worker pattern | Scalable, flexible data processing |
+| **Quality Assurance** | Conflict detection, deduplication, quality scoring, provenance | Trusted knowledge graphs ready for production |
 
 ---
 
@@ -182,23 +182,23 @@ flowchart TD
 
 Semantica is designed for **developers, data engineers, and organizations** building the next generation of AI applications that require semantic understanding and knowledge graphs.
 
-### 🎯 Who Uses Semantica
+### Who Uses Semantica
 
-**👨‍💻 AI/ML Engineers & Data Scientists** — Build GraphRAG systems, AI agents, and multi-agent systems.
+**AI/ML Engineers & Data Scientists** — Build GraphRAG systems, AI agents, and multi-agent systems.
 
-**👷 Data Engineers** — Build scalable pipelines with semantic enrichment.
+**Data Engineers** — Build scalable pipelines with semantic enrichment.
 
-**📚 Knowledge Engineers & Ontologists** — Create knowledge graphs and ontologies with automated pipelines.
+**Knowledge Engineers & Ontologists** — Create knowledge graphs and ontologies with automated pipelines.
 
-**🏢 Enterprise Data Teams** — Unify semantic layers, improve data quality, resolve conflicts.
+**Enterprise Data Teams** — Unify semantic layers, improve data quality, resolve conflicts.
 
-**💻 Software & DevOps Engineers** — Build semantic APIs and infrastructure with production-ready SDK.
+**Software & DevOps Engineers** — Build semantic APIs and infrastructure with production-ready SDK.
 
-**📊 Analysts & Researchers** — Transform data into queryable knowledge graphs for insights.
+**Analysts & Researchers** — Transform data into queryable knowledge graphs for insights.
 
-**🛡️ Security & Compliance Teams** — Threat intelligence, regulatory reporting, audit trails.
+**Security & Compliance Teams** — Threat intelligence, regulatory reporting, audit trails.
 
-**🚀 Product Teams & Startups** — Rapid prototyping of AI products and semantic features.
+**Product Teams & Startups** — Rapid prototyping of AI products and semantic features.
 
 **Skill Levels:** Beginner (Python basics) • Intermediate (NLP/knowledge graphs) • Advanced (custom pipelines, ontology engineering)
 
@@ -240,24 +240,24 @@ pip install -e ".[dev]"
 
 ## 📚 Resources
 
-> 💡 **New to Semantica?** Check out the [**Cookbook**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook) for hands-on examples!
+> **New to Semantica?** Check out the [**Cookbook**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook) for hands-on examples!
 
-- 🍳 [**Cookbook**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook) - 50+ interactive notebooks
-  - 📖 [Introduction](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction) - Getting started tutorials
-  - 🚀 [Advanced](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/advanced) - Advanced techniques
-  - 💼 [Use Cases](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/use_cases) - Real-world applications
+- [**Cookbook**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook) - 50+ interactive notebooks
+  - [Introduction](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction) - Getting started tutorials
+  - [Advanced](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/advanced) - Advanced techniques
+  - [Use Cases](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/use_cases) - Real-world applications
 
 ## ✨ Core Capabilities
 
-| **📊 Data Ingestion** | **🧠 Semantic Extract** | **🕸️ Knowledge Graphs** | **📚 Ontology** |
+| **Data Ingestion** | **Semantic Extract** | **Knowledge Graphs** | **Ontology** |
 |:--------------------:|:----------------------:|:----------------------:|:--------------:|
 | [50+ Formats](#universal-data-ingestion) | [Entity & Relations](#semantic-intelligence-engine) | [Graph Analytics](#knowledge-graph-construction) | [Auto Generation](#ontology-generation--management) |
-| **🔗 Context** | **🎯 GraphRAG** | **🔄 Pipeline** | **🔧 QA** |
+| **Context** | **GraphRAG** | **Pipeline** | **QA** |
 | [Agent Memory](#context-engineering-for-ai-agents) | [Hybrid RAG](#knowledge-graph-powered-rag-graphrag) | [Parallel Workers](#pipeline-orchestration--parallel-processing) | [Conflict Resolution](#production-ready-quality-assurance) |
 
 ---
 
-### 📊 Universal Data Ingestion
+### Universal Data Ingestion
 
 > **50+ file formats** • PDF, DOCX, HTML, JSON, CSV, databases, feeds, archives
 
@@ -276,9 +276,9 @@ sources.extend(db_ingestor.ingest(query="SELECT * FROM articles"))
 print(f"✅ Ingested {len(sources)} sources")
 ```
 
-🍳 [**Cookbook: Data Ingestion**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Data_Ingestion.ipynb)
+[**Cookbook: Data Ingestion**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Data_Ingestion.ipynb)
 
-### 🧠 Semantic Intelligence Engine
+### Semantic Intelligence Engine
 
 > **Entity & Relation Extraction** • NER, Relationships, Events, Triples with LLM Enhancement
 
@@ -293,9 +293,9 @@ results = core.extract_semantics(text)
 print(f"Entities: {len(results.entities)}, Relationships: {len(results.relationships)}")
 ```
 
-🍳 [**Cookbook: Entity Extraction**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Entity_Extraction.ipynb) • [**Relation Extraction**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Relation_Extraction.ipynb)
+[**Cookbook: Entity Extraction**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Entity_Extraction.ipynb) • [**Relation Extraction**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Relation_Extraction.ipynb)
 
-### 🕸️ Knowledge Graph Construction
+### Knowledge Graph Construction
 
 > **Production-Ready KGs** • Entity Resolution • Temporal Support • Graph Analytics
 
@@ -315,9 +315,9 @@ result = kg.query("Who founded the company?", return_format="structured")
 print(f"Nodes: {kg.node_count}, Answer: {result.answer}")
 ```
 
-🍳 [**Cookbook: Building Knowledge Graphs**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Building_Knowledge_Graphs.ipynb) • [**Graph Analytics**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Graph_Analytics.ipynb)
+[**Cookbook: Building Knowledge Graphs**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Building_Knowledge_Graphs.ipynb) • [**Graph Analytics**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Graph_Analytics.ipynb)
 
-### 📚 Ontology Generation & Management
+### Ontology Generation & Management
 
 > **6-Stage LLM Pipeline** • Automatic OWL Generation • HermiT/Pellet Validation
 
@@ -333,9 +333,9 @@ validation = validator.validate(ontology)
 print(f"Classes: {len(ontology.classes)}, Valid: {validation.is_consistent}")
 ```
 
-🍳 [**Cookbook: Ontology**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Ontology.ipynb)
+[**Cookbook: Ontology**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Ontology.ipynb)
 
-### 🔗 Context Engineering for AI Agents
+### Context Engineering for AI Agents
 
 > **Persistent Memory** • RAG + Knowledge Graphs • MCP-Compatible Tools
 
@@ -350,9 +350,9 @@ retriever = ContextRetriever(memory_store=memory)
 context = retriever.retrieve("What are user preferences?", max_results=5)
 ```
 
-🍳 [**Cookbook: Vector Store**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Vector_Store.ipynb)
+[**Cookbook: Vector Store**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Vector_Store.ipynb)
 
-### 🎯 Knowledge Graph-Powered RAG (GraphRAG)
+### Knowledge Graph-Powered RAG (GraphRAG)
 
 > **30% Accuracy Improvement** • Vector + Graph Hybrid Search • 91% Accuracy
 
@@ -368,9 +368,9 @@ result = graphrag.query("Who founded the company?", top_k=5, expand_graph=True)
 print(f"Answer: {result.answer} (Confidence: {result.confidence:.2f})")
 ```
 
-🍳 [**Cookbook: GraphRAG**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/use_cases/advanced_rag/GraphRAG_Complete.ipynb)
+[**Cookbook: GraphRAG**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/use_cases/advanced_rag/GraphRAG_Complete.ipynb)
 
-### 🔄 Pipeline Orchestration & Parallel Processing
+### Pipeline Orchestration & Parallel Processing
 
 > **Orchestrator-Worker Pattern** • Parallel Execution • Scalable Processing
 
@@ -386,9 +386,9 @@ pipeline = PipelineBuilder() \
 result = ExecutionEngine().execute_pipeline(pipeline, parallel=True)
 ```
 
-🍳 [**Cookbook: Pipeline Orchestration**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/advanced/Pipeline_Orchestration.ipynb)
+[**Cookbook: Pipeline Orchestration**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/advanced/Pipeline_Orchestration.ipynb)
 
-### 🔧 Production-Ready Quality Assurance
+### Production-Ready Quality Assurance
 
 > **Enterprise-Grade QA** • Conflict Detection • Deduplication • Quality Scoring
 
@@ -406,11 +406,11 @@ duplicates = detector.find_duplicates(entities=kg.entities, similarity_threshold
 print(f"Quality Score: {report.overall_score}/100, Duplicates: {len(duplicates)}")
 ```
 
-🍳 [**Cookbook: Conflict Detection**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Conflict_Detection.ipynb) • [**Deduplication**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Deduplication.ipynb) • [**Graph Quality**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Graph_Quality.ipynb)
+[**Cookbook: Conflict Detection**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Conflict_Detection.ipynb) • [**Deduplication**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Deduplication.ipynb) • [**Graph Quality**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Graph_Quality.ipynb)
 
 ## 🚀 Quick Start
 
-> 💡 **For comprehensive examples, see the [**Cookbook**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook) with 50+ interactive notebooks!**
+> **For comprehensive examples, see the [**Cookbook**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook) with 50+ interactive notebooks!**
 
 ```python
 from semantica import Semantica
@@ -425,43 +425,43 @@ result = kg.query("Who founded the company?", return_format="structured")
 print(f"Answer: {result.answer} | Nodes: {kg.node_count}, Edges: {kg.edge_count}")
 ```
 
-🍳 [**Cookbook: Your First Knowledge Graph**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Your_First_Knowledge_Graph.ipynb)
+[**Cookbook: Your First Knowledge Graph**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/Your_First_Knowledge_Graph.ipynb)
 
 ## 🎯 Use Cases
 
-**🏢 Enterprise Knowledge Engineering** — Unify data sources into knowledge graphs, breaking down silos.
+**Enterprise Knowledge Engineering** — Unify data sources into knowledge graphs, breaking down silos.
 
-**🤖 AI Agents & Autonomous Systems** — Build agents with persistent memory and semantic understanding.
+**AI Agents & Autonomous Systems** — Build agents with persistent memory and semantic understanding.
 
-**📄 Multi-Format Document Processing** — Process 50+ formats through a unified pipeline.
+**Multi-Format Document Processing** — Process 50+ formats through a unified pipeline.
 
-**🔄 Data Pipeline Processing** — Build scalable pipelines with parallel execution.
+**Data Pipeline Processing** — Build scalable pipelines with parallel execution.
 
-**🛡️ Intelligence & Security** — Analyze networks, threat intelligence, forensic analysis.
+**Intelligence & Security** — Analyze networks, threat intelligence, forensic analysis.
 
-**💰 Finance & Trading** — Fraud detection, market intelligence, risk assessment.
+**Finance & Trading** — Fraud detection, market intelligence, risk assessment.
 
-**🏥 Healthcare & Biomedical** — Clinical reports, drug discovery, medical literature analysis.
+**Healthcare & Biomedical** — Clinical reports, drug discovery, medical literature analysis.
 
-🍳 [**Explore Use Case Examples**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/use_cases) — See real-world implementations in finance, healthcare, cybersecurity, trading, and more.
+[**Explore Use Case Examples**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/use_cases) — See real-world implementations in finance, healthcare, cybersecurity, trading, and more.
 
 ## 🔬 Advanced Features
 
-**🔄 Incremental Updates** — Real-time stream processing with Kafka, RabbitMQ, Kinesis for live updates.
+**Incremental Updates** — Real-time stream processing with Kafka, RabbitMQ, Kinesis for live updates.
 
-**🌍 Multi-Language Support** — Process 50+ languages with automatic detection.
+**Multi-Language Support** — Process 50+ languages with automatic detection.
 
-**📚 Custom Ontology Import** — Import and extend Schema.org and custom ontologies.
+**Custom Ontology Import** — Import and extend Schema.org and custom ontologies.
 
-**🧠 Advanced Reasoning** — Deductive, inductive, abductive reasoning with HermiT/Pellet.
+**Advanced Reasoning** — Deductive, inductive, abductive reasoning with HermiT/Pellet.
 
-**📊 Graph Analytics** — Centrality, community detection, path finding, temporal analysis.
+**Graph Analytics** — Centrality, community detection, path finding, temporal analysis.
 
-**🔧 Custom Pipelines** — Build custom pipelines with parallel execution.
+**Custom Pipelines** — Build custom pipelines with parallel execution.
 
-**🔌 API Integration** — Integrate external APIs for entity enrichment.
+**API Integration** — Integrate external APIs for entity enrichment.
 
-🍳 [**See Advanced Examples**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/advanced) — Advanced extraction, graph analytics, reasoning, and more.
+[**See Advanced Examples**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/advanced) — Advanced extraction, graph analytics, reasoning, and more.
 
 ## 🗺️ Roadmap
 
@@ -481,26 +481,26 @@ print(f"Answer: {result.answer} | Nodes: {kg.node_count}, Edges: {kg.edge_count}
 
 ## 🤝 Community & Support
 
-### 💬 Join Our Community
+### Join Our Community
 
 | **Channel** | **Purpose** |
 |:-----------:|:-----------|
-| 💬 [**Discord**](https://discord.gg/semantica) | Real-time help, showcases |
-| 💡 [**GitHub Discussions**](https://github.com/Hawksight-AI/semantica/discussions) | Q&A, feature requests |
-| 🐦 [**Twitter**](https://twitter.com/semantica_ai) | Updates, tips |
-| 📺 [**YouTube**](https://youtube.com/@semantica) | Tutorials, webinars |
+| [**Discord**](https://discord.gg/semantica) | Real-time help, showcases |
+| [**GitHub Discussions**](https://github.com/Hawksight-AI/semantica/discussions) | Q&A, feature requests |
+| [**Twitter**](https://twitter.com/semantica_ai) | Updates, tips |
+| [**YouTube**](https://youtube.com/@semantica) | Tutorials, webinars |
 
-### 📚 Learning Resources
+### Learning Resources
 
 
-### 🏢 Enterprise Support
+### Enterprise Support
 
 | **Tier** | **Features** | **SLA** | **Price** |
 |:--------:|:-----------|:-------:|:--------:|
-| 🆓 **Community** | Public support | Best effort | Free |
-| 💼 **Professional** | Email support | 48h | Contact |
-| 🏢 **Enterprise** | 24/7 support | 4h | Contact |
-| ⭐ **Premium** | Phone, custom dev | 1h | Contact |
+| **Community** | Public support | Best effort | Free |
+| **Professional** | Email support | 48h | Contact |
+| **Enterprise** | 24/7 support | 4h | Contact |
+| **Premium** | Phone, custom dev | 1h | Contact |
 
 **Contact:** enterprise@semantica.io
 
@@ -539,10 +539,10 @@ git push origin feature/your-feature
 ### Recognition
 
 Contributors receive:
-- 📜 Recognition in [CONTRIBUTORS.md](https://github.com/Hawksight-AI/semantica/blob/main/CONTRIBUTORS.md)
-- 🏆 GitHub badges
-- 🎁 Semantica swag
-- 🌟 Featured showcases
+- Recognition in [CONTRIBUTORS.md](https://github.com/Hawksight-AI/semantica/blob/main/CONTRIBUTORS.md)
+- GitHub badges
+- Semantica swag
+- Featured showcases
 
 ## 📜 License
 
@@ -550,7 +550,7 @@ Semantica is licensed under the **MIT License** - see the [LICENSE](https://gith
 
 <div align="center">
 
-**Built with ❤️ by the Semantica Community**
+**Built by the Semantica Community**
 
 [GitHub](https://github.com/Hawksight-AI/semantica) • [Discord](https://discord.gg/semantica)
 
