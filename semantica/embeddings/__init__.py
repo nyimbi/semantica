@@ -189,9 +189,6 @@ __all__ = [
     "EmbeddingsConfig",
     "embeddings_config",
 ]
-<<<<<<< HEAD
-=======
-
 
 def build(
     data: Union[str, Path, List[Union[str, Path]]],
@@ -277,4 +274,3 @@ def build(
             },
             "failed_items": results.get("failed", []),
         }
->>>>>>> origin/main

@@ -183,9 +183,6 @@ __all__ = [
     "get_entity_method",
     "get_relation_method",
     "get_triple_method",
-<<<<<<< HEAD
-]
-=======
     # Convenience
     "build",
 ]
@@ -337,4 +334,3 @@ def build(
     }
 
     return results
->>>>>>> origin/main

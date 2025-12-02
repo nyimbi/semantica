@@ -216,8 +216,6 @@ class _SemanticaModules:
 # Create singleton instance for module access
 _modules = _SemanticaModules()
 
-<<<<<<< HEAD
-=======
 # Singleton Semantica instance for module-level build()
 _semantica_instance: Optional[Semantica] = None
 
@@ -275,7 +273,6 @@ def build(
 
     # Build knowledge base (auto-initializes if needed)
     return semantica.build_knowledge_base(sources, **kwargs)
->>>>>>> origin/main
 
 
 __all__ = [

@@ -7,6 +7,8 @@ Understand the fundamental concepts behind Semantica. This guide covers the theo
 
 ---
 
+[TOC]
+
 
 
 ## Core Concepts
@@ -56,7 +58,7 @@ graph LR
     style E fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
 ```
 
-<<<<<<< HEAD
+
 **Practical Examples**:
 
 === "Basic Usage"
@@ -83,7 +85,6 @@ graph LR
     for entity in kg['entities'][:5]:
         print(f"  {entity['text']} ({entity['type']})")
     ```
-
 === "Direct KG Module Usage"
     Use the `kg` module directly for more control:
     
@@ -122,7 +123,6 @@ graph LR
     )
     kg = builder.build(sources)
     ```
-
 === "Multi-Source Integration"
     Merge knowledge from multiple data sources:
     
@@ -154,7 +154,6 @@ graph LR
     print(f"Merged graph: {len(unified_kg['entities'])} unique entities")
     print(f"Deduplicated from {len(kg_news['entities']) + len(kg_reports['entities'])} total")
     ```
-
 === "Graph Analytics"
     Analyze the structure and properties of your knowledge graph:
     
@@ -201,33 +200,7 @@ graph LR
     print(f"Connected components: {conn['num_components']}")
     print(f"Largest component: {conn['largest_component_size']} nodes")
     ```
-=======
-**Practical Example**:
 
-```python
-from semantica import Semantica
-
-# Initialize Semantica
-semantica = Semantica()
-
-# Build knowledge graph from document
-result = semantica.build_knowledge_base(
-    sources=["company_report.pdf"],
-    embeddings=True,
-    graph=True
-)
-
-kg = result["knowledge_graph"]
-
-# Access entities and relationships
-print(f"Entities: {len(kg['entities'])}")
-print(f"Relationships: {len(kg['relationships'])}")
-
-# Query the graph
-for entity in kg['entities'][:5]:
-    print(f"- {entity.get('text', 'N/A')}: {entity.get('type', 'N/A')}")
-```
->>>>>>> origin/main
 
 **Related Modules**:
 
@@ -260,22 +233,15 @@ for entity in kg['entities'][:5]:
 
 **Extraction Methods**:
 
-<<<<<<< HEAD
+
 === "Quick Start"
     Extract entities from text using the convenience function:
-=======
-=== "Rule-based"
-    Uses pattern matching (regex) to identify entities.
-    
-    **Pros**: Fast, deterministic, no training data needed
-    
-    **Cons**: Limited to predefined patterns, less flexible
->>>>>>> origin/main
+
     
     ```python
     from semantica.semantic_extract import NamedEntityRecognizer
     
-<<<<<<< HEAD
+
     text = """
     Apple Inc. was founded by Steve Jobs, Steve Wozniak, and Ronald Wayne 
     in Cupertino, California on April 1, 1976. The company is now worth 
@@ -293,7 +259,6 @@ for entity in kg['entities'][:5]:
         print(f"  {entity['text']:20} | Type: {entity['type']:15} | "
               f"Confidence: {entity.get('confidence', 0.0):.2f}")
     ```
-
 === "Named Entity Recognizer"
     Use the `NamedEntityRecognizer` class for advanced control:
     
@@ -321,7 +286,6 @@ for entity in kg['entities'][:5]:
       Method: {entity.get('extraction_method', 'N/A')}
     """)
     ```
-
 === "Custom Entity Types"
     Define and extract custom entity types for your domain:
     
@@ -375,7 +339,6 @@ for entity in kg['entities'][:5]:
     # Dosage: 400mg, twice daily
     # Condition: arthritis
     ```
-
 === "LLM-Enhanced Extraction"
     Use LLMs for context-aware, high-accuracy extraction:
     
@@ -417,7 +380,6 @@ for entity in kg['entities'][:5]:
     # - "Goldman Sachs" (organization)
     # - "Apple Watch" (product vs organization)
     ```
-
 === "Batch Processing"
     Process multiple documents efficiently:
     
@@ -449,34 +411,7 @@ for entity in kg['entities'][:5]:
     print(f"Entity Distribution:")
     for etype, count in entity_types.most_common():
         print(f"  {etype}: {count}")
-=======
-    ner = NamedEntityRecognizer(method="rule-based")
-    entities = ner.extract_entities("Apple Inc. was founded in 1976.")
-    ```
 
-=== "Machine Learning"
-    Uses trained models (spaCy, transformers) for extraction.
-    
-    **Pros**: More accurate, handles variations
-    
-    **Cons**: Requires training data, slower than rules
-    
-    ```python
-    ner = NamedEntityRecognizer(method="spacy")
-    entities = ner.extract_entities(text)
-    ```
-
-=== "LLM-based"
-    Uses large language models (GPT-4, Claude) for extraction.
-    
-    **Pros**: Most accurate, understands context
-    
-    **Cons**: Slower, requires API access, costs money
-    
-    ```python
-    ner = NamedEntityRecognizer(method="llm", model="gpt-4")
-    entities = ner.extract_entities(text)
->>>>>>> origin/main
     ```
 
 **Related Modules**:
@@ -505,7 +440,6 @@ for entity in kg['entities'][:5]:
     # Example: "Tim Cook works for Apple Inc."
     # Extracted: (Tim Cook) --[works_for]--> (Apple Inc.)
     ```
-
 === "Temporal Relationships"
     Relationships defined by time and sequence.
     
@@ -518,7 +452,6 @@ for entity in kg['entities'][:5]:
     # Example: "WWDC 2023 happened before WWDC 2024"
     # Extracted: (WWDC 2023) --[happened_before]--> (WWDC 2024)
     ```
-
 === "Causal Relationships"
     Cause and effect relationships.
     
@@ -550,7 +483,7 @@ graph LR
     style F fill:#e3f2fd
 ```
 
-<<<<<<< HEAD
+
 **Practical Examples**:
 
 === "Basic Relation Extraction"
@@ -578,7 +511,6 @@ graph LR
         print(f"  ({rel['source']}) --[{rel['type']}]--> ({rel['target']})")
         print(f"     Confidence: {rel.get('confidence', 0.0):.2f}")
     ```
-
 === "RelationExtractor Class"
     Use the `RelationExtractor` for advanced control:
     
@@ -611,7 +543,6 @@ graph LR
         print(f"  {rel['source_text']} {arrow} {rel['target_text']}")
         print(f"    Relation: {rel['type']}")
     ```
-
 === "Triple Extraction (RDF)"
     Extract subject-predicate-object triples for RDF/semantic web:
     
@@ -657,7 +588,6 @@ graph LR
     print("Turtle Output:")
     print(turtle_output)
     ```
-
 === "Event Detection"
     Extract events with temporal information:
     
@@ -701,7 +631,6 @@ graph LR
     for i, evt in enumerate(timeline, 1):
         print(f"  {i}. {evt['datetime']}: {evt['description']}")
     ```
-
 === "Coreference Resolution"
     Resolve pronouns and entity references:
     
@@ -728,8 +657,7 @@ graph LR
     print(resolved_text)
     ```
 
-=======
->>>>>>> origin/main
+
 **Related Modules**:
 - [`semantic_extract` Module](reference/semantic_extract.md) - Relationship extraction
 - [`kg` Module](reference/kg.md) - Building graphs from relationships
@@ -769,7 +697,7 @@ Embedding: [0.123, -0.456, 0.789, ..., 0.234]  # (vector of 1536 dimensions)
 | **HuggingFace** | sentence-transformers | 384-768 | Medium | Free | Development, open source |
 | **Local** | Various | Variable | Slow | Free | Privacy, offline use |
 
-<<<<<<< HEAD
+
 **Practical Examples**:
 
 === "Quick Start"
@@ -801,7 +729,6 @@ Embedding: [0.123, -0.456, 0.789, ..., 0.234]  # (vector of 1536 dimensions)
     embedding = embed_text("Hello, world!", method="sentence_transformers")
     print(f"Single embedding shape: {embedding.shape}")
     ```
-
 === "Similarity Search"
     Calculate semantic similarity between texts:
     
@@ -839,7 +766,6 @@ Embedding: [0.123, -0.456, 0.789, ..., 0.234]  # (vector of 1536 dimensions)
         relevance = "HIGH" if sim > 0.6 else "MED" if sim > 0.3 else "LOW"
         print(f"  [{relevance}] {sim:.3f}: {doc[:50]}...")
     ```
-
 === "Multiple Embedding Types"
     Work with text, image, and audio embeddings:
     
@@ -880,7 +806,6 @@ Embedding: [0.123, -0.456, 0.789, ..., 0.234]  # (vector of 1536 dimensions)
         sim = calculate_similarity(text_query, img_emb, method="cosine")
         print(f"  {img}: {sim:.3f}")
     ```
-
 === "Embedding Optimization"
     Optimize embeddings for storage and performance:
     
@@ -913,7 +838,6 @@ Embedding: [0.123, -0.456, 0.789, ..., 0.234]  # (vector of 1536 dimensions)
     normalized = optimizer.normalize(embeddings, method="l2")
     print(f"Normalized: unit vectors ready for dot product")
     ```
-
 === "Pooling Strategies"
     Aggregate embeddings using different strategies:
     
@@ -951,7 +875,6 @@ Embedding: [0.123, -0.456, 0.789, ..., 0.234]  # (vector of 1536 dimensions)
     hier_result = hier_pool.pool(document_embeddings)
     print(f"Hierarchical pooling: {hier_result.shape}")  # (768,)
     ```
-
 === "Context Management"
     Handle long texts with context windows:
     
@@ -992,8 +915,7 @@ Embedding: [0.123, -0.456, 0.789, ..., 0.234]  # (vector of 1536 dimensions)
     print(f"Document embedding shape: {doc_embedding.shape}")
     ```
 
-=======
->>>>>>> origin/main
+
 **Related Modules**:
 - [`embeddings` Module](reference/embeddings.md) - Embedding generation
 - [`vector_store` Module](reference/vector_store.md) - Vector storage and search
@@ -1027,7 +949,7 @@ timeline
          : Relationship A->B expired
 ```
 
-<<<<<<< HEAD
+
 **Practical Examples**:
 
 === "Building Temporal Graphs"
@@ -1088,7 +1010,6 @@ timeline
     kg = builder.build(sources)
     print(f"Built temporal graph with {kg['metadata']['num_entities']} entities")
     ```
-
 === "Temporal Queries"
     Query the graph at specific points in time:
     
@@ -1124,7 +1045,6 @@ timeline
     for rel in ceo_history['results']:
         print(f"  {rel['source']} -> {rel['valid_from']} to {rel.get('valid_until', 'present')}")
     ```
-
 === "Pattern Detection"
     Detect temporal patterns in your graph:
     
@@ -1242,8 +1162,7 @@ timeline
     print(f"  Most volatile entities: {stability['most_volatile'][:3]}")
     ```
 
-=======
->>>>>>> origin/main
+
 **Related Modules**:
 - [`kg` Module](reference/kg.md) - Temporal graph support
 - [`visualization` Module](reference/visualization.md) - Temporal visualization
@@ -1294,7 +1213,7 @@ flowchart TD
 | **Complex Queries** | Limited | Excellent |
 | **Relationship Awareness** | No | Yes |
 
-<<<<<<< HEAD
+
 **Practical Examples**:
 
 === "Basic GraphRAG"
@@ -1560,8 +1479,7 @@ Answer:"""
     print(f"Answer: {response}")
     ```
 
-=======
->>>>>>> origin/main
+
 **Related Modules**:
 - [`kg` Module](reference/kg.md) - Knowledge graph construction
 - [`vector_store` Module](reference/vector_store.md) - Vector search
@@ -1604,7 +1522,7 @@ classDiagram
     Company --> Location : locatedIn
 ```
 
-<<<<<<< HEAD
+
 **Practical Examples**:
 
 === "Automatic Ontology Generation"
@@ -1926,8 +1844,7 @@ classDiagram
         print(f"  {align['source']} ~ {align['target']} ({align['similarity']:.2f})")
     ```
 
-=======
->>>>>>> origin/main
+
 **Related Modules**:
 - [`ontology` Module](reference/ontology.md) - Ontology generation and management
 - [`kg` Module](reference/kg.md) - Knowledge graph construction
@@ -1949,7 +1866,7 @@ classDiagram
 | **Coverage** | Breadth of domain coverage | Entity diversity, relationship types |
 | **Freshness** | How up-to-date the data is | Last update timestamp, staleness |
 
-<<<<<<< HEAD
+
 **Practical Examples**:
 
 === "Quality Assessment"
@@ -2121,8 +2038,7 @@ classDiagram
         print(f"    Effort: {rec['effort_level']}")
     ```
 
-=======
->>>>>>> origin/main
+
 **Related Modules**:
 - [`kg_qa` Module](reference/evals.md) - Quality assurance and evaluation
 - [`conflicts` Module](../semantica/conflicts/conflicts_usage.md) - Conflict detection
@@ -2144,7 +2060,7 @@ classDiagram
 
 Deduplication works by calculating similarity between entities. If similarity exceeds a threshold, entities are merged; otherwise, they remain separate.
 
-<<<<<<< HEAD
+
 **Practical Examples**:
 
 === "Entity Resolution"
@@ -2351,8 +2267,7 @@ Deduplication works by calculating similarity between entities. If similarity ex
     print(f"  Source IDs: {merged_entity['source_ids']}")
     ```
 
-=======
->>>>>>> origin/main
+
 **Related Modules**:
 - [`deduplication` Module](../semantica/deduplication/deduplication_usage.md) - Deduplication and merging
 - [`embeddings` Module](reference/embeddings.md) - Similarity calculation
@@ -2378,7 +2293,7 @@ flowchart LR
     style Normalized fill:#c8e6c9
 ```
 
-<<<<<<< HEAD
+
 **Practical Examples**:
 
 === "Text Normalization"
@@ -2581,8 +2496,7 @@ flowchart LR
             print(f"    {key}: {value}")
     ```
 
-=======
->>>>>>> origin/main
+
 **Related Modules**:
 - [`normalize` Module](reference/normalize.md) - Data normalization
 - [`parse` Module](reference/parse.md) - Document parsing
@@ -2603,7 +2517,7 @@ flowchart LR
 | **Type Conflict** | Different entity types | "Apple: Company" vs "Apple: Product" |
 | **Temporal Conflict** | Conflicting time information | "Active: 2020-2023" vs "Active: 2021-2024" |
 
-<<<<<<< HEAD
+
 **Practical Examples**:
 
 === "Detecting Conflicts"
@@ -2889,43 +2803,7 @@ flowchart LR
     print(f"  Entity: {context.get('entity_text', 'Unknown')}")
     print(f"  Property: {context.get('property', 'Unknown')}")
     print(f"  Value count: {len(conflict.values)}")
-=======
-**Conflict Resolution Strategies**:
 
-=== "Voting"
-    Use the most common value across sources.
-    
-    ```python
-    resolver = ConflictResolver(strategy="voting")
-    resolved = resolver.resolve(conflicts)
-    ```
-
-=== "Highest Confidence"
-    Use the value with the highest confidence score.
-    
-    ```python
-    resolver = ConflictResolver(strategy="highest_confidence")
-    resolved = resolver.resolve(conflicts)
-    ```
-
-=== "Most Recent"
-    Use the most recently updated value.
-    
-    ```python
-    resolver = ConflictResolver(strategy="most_recent")
-    resolved = resolver.resolve(conflicts)
-    ```
-
-=== "Source Priority"
-    Use values from trusted sources first.
-    
-    ```python
-    resolver = ConflictResolver(
-        strategy="source_priority",
-        source_priority=["trusted_source", "other_source"]
-    )
-    resolved = resolver.resolve(conflicts)
->>>>>>> origin/main
     ```
 
 **Related Modules**:
@@ -3057,59 +2935,7 @@ for i in range(0, len(sources), batch_size):
 
 ---
 
-## Troubleshooting
 
-Common issues and solutions:
-
-!!! failure "Import Errors"
-    **Solution**:
-    - Ensure Semantica is properly installed: `pip install semantica`
-    - Check Python version (3.8+): `python --version`
-    - Verify virtual environment is activated
-    - Install missing dependencies: `pip install -r requirements.txt`
-
-!!! failure "API Key Errors"
-    **Solution**:
-    - Set environment variables: `export OPENAI_API_KEY=your_key`
-    - Check config file for correct key format
-    - Verify API key is valid and has sufficient credits
-    - Test API connection: `curl https://api.openai.com/v1/models`
-
-!!! failure "Memory Issues"
-    **Solution**:
-    - Process documents in batches
-    - Use smaller embedding models
-    - Enable garbage collection
-    - Consider using streaming for large datasets
-    - Use graph store backends (Neo4j, KuzuDB) instead of in-memory
-
-!!! failure "Low Quality Extractions"
-    **Solution**:
-    - Preprocess and normalize text
-    - Use domain-specific models
-    - Adjust extraction parameters
-    - Validate and clean extracted entities
-    - Use LLM-based extraction for better accuracy
-    - Fine-tune models on your domain
-
-!!! failure "Slow Processing"
-    **Solution**:
-    - Enable parallel processing
-    - Use GPU acceleration if available
-    - Cache embeddings and results
-    - Optimize batch sizes
-    - Use faster embedding models
-    - Consider using local models for development
-
-!!! failure "Graph Too Large"
-    **Solution**:
-    - Use graph store backends (Neo4j, KuzuDB) instead of NetworkX
-    - Implement graph partitioning
-    - Use incremental building
-    - Filter entities by confidence threshold
-    - Remove low-value relationships
-
----
 
 ## Next Steps
 

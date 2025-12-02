@@ -208,9 +208,6 @@ __all__ = [
     "KGConfig",
     "kg_config",
 ]
-<<<<<<< HEAD
-=======
-
 
 def build(
     sources: Union[List[Any], Any],
@@ -277,4 +274,3 @@ def build(
     graph = graph_builder.build(sources, entity_resolver=entity_resolver, **options)
 
     return graph
->>>>>>> origin/main
