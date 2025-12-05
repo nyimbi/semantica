@@ -40,7 +40,7 @@
     - **Classification**: Using embeddings as features for ML models
     - **RAG**: Embedding chunks for retrieval
     - **Vector Databases**: Preparing embeddings for FAISS, Pinecone, Qdrant, etc.
-    - **Graph Databases**: Creating node and edge embeddings for Neo4j, NetworkX, etc.
+    - **Graph Databases**: Creating node and edge embeddings for Neo4j, KuzuDB, FalkorDB, etc.
 
 ---
 
