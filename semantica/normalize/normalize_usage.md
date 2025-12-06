@@ -1,43 +1,24 @@
-# Data Normalization Module Usage Guide
+# Normalize Module Usage Guide
 
-This comprehensive guide demonstrates how to use the data normalization module for text normalization, entity normalization, date/time normalization, number/quantity normalization, data cleaning, language detection, and encoding handling.
+Use the normalize module to clean, standardize, and prepare text and data for downstream processing. This guide only references classes and functions implemented in the module.
 
-## Table of Contents
+## Contents
 
-1. [Basic Usage](#basic-usage)
-2. [Text Normalization](#text-normalization)
-3. [Entity Normalization](#entity-normalization)
-4. [Date/Time Normalization](#datetime-normalization)
-5. [Number/Quantity Normalization](#numberquantity-normalization)
+1. [Quick Start](#quick-start)
+2. [Text](#text)
+3. [Entities](#entities)
+4. [Dates & Time](#dates--time)
+5. [Numbers & Quantities](#numbers--quantities)
 6. [Data Cleaning](#data-cleaning)
-7. [Language Detection](#language-detection)
-8. [Encoding Handling](#encoding-handling)
-9. [Using Methods](#using-methods)
-10. [Using Registry](#using-registry)
-11. [Configuration](#configuration)
-12. [Advanced Examples](#advanced-examples)
+7. [Language](#language)
+8. [Encoding](#encoding)
+9. [Methods Registry](#methods-registry)
+10. [Configuration](#configuration)
+11. [Workflows](#workflows)
 
-## Basic Usage
+## Quick Start
 
-### Using the Convenience Functions
-
-```python
-from semantica.normalize import normalize_text, normalize_entity, normalize_date
-
-# Normalize text
-text = normalize_text("Hello   World", method="default")
-print(f"Normalized: {text}")
-
-# Normalize entity
-entity = normalize_entity("John Doe", entity_type="Person", method="default")
-print(f"Normalized entity: {entity}")
-
-# Normalize date
-date = normalize_date("2023-01-15", method="default")
-print(f"Normalized date: {date}")
-```
-
-### Using Main Classes
+### Main Classes
 
 ```python
 from semantica.normalize import TextNormalizer, EntityNormalizer, DateNormalizer
@@ -57,107 +38,72 @@ normalized_entity = entity_norm.normalize_entity("John Doe", entity_type="Person
 normalized_date = date_norm.normalize_date("2023-01-15", format="ISO8601")
 ```
 
-## Text Normalization
+## Text
 
-### Basic Text Normalization
+### Normalize Text
 
 ```python
-from semantica.normalize import normalize_text, TextNormalizer
+from semantica.normalize import TextNormalizer
 
-# Using convenience function
-normalized = normalize_text("Hello   World", method="default")
-print(f"Normalized: {normalized}")
-
-# Using class directly
 normalizer = TextNormalizer()
 normalized = normalizer.normalize_text("Hello   World", case="lower")
 ```
 
-### Unicode Normalization
+### Unicode
 
 ```python
-from semantica.normalize import normalize_text, UnicodeNormalizer
+from semantica.normalize import UnicodeNormalizer
 
-# Normalize with different Unicode forms
-nfc = normalize_text("café", method="default", unicode_form="NFC")
-nfd = normalize_text("café", method="default", unicode_form="NFD")
-nfkc = normalize_text("café", method="default", unicode_form="NFKC")
-nfkd = normalize_text("café", method="default", unicode_form="NFKD")
-
-# Using UnicodeNormalizer directly
 unicode_norm = UnicodeNormalizer()
 normalized = unicode_norm.normalize_unicode("café", form="NFC")
 ```
 
-### Whitespace Normalization
+### Whitespace
 
 ```python
-from semantica.normalize import normalize_text, WhitespaceNormalizer
+from semantica.normalize import WhitespaceNormalizer
 
-# Normalize whitespace
-normalized = normalize_text(
-    "Hello   World\n\nTest",
-    method="default",
-    line_break_type="unix"
-)
-
-# Using WhitespaceNormalizer directly
 whitespace_norm = WhitespaceNormalizer()
 normalized = whitespace_norm.normalize_whitespace(
-    "Hello   World",
+    "Hello   World\n\nTest",
     line_break_type="unix"
 )
 ```
 
-### Case Normalization
+### Case
 
 ```python
-from semantica.normalize import normalize_text
+from semantica.normalize import TextNormalizer
+
+normalizer = TextNormalizer()
 
 # Lowercase
-lower = normalize_text("Hello World", method="default", case="lower")
+lower = normalizer.normalize_text("Hello World", case="lower")
 
 # Uppercase
-upper = normalize_text("Hello World", method="default", case="upper")
+upper = normalizer.normalize_text("Hello World", case="upper")
 
 # Title case
-title = normalize_text("hello world", method="default", case="title")
+title = normalizer.normalize_text("hello world", case="title")
 
 # Preserve case
-preserved = normalize_text("Hello World", method="default", case="preserve")
+preserved = normalizer.normalize_text("Hello World", case="preserve")
 ```
 
-### Special Character Processing
+### Special Characters
 
 ```python
-from semantica.normalize import normalize_text, SpecialCharacterProcessor
+from semantica.normalize import SpecialCharacterProcessor
 
-# Normalize with special character processing
-normalized = normalize_text(
-    "Hello—World",
-    method="default",
-    normalize_diacritics=True
-)
-
-# Using SpecialCharacterProcessor directly
 char_processor = SpecialCharacterProcessor()
 processed = char_processor.process_special_chars("Hello—World")
 ```
 
-### Text Cleaning
+### Cleaning
 
 ```python
-from semantica.normalize import clean_text, TextCleaner
+from semantica.normalize import TextCleaner
 
-# Using convenience function
-cleaned = clean_text(
-    "<p>Hello World</p>",
-    method="default",
-    remove_html=True,
-    normalize_whitespace=True
-)
-
-# Using TextCleaner directly
 cleaner = TextCleaner()
 cleaned = cleaner.clean(
     "<p>Hello World</p>",
@@ -166,7 +112,7 @@ cleaned = cleaner.clean(
 )
 ```
 
-### Batch Text Processing
+### Batch
 
 ```python
 from semantica.normalize import TextNormalizer
@@ -185,66 +131,36 @@ for text in normalized_texts:
     print(text)
 ```
 
-## Entity Normalization
+## Entities
 
-### Basic Entity Normalization
+### Normalize Entity
 
 ```python
-from semantica.normalize import normalize_entity, EntityNormalizer
+from semantica.normalize import EntityNormalizer
 
-# Using convenience function
-normalized = normalize_entity(
-    "John Doe",
-    entity_type="Person",
-    method="default"
-)
-
-# Using class directly
 normalizer = EntityNormalizer()
 normalized = normalizer.normalize_entity("John Doe", entity_type="Person")
 ```
 
-### Alias Resolution
+### Aliases
 
 ```python
-from semantica.normalize import resolve_aliases, AliasResolver
+from semantica.normalize import AliasResolver
 
-# Using convenience function
-canonical = resolve_aliases(
-    "J. Doe",
-    entity_type="Person",
-    method="default"
-)
-
-# Using AliasResolver directly
 resolver = AliasResolver(alias_map={"j. doe": "John Doe"})
 canonical = resolver.resolve_aliases("J. Doe", entity_type="Person")
 ```
 
-### Entity Disambiguation
+### Disambiguation
 
 ```python
-from semantica.normalize import disambiguate_entity, EntityDisambiguator
+from semantica.normalize import EntityDisambiguator
 
-# Using convenience function
-result = disambiguate_entity(
-    "Apple",
-    method="default",
-    entity_type="Organization",
-    context="technology company"
-)
-
-print(f"Entity: {result['entity_name']}")
-print(f"Type: {result['entity_type']}")
-print(f"Confidence: {result['confidence']}")
-print(f"Candidates: {result['candidates']}")
-
-# Using EntityDisambiguator directly
 disambiguator = EntityDisambiguator()
 result = disambiguator.disambiguate("Apple", entity_type="Organization")
 ```
 
-### Entity Linking
+### Linking
 
 ```python
 from semantica.normalize import EntityNormalizer
@@ -263,7 +179,7 @@ for original, canonical in linked.items():
     print(f"{original} -> {canonical}")
 ```
 
-### Name Variant Handling
+### Name Variants
 
 ```python
 from semantica.normalize import EntityNormalizer, NameVariantHandler
@@ -284,86 +200,58 @@ normalized = variant_handler.normalize_name_format(
 )
 ```
 
-## Date/Time Normalization
+## Dates & Time
 
-### Basic Date Normalization
+### Normalize Date
 
 ```python
-from semantica.normalize import normalize_date, DateNormalizer
+from semantica.normalize import DateNormalizer
 
-# Using convenience function
-normalized = normalize_date("2023-01-15", method="default")
-print(f"Normalized: {normalized}")
-
-# Using class directly
 normalizer = DateNormalizer()
 normalized = normalizer.normalize_date("2023-01-15", format="ISO8601")
 ```
 
-### Different Date Formats
+### Formats
 
 ```python
-from semantica.normalize import normalize_date
+from semantica.normalize import DateNormalizer
 
-# ISO8601 format
-iso_date = normalize_date("2023-01-15", format="ISO8601", method="default")
-
-# Date only
-date_only = normalize_date("2023-01-15", format="date", method="default")
-
-# Custom format
-custom = normalize_date("2023-01-15", format="%Y-%m-%d", method="default")
+normalizer = DateNormalizer()
+iso_date = normalizer.normalize_date("2023-01-15", format="ISO8601")
+date_only = normalizer.normalize_date("2023-01-15", format="date")
+custom = normalizer.normalize_date("2023-01-15", format="%Y-%m-%d")
 ```
 
-### Timezone Normalization
+### Timezone
 
 ```python
-from semantica.normalize import normalize_date, TimeZoneNormalizer
+from semantica.normalize import TimeZoneNormalizer
 
-# Normalize with timezone
-normalized = normalize_date(
-    "2023-01-15T10:30:00",
-    timezone="America/New_York",
-    method="default"
-)
-
-# Using TimeZoneNormalizer directly
 tz_norm = TimeZoneNormalizer()
 from datetime import datetime
 dt = datetime(2023, 1, 15, 10, 30, 0)
 utc_dt = tz_norm.convert_to_utc(dt)
 ```
 
-### Relative Date Processing
+### Relative Dates
 
 ```python
-from semantica.normalize import normalize_date, RelativeDateProcessor
+from semantica.normalize import RelativeDateProcessor
 
-# Process relative dates
-yesterday = normalize_date("yesterday", method="relative")
-three_days_ago = normalize_date("3 days ago", method="relative")
-next_week = normalize_date("next week", method="relative")
-
-# Using RelativeDateProcessor directly
 relative_processor = RelativeDateProcessor()
 dt = relative_processor.process_relative_expression("3 days ago")
 ```
 
-### Time Normalization
+### Time
 
 ```python
-from semantica.normalize import normalize_time, DateNormalizer
+from semantica.normalize import DateNormalizer
 
-# Normalize time
-normalized = normalize_time("10:30:00", method="default")
-print(f"Normalized time: {normalized}")
-
-# Using DateNormalizer directly
 normalizer = DateNormalizer()
 normalized = normalizer.normalize_time("10:30 AM")
 ```
 
-### Temporal Expression Parsing
+### Temporal Expressions
 
 ```python
 from semantica.normalize import DateNormalizer, TemporalExpressionParser
@@ -379,58 +267,44 @@ parser = TemporalExpressionParser()
 result = parser.parse_temporal_expression("last week")
 ```
 
-## Number/Quantity Normalization
+## Numbers & Quantities
 
-### Basic Number Normalization
+### Normalize Number
 
 ```python
-from semantica.normalize import normalize_number, NumberNormalizer
+from semantica.normalize import NumberNormalizer
 
-# Using convenience function
-number = normalize_number("1,234.56", method="default")
-print(f"Normalized: {number}")
-
-# Using class directly
 normalizer = NumberNormalizer()
 number = normalizer.normalize_number("1,234.56")
 ```
 
-### Percentage Handling
+### Percentages
 
 ```python
-from semantica.normalize import normalize_number
+from semantica.normalize import NumberNormalizer
 
-# Normalize percentage
-percentage = normalize_number("50%", method="default")
+normalizer = NumberNormalizer()
+percentage = normalizer.normalize_number("50%")
 print(f"Percentage as decimal: {percentage}")  # 0.5
 ```
 
 ### Scientific Notation
 
 ```python
-from semantica.normalize import normalize_number, ScientificNotationHandler
+from semantica.normalize import ScientificNotationHandler
 
-# Normalize scientific notation
-number = normalize_number("1.5e3", method="default")
-print(f"Normalized: {number}")  # 1500.0
-
-# Using ScientificNotationHandler directly
 sci_handler = ScientificNotationHandler()
 parsed = sci_handler.parse_scientific_notation("1.5e3")
 ```
 
-### Quantity Normalization
+### Quantities
 
 ```python
-from semantica.normalize import normalize_quantity, NumberNormalizer
+from semantica.normalize import NumberNormalizer
 
-# Using convenience function
-quantity = normalize_quantity("5 kg", method="default")
-print(f"Value: {quantity['value']}, Unit: {quantity['unit']}")
-
-# Using class directly
 normalizer = NumberNormalizer()
 quantity = normalizer.normalize_quantity("10 meters")
+print(f"Value: {quantity['value']}, Unit: {quantity['unit']}")
 ```
 
 ### Unit Conversion
@@ -449,7 +323,7 @@ converter = UnitConverter()
 converted = converter.convert_units(1, "kilometer", "mile")
 ```
 
-### Currency Processing
+### Currency
 
 ```python
 from semantica.normalize import NumberNormalizer, CurrencyNormalizer
@@ -467,10 +341,10 @@ currency = currency_norm.normalize_currency("€50", default_currency="EUR")
 
 ## Data Cleaning
 
-### Basic Data Cleaning
+### Clean Data
 
 ```python
-from semantica.normalize import clean_data, DataCleaner
+from semantica.normalize import DataCleaner
 
 dataset = [
     {"id": 1, "name": "Alice", "age": 30},
@@ -478,16 +352,6 @@ dataset = [
     {"id": 1, "name": "Alice", "age": 30},  # Duplicate
 ]
 
-# Using convenience function
-cleaned = clean_data(
-    dataset,
-    remove_duplicates=True,
-    validate=True,
-    handle_missing=True,
-    method="default"
-)
-
-# Using class directly
 cleaner = DataCleaner()
 cleaned = cleaner.clean_data(
     dataset,
@@ -496,10 +360,10 @@ cleaned = cleaner.clean_data(
 )
 ```
 
-### Duplicate Detection
+### Duplicates
 
 ```python
-from semantica.normalize import detect_duplicates, DuplicateDetector
+from semantica.normalize import DuplicateDetector
 
 dataset = [
     {"id": 1, "name": "Alice"},
@@ -507,23 +371,14 @@ dataset = [
     {"id": 1, "name": "Alice"},  # Duplicate
 ]
 
-# Using convenience function
-duplicates = detect_duplicates(
-    dataset,
-    threshold=0.8,
-    method="default"
-)
-
+detector = DuplicateDetector(similarity_threshold=0.8)
+duplicates = detector.detect_duplicates(dataset, key_fields=["id", "name"]) 
 for group in duplicates:
     print(f"Duplicate group: {len(group.records)} records")
     print(f"Similarity: {group.similarity_score}")
-
-# Using DuplicateDetector directly
-detector = DuplicateDetector(similarity_threshold=0.8)
-duplicates = detector.detect_duplicates(dataset, key_fields=["id", "name"])
 ```
 
-### Data Validation
+### Validation
 
 ```python
 from semantica.normalize import DataCleaner, DataValidator
@@ -556,7 +411,7 @@ validator = DataValidator()
 validation = validator.validate_dataset(dataset, schema)
 ```
 
-### Missing Value Handling
+### Missing Values
 
 ```python
 from semantica.normalize import DataCleaner, MissingValueHandler
@@ -592,37 +447,28 @@ handler = MissingValueHandler()
 cleaned = handler.handle_missing_values(dataset, strategy="remove")
 ```
 
-## Language Detection
+## Language
 
-### Basic Language Detection
+### Detect
 
 ```python
-from semantica.normalize import detect_language, LanguageDetector
+from semantica.normalize import LanguageDetector
 
-# Using convenience function
-language = detect_language("Hello world", method="default")
-print(f"Detected language: {language}")
-
-# Using class directly
 detector = LanguageDetector()
 language = detector.detect("Bonjour le monde")
 ```
 
-### Detection with Confidence
+### Confidence
 
 ```python
-from semantica.normalize import detect_language
+from semantica.normalize import LanguageDetector
 
-# Detect with confidence score
-lang, confidence = detect_language(
-    "Bonjour le monde",
-    method="confidence"
-)
-
+detector = LanguageDetector()
+lang, confidence = detector.detect_with_confidence("Bonjour le monde")
 print(f"Language: {lang}, Confidence: {confidence:.2f}")
 ```
 
-### Multiple Language Detection
+### Top-N
 
 ```python
 from semantica.normalize import LanguageDetector
@@ -639,7 +485,7 @@ for lang, conf in languages:
     print(f"{lang}: {conf:.2f}")
 ```
 
-### Language Validation
+### Validation
 
 ```python
 from semantica.normalize import LanguageDetector
@@ -654,41 +500,23 @@ print(f"Is English: {is_english}")
 print(f"Is French: {is_french}")
 ```
 
-## Encoding Handling
+## Encoding
 
-### Encoding Detection
+### Detect
 
 ```python
-from semantica.normalize import handle_encoding, EncodingHandler
+from semantica.normalize import EncodingHandler
 
-# Using convenience function
-encoding, confidence = handle_encoding(
-    data,
-    operation="detect",
-    method="default"
-)
-
-print(f"Encoding: {encoding}, Confidence: {confidence:.2f}")
-
-# Using EncodingHandler directly
 handler = EncodingHandler()
 encoding, confidence = handler.detect(data)
+print(f"Encoding: {encoding}, Confidence: {confidence:.2f}")
 ```
 
-### UTF-8 Conversion
+### Convert to UTF-8
 
 ```python
-from semantica.normalize import handle_encoding, EncodingHandler
+from semantica.normalize import EncodingHandler
 
-# Convert to UTF-8
-utf8_text = handle_encoding(
-    data,
-    operation="convert",
-    method="default",
-    source_encoding="latin-1"
-)
-
-# Using EncodingHandler directly
 handler = EncodingHandler()
 utf8_text = handler.convert_to_utf8(data, source_encoding="latin-1")
 ```
@@ -696,21 +524,13 @@ utf8_text = handler.convert_to_utf8(data, source_encoding="latin-1")
 ### BOM Removal
 
 ```python
-from semantica.normalize import handle_encoding, EncodingHandler
+from semantica.normalize import EncodingHandler
 
-# Remove BOM
-cleaned = handle_encoding(
-    data,
-    operation="remove_bom",
-    method="default"
-)
-
-# Using EncodingHandler directly
 handler = EncodingHandler()
 cleaned = handler.remove_bom(data)
 ```
 
-### File Encoding Conversion
+### File Encoding
 
 ```python
 from semantica.normalize import EncodingHandler
@@ -725,9 +545,9 @@ encoding, confidence = handler.detect_file("input.txt")
 print(f"File encoding: {encoding}")
 ```
 
-## Using Methods
+## Methods Registry
 
-### Getting Available Methods
+### List & Get
 
 ```python
 from semantica.normalize.methods import get_normalize_method, list_available_methods
@@ -746,68 +566,12 @@ if normalize_method:
     result = normalize_method("Hello   World")
 ```
 
-### Method Examples
+### Examples
 
-```python
-from semantica.normalize.methods import (
-    normalize_text,
-    clean_text,
-    normalize_entity,
-    resolve_aliases,
-    disambiguate_entity,
-    normalize_date,
-    normalize_time,
-    normalize_number,
-    normalize_quantity,
-    clean_data,
-    detect_duplicates,
-    detect_language,
-    handle_encoding
-)
 
-# Text normalization
-text = normalize_text("Hello   World", method="default")
+## Register Custom Methods
 
-# Text cleaning
-cleaned = clean_text("<p>Hello</p>", method="default", remove_html=True)
-
-# Entity normalization
-entity = normalize_entity("John Doe", entity_type="Person", method="default")
-
-# Alias resolution
-canonical = resolve_aliases("J. Doe", entity_type="Person", method="default")
-
-# Entity disambiguation
-result = disambiguate_entity("Apple", method="default", entity_type="Organization")
-
-# Date normalization
-date = normalize_date("2023-01-15", method="default")
-
-# Time normalization
-time = normalize_time("10:30:00", method="default")
-
-# Number normalization
-number = normalize_number("1,234.56", method="default")
-
-# Quantity normalization
-quantity = normalize_quantity("5 kg", method="default")
-
-# Data cleaning
-cleaned = clean_data(dataset, method="default", remove_duplicates=True)
-
-# Duplicate detection
-duplicates = detect_duplicates(dataset, method="default", threshold=0.8)
-
-# Language detection
-language = detect_language("Hello world", method="default")
-
-# Encoding handling
-encoding, confidence = handle_encoding(data, operation="detect", method="default")
-```
-
-## Using Registry
-
-### Registering Custom Methods
+### Register
 
 ```python
 from semantica.normalize.registry import method_registry
@@ -827,7 +591,7 @@ custom_method = get_normalize_method("text", "custom_upper")
 result = custom_method("hello world")
 ```
 
-### Listing Registered Methods
+### List
 
 ```python
 from semantica.normalize.registry import method_registry
@@ -844,7 +608,7 @@ entity_methods = method_registry.list_all("entity")
 print("Entity methods:", entity_methods)
 ```
 
-### Unregistering Methods
+### Unregister
 
 ```python
 from semantica.normalize.registry import method_registry
@@ -861,7 +625,7 @@ method_registry.clear()
 
 ## Configuration
 
-### Using Configuration Manager
+### Config Manager
 
 ```python
 from semantica.normalize.config import normalize_config
@@ -897,7 +661,7 @@ export NORMALIZE_DEFAULT_LANGUAGE=en
 export NORMALIZE_DEFAULT_ENCODING=utf-8
 ```
 
-### Configuration File
+### Config File
 
 ```yaml
 # config.yaml
@@ -928,39 +692,48 @@ config = NormalizeConfig(config_file="config.yaml")
 unicode_form = config.get("unicode_form")
 ```
 
-## Advanced Examples
+## Workflows
 
-### Complete Normalization Pipeline
+### Complete Pipeline
 
 ```python
 from semantica.normalize import (
-    normalize_text,
-    normalize_entity,
-    normalize_date,
-    normalize_number,
-    clean_data
+    TextNormalizer,
+    EntityNormalizer,
+    DateNormalizer,
+    NumberNormalizer,
+    DataCleaner
 )
 
+# Create normalizers
+text_norm = TextNormalizer()
+entity_norm = EntityNormalizer()
+date_norm = DateNormalizer()
+number_norm = NumberNormalizer()
+cleaner = DataCleaner()
+
 # Step 1: Normalize text
-text = normalize_text("Hello   World", method="default", case="lower")
+text = text_norm.normalize_text("Hello   World", case="lower")
 
 # Step 2: Normalize entities
 entities = ["John Doe", "J. Doe", "Johnny Doe"]
 normalized_entities = [
-    normalize_entity(e, entity_type="Person", method="default")
+    entity_norm.normalize_entity(e, entity_type="Person")
     for e in entities
 ]
 
 # Step 3: Normalize dates
 dates = ["2023-01-15", "yesterday", "3 days ago"]
 normalized_dates = [
-    normalize_date(d, method="default") for d in dates
+    date_norm.normalize_date(d)
+    for d in dates
 ]
 
 # Step 4: Normalize numbers
 numbers = ["1,234.56", "50%", "1.5e3"]
 normalized_numbers = [
-    normalize_number(n, method="default") for n in numbers
+    number_norm.normalize_number(n)
+    for n in numbers
 ]
 
 # Step 5: Clean dataset
@@ -968,10 +741,10 @@ dataset = [
     {"id": 1, "name": "Alice", "date": "2023-01-15"},
     {"id": 2, "name": "Bob", "date": "yesterday"},
 ]
-cleaned = clean_data(dataset, method="default", remove_duplicates=True)
+cleaned = cleaner.clean_data(dataset, remove_duplicates=True)
 ```
 
-### Custom Normalization Workflow
+### Custom Workflow
 
 ```python
 from semantica.normalize import (
@@ -1025,26 +798,29 @@ normalized_entities = [
 ]
 ```
 
-### Integration with Other Modules
+### Integration
 
 ```python
-from semantica.normalize import normalize_text, normalize_entity
+from semantica.normalize import TextNormalizer, EntityNormalizer
 from semantica.kg import build
 
+text_norm = TextNormalizer()
+entity_norm = EntityNormalizer()
+
 # Normalize text before KG building
-text = normalize_text("Apple Inc. was founded by Steve Jobs", method="default")
+text = text_norm.normalize_text("Apple Inc. was founded by Steve Jobs")
 
 # Normalize entities before adding to KG
 entities = [
-    normalize_entity("Apple Inc.", entity_type="Organization", method="default"),
-    normalize_entity("Steve Jobs", entity_type="Person", method="default")
+    entity_norm.normalize_entity("Apple Inc.", entity_type="Organization"),
+    entity_norm.normalize_entity("Steve Jobs", entity_type="Person")
 ]
 
 # Build knowledge graph with normalized data
 kg = build(sources=[{"entities": entities, "relationships": []}])
 ```
 
-### Custom Validation Rules
+### Custom Validation
 
 ```python
 from semantica.normalize import DataCleaner, DataValidator
@@ -1072,58 +848,42 @@ if not validation.valid:
         print(f"Error: {error}")
 ```
 
-### Language-Aware Normalization
+### Language-Aware
 
 ```python
-from semantica.normalize import (
-    normalize_text,
-    detect_language,
-    LanguageDetector
-)
+from semantica.normalize import TextNormalizer, LanguageDetector
 
 detector = LanguageDetector()
+normalizer = TextNormalizer()
 
-# Detect language first
 text = "Bonjour le monde"
 language, confidence = detector.detect_with_confidence(text)
 
-# Normalize based on language
 if language == "fr":
-    normalized = normalize_text(text, method="default", case="preserve")
+    normalized = normalizer.normalize_text(text, case="preserve")
 else:
-    normalized = normalize_text(text, method="default", case="lower")
+    normalized = normalizer.normalize_text(text, case="lower")
 ```
 
-### Encoding-Aware Text Processing
+### Encoding-Aware
 
 ```python
-from semantica.normalize import (
-    handle_encoding,
-    normalize_text,
-    EncodingHandler
-)
+from semantica.normalize import TextNormalizer, EncodingHandler
 
 handler = EncodingHandler()
+text_norm = TextNormalizer()
 
-# Detect and convert encoding
 data = b'\xff\xfeH\x00e\x00l\x00l\x00o\x00'  # UTF-16 LE with BOM
 encoding, confidence = handler.detect(data)
 utf8_text = handler.convert_to_utf8(data, source_encoding=encoding)
 
-# Normalize text after encoding conversion
-normalized = normalize_text(utf8_text, method="default")
+normalized = text_norm.normalize_text(utf8_text)
 ```
 
-### Comprehensive Data Cleaning Pipeline
+### Cleaning Pipeline
 
 ```python
-from semantica.normalize import (
-    clean_data,
-    detect_duplicates,
-    normalize_text,
-    normalize_date,
-    DataCleaner
-)
+from semantica.normalize import TextNormalizer, DateNormalizer, DataCleaner
 
 # Raw dataset
 raw_dataset = [
@@ -1133,15 +893,18 @@ raw_dataset = [
     {"id": 3, "name": None, "date": "2023-01-20"},  # Missing name
 ]
 
+text_norm = TextNormalizer()
+date_norm = DateNormalizer()
+
 # Step 1: Normalize text fields
 for record in raw_dataset:
     if record.get("name"):
-        record["name"] = normalize_text(record["name"], method="default")
+        record["name"] = text_norm.normalize_text(record["name"]) 
 
 # Step 2: Normalize dates
 for record in raw_dataset:
     if record.get("date"):
-        record["date"] = normalize_date(record["date"], method="default")
+        record["date"] = date_norm.normalize_date(record["date"]) 
 
 # Step 3: Clean data
 cleaner = DataCleaner()

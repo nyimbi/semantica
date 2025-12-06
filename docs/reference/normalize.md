@@ -102,67 +102,29 @@ Main text normalization orchestrator with comprehensive cleaning capabilities.
 
 **Methods:**
 
-| Method | Description | Algorithm |
-|--------|-------------|-----------|
-| `normalize(text)` | Normalize single text | Full normalization pipeline |
-| `normalize_documents(docs)` | Batch normalize documents | Parallel processing |
-| `clean(text)` | Clean text only | Noise removal |
-| `fix_encoding(text)` | Fix encoding issues | Character encoding detection |
-| `normalize_whitespace(text)` | Standardize whitespace | Regex-based cleanup |
-| `remove_diacritics(text)` | Remove accents | Unicode decomposition |
-
-**Configuration Options:**
-
-```python
-TextNormalizer(
-    lowercase=False,              # Convert to lowercase
-    remove_punctuation=False,     # Remove all punctuation
-    remove_numbers=False,         # Remove numeric values
-    remove_whitespace=True,       # Normalize whitespace
-    fix_encoding=True,            # Fix encoding issues
-    remove_diacritics=False,      # Remove accents/diacritics
-    normalize_unicode=True,       # Unicode normalization (NFC)
-    remove_urls=False,            # Remove URLs
-    remove_emails=False,          # Remove email addresses
-    remove_phone_numbers=False,   # Remove phone numbers
-    expand_contractions=False,    # Expand contractions (don't → do not)
-    remove_html=True,             # Remove HTML tags
-    remove_extra_spaces=True,     # Remove extra spaces
-    strip=True                    # Strip leading/trailing whitespace
-)
-```
+| Method | Description |
+|--------|-------------|
+| `normalize_text(text, ...)` | Normalize single text using full pipeline |
+| `clean_text(text, ...)` | Clean text (HTML removal, sanitization) |
+| `standardize_format(text, format_type)` | Standardize formatting (standard/compact/preserve) |
+| `process_batch(texts, ...)` | Batch normalize multiple texts |
 
 **Example:**
 
 ```python
 from semantica.normalize import TextNormalizer
 
-# Basic normalization
-normalizer = TextNormalizer(
-    lowercase=False,
-    remove_punctuation=False,
-    fix_encoding=True,
-    normalize_whitespace=True
-)
+normalizer = TextNormalizer()
 
-text = "  Apple Inc.  was founded in 1976.  "
-normalized = normalizer.normalize(text)
-print(normalized)
-# Output: "Apple Inc. was founded in 1976."
+# Normalize
+normalized = normalizer.normalize_text("  Apple Inc.  was founded in 1976.  ", case="preserve")
 
-# Aggressive cleaning
-aggressive_normalizer = TextNormalizer(
-    lowercase=True,
-    remove_punctuation=True,
-    remove_numbers=True,
-    remove_urls=True,
-    expand_contractions=True
-)
+# Clean only
+cleaned = normalizer.clean_text("<p>Hello</p>", remove_html=True)
 
-text = "Check out https://example.com! It's amazing (founded in 2020)."
-cleaned = aggressive_normalizer.normalize(text)
-print(cleaned)
-# Output: "check out it is amazing founded in"
+# Batch
+texts = ["Hello   World", "Another   Example"]
+normalized_batch = normalizer.process_batch(texts, case="lower")
 ```
 
 ---
@@ -173,12 +135,12 @@ Standardize entity names and resolve variations to canonical forms.
 
 **Methods:**
 
-| Method | Description | Algorithm |
-|--------|-------------|-----------|
-| `normalize(entities)` | Normalize entity list | Fuzzy + phonetic matching |
-| `normalize_single(entity)` | Normalize one entity | Canonical form lookup |
-| `add_canonical(entity, canonical)` | Add canonical mapping | Dictionary update |
-| `get_canonical(entity)` | Get canonical form | Fuzzy search |
+| Method | Description |
+|--------|-------------|
+| `normalize_entity(name, ...)` | Normalize entity name to canonical form |
+| `resolve_aliases(name, ...)` | Resolve aliases via alias map |
+| `disambiguate_entity(name, ...)` | Disambiguate using context and candidates |
+| `link_entities(names, ...)` | Link a list of names to canonical forms |
 
 **Configuration Options:**
 
@@ -199,32 +161,13 @@ EntityNormalizer(
 ```python
 from semantica.normalize import EntityNormalizer
 
-normalizer = EntityNormalizer(
-    fuzzy_matching=True,
-    similarity_threshold=0.85,
-    expand_abbreviations=True
-)
+normalizer = EntityNormalizer(similarity_threshold=0.85)
 
-# Normalize entity variations
-entities = [
-    "Apple Inc.",
-    "Apple",
-    "AAPL",
-    "Apple Computer",
-    "Apple, Inc."
-]
+# Normalize single
+canonical = normalizer.normalize_entity("Apple, Inc.")
 
-normalized = normalizer.normalize(entities)
-print(normalized)
-# All mapped to canonical form: "Apple Inc."
-
-# Add custom canonical mappings
-normalizer.add_canonical("AAPL", "Apple Inc.")
-normalizer.add_canonical("Microsoft Corp", "Microsoft Corporation")
-
-# Get canonical form
-canonical = normalizer.get_canonical("MSFT")
-print(canonical)  # "Microsoft Corporation"
+# Link list
+linked = normalizer.link_entities(["Apple Inc.", "Apple", "AAPL"], entity_type="Organization")
 ```
 
 ---
@@ -235,12 +178,11 @@ Parse and standardize date/time formats to ISO 8601.
 
 **Methods:**
 
-| Method | Description | Algorithm |
-|--------|-------------|-----------|
-| `normalize(date_string)` | Parse and normalize date | dateutil parser |
-| `normalize_batch(dates)` | Batch normalize dates | Parallel processing |
-| `parse_relative(relative_date)` | Parse relative dates | Date arithmetic |
-| `detect_format(date_string)` | Detect date format | Pattern matching |
+| Method | Description |
+|--------|-------------|
+| `normalize_date(date_str, ...)` | Parse and normalize date |
+| `normalize_time(time_str, ...)` | Normalize time-only strings |
+| `parse_temporal_expression(expr)` | Parse date ranges and temporal phrases |
 
 **Configuration Options:**
 
@@ -260,38 +202,12 @@ DateNormalizer(
 ```python
 from semantica.normalize import DateNormalizer
 
-normalizer = DateNormalizer(
-    output_format="ISO8601",
-    timezone="UTC",
-    handle_relative=True
-)
+normalizer = DateNormalizer()
 
-# Normalize various date formats
-dates = [
-    "Jan 1, 2024",
-    "01/01/2024",
-    "2024-01-01",
-    "1st January 2024",
-    "yesterday",
-    "March 2024"
-]
+dates = ["Jan 1, 2024", "01/01/2024", "yesterday"]
+normalized = [normalizer.normalize_date(d) for d in dates]
 
-normalized = [normalizer.normalize(d) for d in dates]
-for original, norm in zip(dates, normalized):
-    print(f"{original:20} → {norm}")
-
-# Output:
-# Jan 1, 2024          → 2024-01-01T00:00:00Z
-# 01/01/2024           → 2024-01-01T00:00:00Z
-# 2024-01-01           → 2024-01-01T00:00:00Z
-# 1st January 2024     → 2024-01-01T00:00:00Z
-# yesterday            → 2024-11-29T00:00:00Z
-# March 2024           → 2024-03-01T00:00:00Z
-
-# Custom format
-custom_normalizer = DateNormalizer(output_format="%Y/%m/%d")
-result = custom_normalizer.normalize("Jan 1, 2024")
-print(result)  # "2024/01/01"
+time = normalizer.normalize_time("10:30 AM")
 ```
 
 ---
@@ -302,41 +218,26 @@ Standardize numeric values, units, and measurements.
 
 **Methods:**
 
-| Method | Description | Algorithm |
-|--------|-------------|-----------|
-| `normalize(number_string)` | Parse and normalize number | Regex parsing |
-| `convert_units(value, from_unit, to_unit)` | Convert units | Unit conversion |
-| `parse_currency(currency_string)` | Parse currency | Currency parsing |
-| `normalize_percentage(percent_string)` | Normalize percentage | Percentage parsing |
+| Method | Description |
+|--------|-------------|
+| `normalize_number(input, ...)` | Parse and normalize number |
+| `normalize_quantity(quantity, ...)` | Parse value with unit |
+| `convert_units(value, from_unit, to_unit)` | Convert units |
+| `process_currency(text, ...)` | Parse currency amount and code |
 
 **Example:**
 
 ```python
 from semantica.normalize import NumberNormalizer
 
-normalizer = NumberNormalizer(
-    decimal_separator=".",
-    thousands_separator=",",
-    normalize_units=True
-)
+normalizer = NumberNormalizer()
 
-# Normalize various number formats
-numbers = [
-    "1,000.50",
-    "1.000,50",
-    "1 000.50",
-    "$1,234.56",
-    "50%",
-    "1.5e3"
-]
+numbers = ["1,000.50", "50%", "1.5e3"]
+normalized = [normalizer.normalize_number(n) for n in numbers]
 
-normalized = [normalizer.normalize(n) for n in numbers]
-for original, norm in zip(numbers, normalized):
-    print(f"{original:15} → {norm}")
-
-# Unit conversion
-distance_km = normalizer.convert_units(5, "km", "m")
-print(f"5 km = {distance_km} m")  # 5000 m
+quantity = normalizer.normalize_quantity("5 kg")
+converted = normalizer.convert_units(5, "km", "m")
+currency = normalizer.process_currency("$1,234.56")
 ```
 
 ---
@@ -347,11 +248,12 @@ Detect document language with confidence scoring.
 
 **Methods:**
 
-| Method | Description | Algorithm |
-|--------|-------------|-----------|
-| `detect(text)` | Detect language | N-gram analysis |
-| `detect_batch(texts)` | Batch detect languages | Parallel processing |
-| `get_confidence(text, language)` | Get confidence score | Statistical model |
+| Method | Description |
+|--------|-------------|
+| `detect(text)` | Detect language |
+| `detect_with_confidence(text)` | Detect with confidence score |
+| `detect_multiple(text, top_n)` | List top-N candidate languages |
+| `detect_batch(texts)` | Batch language detection |
 
 **Example:**
 
@@ -379,41 +281,6 @@ for text in texts:
 # Hola, ¿cómo estás?            → es (0.97)
 # Hallo, wie geht es dir?       → de (0.96)
 # こんにちは、お元気ですか？         → ja (0.99)
-```
-
----
-
-## Convenience Functions
-
-Quick access to normalization operations:
-
-```python
-from semantica.normalize import (
-    normalize_text,
-    normalize_entities,
-    normalize_dates,
-    normalize_numbers,
-    detect_language,
-    fix_encoding
-)
-
-# Normalize text
-clean_text = normalize_text("  Messy   text  ", remove_extra_spaces=True)
-
-# Normalize entities
-canonical_entities = normalize_entities(["Apple Inc.", "Apple", "AAPL"])
-
-# Normalize dates
-iso_dates = normalize_dates(["Jan 1, 2024", "01/01/2024"])
-
-# Normalize numbers
-standard_numbers = normalize_numbers(["1,000.50", "$1,234.56"])
-
-# Detect language
-language = detect_language("Hello, world!")
-
-# Fix encoding
-fixed_text = fix_encoding("Caf\u00e9")  # Café
 ```
 
 ---
@@ -495,21 +362,16 @@ for doc in documents:
     doc.metadata["language"] = lang_result["language"]
     doc.metadata["language_confidence"] = lang_result["confidence"]
 
-# Normalize text
-text_normalizer = TextNormalizer(
-    fix_encoding=True,
-    normalize_whitespace=True,
-    remove_html=True
-)
+text_normalizer = TextNormalizer()
 
 for doc in documents:
-    doc.content = text_normalizer.normalize(doc.content)
+    doc.content = text_normalizer.normalize_text(doc.content)
 
 # Normalize dates in metadata
 date_normalizer = DateNormalizer(output_format="ISO8601")
 for doc in documents:
     if "date" in doc.metadata:
-        doc.metadata["date"] = date_normalizer.normalize(doc.metadata["date"])
+        doc.metadata["date"] = date_normalizer.normalize_date(doc.metadata["date"])
 
 # Normalize entities
 entity_normalizer = EntityNormalizer(similarity_threshold=0.85)
@@ -535,7 +397,7 @@ def process_multilingual_document(text):
     
     # Use language-specific normalizer
     normalizer = normalizers.get(language, TextNormalizer())
-    normalized = normalizer.normalize(text)
+    normalized = normalizer.normalize_text(text)
     
     return {
         "text": normalized,
@@ -584,7 +446,7 @@ aggressive = TextNormalizer(
 ```python
 # Always keep original text
 doc.original_content = doc.content
-doc.content = normalizer.normalize(doc.content)
+doc.content = normalizer.normalize_text(doc.content)
 
 # Store normalization metadata
 doc.metadata["normalized"] = True
@@ -596,7 +458,7 @@ doc.metadata["normalization_config"] = normalizer.config
 ```python
 # Batch normalize for better performance
 texts = [doc.content for doc in documents]
-normalized_texts = normalizer.normalize_documents(texts)
+normalized_texts = normalizer.process_batch(texts)
 
 for doc, normalized in zip(documents, normalized_texts):
     doc.content = normalized
@@ -615,8 +477,8 @@ for doc, normalized in zip(documents, normalized_texts):
 normalizer = TextNormalizer(fix_encoding=True)
 
 # Or manually fix encoding
-from semantica.normalize import fix_encoding
-fixed_text = fix_encoding(problematic_text)
+from semantica.normalize import handle_encoding
+fixed_text, confidence = handle_encoding(problematic_text, operation="convert", source_encoding="latin-1")
 ```
 
 **Issue**: Over-normalization losing important information
@@ -635,14 +497,35 @@ normalizer = TextNormalizer(
 ```python
 # Solution: Use batch processing
 normalizer = TextNormalizer()
-normalized = normalizer.normalize_documents(
-    documents,
-    batch_size=100,
-    n_jobs=4  # Parallel processing
-)
+normalized = normalizer.process_batch(documents)
 ```
 
 ---
+
+## Components
+
+Key supporting classes available in `semantica.normalize`:
+
+- `UnicodeNormalizer` — Unicode processing (NFC/NFD/NFKC/NFKD), special chars
+- `WhitespaceNormalizer` — Line breaks, indentation, whitespace cleanup
+- `SpecialCharacterProcessor` — Punctuation and diacritic handling
+- `TextCleaner` — HTML removal and sanitization utilities
+- `AliasResolver` — Entity alias mapping
+- `EntityDisambiguator` — Context-based entity disambiguation
+- `NameVariantHandler` — Title and name variant handling
+- `TimeZoneNormalizer` — Timezone conversion utilities
+- `RelativeDateProcessor` — Relative date expressions (e.g., "3 days ago")
+- `TemporalExpressionParser` — Date range and temporal phrase parsing
+- `UnitConverter` — Unit normalization and conversion
+- `CurrencyNormalizer` — Currency symbol/code parsing
+- `ScientificNotationHandler` — Scientific notation parsing
+- `DataCleaner` — General data cleaning utilities
+- `DuplicateDetector` — Duplicate record detection
+- `DataValidator` — Schema-based dataset validation
+- `MissingValueHandler` — Missing value strategies
+- `EncodingHandler` — Encoding detection and conversion
+- `MethodRegistry` — Register and retrieve custom normalization methods
+- `NormalizeConfig` — Module configuration manager
 
 ## Performance Tips
 
@@ -655,7 +538,7 @@ def normalize_large_corpus(documents, chunk_size=1000):
     
     for i in range(0, len(documents), chunk_size):
         chunk = documents[i:i + chunk_size]
-        normalized_chunk = normalizer.normalize_documents(chunk)
+    normalized_chunk = normalizer.process_batch(chunk)
         yield from normalized_chunk
 ```
 
@@ -670,10 +553,8 @@ fast_normalizer = TextNormalizer(
 )
 
 # Use parallel processing
-normalizer.normalize_documents(
-    documents,
-    n_jobs=-1  # Use all CPU cores
-)
+# Batch processing
+normalized_docs = normalizer.process_batch(documents)
 ```
 
 ---
