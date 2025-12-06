@@ -197,8 +197,6 @@ Semantica is designed for **developers, data engineers, and organizations** buil
 
 **Product Teams & Startups** — Rapid prototyping of AI products and semantic features.
 
-**Skill Levels:** Beginner (Python basics) • Intermediate (NLP/knowledge graphs) • Advanced (custom pipelines, ontology engineering)
-
 ---
 
 ## 📦 Installation
