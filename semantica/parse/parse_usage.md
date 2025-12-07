@@ -19,25 +19,6 @@ This comprehensive guide demonstrates how to use the data parsing module for doc
 
 ## Basic Usage
 
-### Using the Convenience Functions
-
-```python
-from semantica.parse import parse_document, parse_web_content, parse_json
-
-# Parse a PDF document
-doc = parse_document("document.pdf", method="default")
-print(f"Text: {doc.get('full_text', '')}")
-print(f"Pages: {doc.get('total_pages', 0)}")
-
-# Parse web content
-web = parse_web_content("https://example.com", method="default")
-print(f"Content: {web.get('text', '')}")
-
-# Parse JSON data
-data = parse_json("data.json", method="default")
-print(f"Data: {data.data}")
-```
-
 ### Using Main Classes
 
 ```python
@@ -66,15 +47,9 @@ print(f"Data: {data}")
 ### PDF Parsing
 
 ```python
-from semantica.parse import parse_pdf, PDFParser
+from semantica.parse import PDFParser
 
-# Using convenience function
-pdf = parse_pdf("document.pdf", method="default", extract_tables=True)
-print(f"Text: {pdf.get('full_text', '')}")
-print(f"Pages: {pdf.get('total_pages', 0)}")
-print(f"Tables: {pdf.get('pages', [{}])[0].get('tables', [])}")
-
-# Using PDFParser directly
+# Using PDFParser
 pdf_parser = PDFParser()
 pdf_data = pdf_parser.parse("document.pdf", extract_text=True, extract_tables=True)
 
@@ -91,14 +66,9 @@ tables = pdf_parser.extract_tables("document.pdf")
 ### DOCX Parsing
 
 ```python
-from semantica.parse import parse_docx, DOCXParser
+from semantica.parse import DOCXParser
 
-# Using convenience function
-docx = parse_docx("document.docx", method="default")
-print(f"Text: {docx.get('text', '')}")
-print(f"Sections: {docx.get('sections', [])}")
-
-# Using DOCXParser directly
+# Using DOCXParser
 docx_parser = DOCXParser()
 docx_data = docx_parser.parse("document.docx", extract_tables=True)
 
@@ -148,13 +118,9 @@ for sheet_name, sheet in excel_data.sheets.items():
 ### HTML Document Parsing
 
 ```python
-from semantica.parse import parse_document, HTMLParser
+from semantica.parse import HTMLParser
 
-# Using convenience function
-html_doc = parse_document("page.html", method="default")
-print(f"Text: {html_doc.get('text', '')}")
-
-# Using HTMLParser directly
+# Using HTMLParser
 html_parser = HTMLParser()
 html_data = html_parser.parse("page.html", extract_links=True, extract_images=True)
 
@@ -172,10 +138,11 @@ for link in links:
 ### Text File Parsing
 
 ```python
-from semantica.parse import parse_document
+from semantica.parse import DocumentParser
 
 # Parse plain text file
-text_doc = parse_document("document.txt", method="default")
+doc_parser = DocumentParser()
+text_doc = doc_parser.parse_document("document.txt")
 print(f"Text: {text_doc.get('text', '')}")
 ```
 
@@ -184,13 +151,9 @@ print(f"Text: {text_doc.get('text', '')}")
 ### HTML Content Parsing
 
 ```python
-from semantica.parse import parse_web_content, WebParser
+from semantica.parse import WebParser
 
-# Using convenience function
-web = parse_web_content("https://example.com", content_type="html", method="default")
-print(f"Text: {web.get('text', '')}")
-
-# Using WebParser directly
+# Using WebParser
 web_parser = WebParser()
 html_data = web_parser.parse_web_content("https://example.com", content_type="html")
 
@@ -209,12 +172,9 @@ rendered = web_parser.render_javascript("https://example.com", wait_time=5)
 ### XML Content Parsing
 
 ```python
-from semantica.parse import parse_web_content, XMLParser
+from semantica.parse import XMLParser
 
-# Using convenience function
-xml_data = parse_web_content("data.xml", content_type="xml", method="default")
-
-# Using XMLParser directly
+# Using XMLParser
 xml_parser = XMLParser()
 xml_data = xml_parser.parse("data.xml")
 
@@ -248,14 +208,9 @@ rendered_content = web_parser.parse_web_content(
 ### JSON Parsing
 
 ```python
-from semantica.parse import parse_json, JSONParser
+from semantica.parse import JSONParser
 
-# Using convenience function
-json_data = parse_json("data.json", method="default")
-print(f"Data: {json_data.data}")
-print(f"Type: {json_data.type}")
-
-# Using JSONParser directly
+# Using JSONParser
 json_parser = JSONParser()
 json_data = json_parser.parse("data.json", flatten=True)
 
@@ -268,14 +223,9 @@ for path in paths:
 ### CSV Parsing
 
 ```python
-from semantica.parse import parse_csv, CSVParser
+from semantica.parse import CSVParser
 
-# Using convenience function
-csv_data = parse_csv("data.csv", delimiter=",", method="default")
-print(f"Headers: {csv_data.headers}")
-print(f"Rows: {csv_data.row_count}")
-
-# Using CSVParser directly
+# Using CSVParser
 csv_parser = CSVParser()
 csv_data = csv_parser.parse("data.csv", delimiter=",", has_header=True)
 
@@ -288,13 +238,9 @@ for row in rows:
 ### XML Parsing
 
 ```python
-from semantica.parse import parse_xml, XMLParser
+from semantica.parse import XMLParser
 
-# Using convenience function
-xml_data = parse_xml("data.xml", method="default")
-print(f"Root: {xml_data.root.tag}")
-
-# Using XMLParser directly
+# Using XMLParser
 xml_parser = XMLParser()
 xml_data = xml_parser.parse("data.xml", engine="lxml")
 
@@ -319,26 +265,19 @@ print(f"Data: {yaml_data}")
 ### Basic Email Parsing
 
 ```python
-from semantica.parse import parse_email, EmailParser
+from semantica.parse import EmailParser
 
-# Using convenience function
-email = parse_email("email.eml", method="default")
-print(f"Subject: {email.headers.subject}")
-print(f"From: {email.headers.from_address}")
-print(f"To: {email.headers.to_addresses}")
-print(f"Body: {email.body.text}")
-
-# Using EmailParser directly
+# Using EmailParser
 email_parser = EmailParser()
 email_data = email_parser.parse_email("email.eml", extract_attachments=True)
 
-# Extract headers only
-headers = email_parser.parse_headers("email.eml")
+# Access headers from parsed email
+headers = email_data.headers
 print(f"Subject: {headers.subject}")
 print(f"Date: {headers.date}")
 
-# Extract body only
-body = email_parser.extract_body("email.eml")
+# Access body from parsed email
+body = email_data.body
 print(f"Text: {body.text}")
 print(f"HTML: {body.html}")
 ```
@@ -351,15 +290,12 @@ from semantica.parse import EmailParser
 email_parser = EmailParser()
 
 # Analyze email thread
-thread = email_parser.analyze_thread("email.eml")
-print(f"Thread ID: {thread.thread_id}")
-print(f"Messages: {len(thread.messages)}")
-print(f"Subject: {thread.subject}")
-
-# Parse multiple emails in a thread
+emails = []
 for email_file in ["email1.eml", "email2.eml", "email3.eml"]:
-    email = email_parser.parse_email(email_file)
-    print(f"Email: {email.headers.subject}")
+    emails.append(email_parser.parse_email(email_file))
+
+thread = email_parser.analyze_thread(emails)
+print(f"Messages: {len(thread.get('messages', []))}")
 ```
 
 ### Email Attachment Extraction
@@ -382,30 +318,23 @@ for attachment in email_data.body.attachments:
 ### Basic Code Parsing
 
 ```python
-from semantica.parse import parse_code, CodeParser
+from semantica.parse import CodeParser
 
-# Using convenience function
-code = parse_code("script.py", method="default")
-print(f"Functions: {code.get('structure', {}).get('functions', [])}")
-print(f"Classes: {code.get('structure', {}).get('classes', [])}")
-print(f"Imports: {code.get('structure', {}).get('imports', [])}")
-
-# Using CodeParser directly
+# Using CodeParser
 code_parser = CodeParser()
 code_data = code_parser.parse_code("script.py", language="python")
 
-# Extract structure
-structure = code_parser.extract_structure("script.py", language="python")
-print(f"Functions: {structure.functions}")
-print(f"Classes: {structure.classes}")
+# Access structure, comments, dependencies
+structure = code_data.get("structure", {})
+print(f"Functions: {structure.get('functions', [])}")
+print(f"Classes: {structure.get('classes', [])}")
+print(f"Imports: {structure.get('imports', [])}")
 
-# Extract comments
-comments = code_parser.extract_comments("script.py", language="python")
+comments = code_data.get("comments", [])
 for comment in comments:
-    print(f"Comment: {comment.text} (Line {comment.line_number})")
+    print(f"Comment: {comment.get('text', '')} (Line {comment.get('line_number', 0)})")
 
-# Analyze dependencies
-dependencies = code_parser.analyze_dependencies("script.py", language="python")
+dependencies = code_data.get("dependencies", {})
 print(f"Dependencies: {dependencies}")
 ```
 
@@ -417,23 +346,18 @@ from semantica.parse import CodeParser, SyntaxTreeParser
 code_parser = CodeParser()
 syntax_parser = SyntaxTreeParser()
 
-# Parse syntax tree
-tree = syntax_parser.parse_syntax_tree("script.py", language="python")
+# Parse file content then build syntax tree
+with open("script.py", "r", encoding="utf-8", errors="ignore") as f:
+    content = f.read()
 
-# Extract functions
-functions = syntax_parser.extract_functions("script.py", language="python")
-for func in functions:
-    print(f"Function: {func.get('name', '')}")
+tree = syntax_parser.parse_syntax_tree(content, language="python")
 
-# Extract classes
-classes = syntax_parser.extract_classes("script.py", language="python")
-for cls in classes:
-    print(f"Class: {cls.get('name', '')}")
-
-# Extract imports
-imports = syntax_parser.extract_imports("script.py", language="python")
-for imp in imports:
-    print(f"Import: {imp}")
+# Structure and imports are provided via parse_code
+code_data = code_parser.parse_code("script.py", language="python")
+structure = code_data.get("structure", {})
+print(f"Functions: {structure.get('functions', [])}")
+print(f"Classes: {structure.get('classes', [])}")
+print(f"Imports: {structure.get('imports', [])}")
 ```
 
 ### Multi-Language Code Parsing
@@ -458,19 +382,9 @@ java_code = code_parser.parse_code("Main.java", language="java")
 ### Image Parsing with OCR
 
 ```python
-from semantica.parse import parse_image, ImageParser
+from semantica.parse import ImageParser
 
-# Using convenience function
-image = parse_image("image.jpg", method="default", extract_text=True)
-print(f"Format: {image.get('metadata', {}).get('format', '')}")
-print(f"Size: {image.get('metadata', {}).get('size', (0, 0))}")
-
-# Extract OCR text
-if "ocr_result" in image:
-    print(f"OCR Text: {image['ocr_result'].text}")
-    print(f"Confidence: {image['ocr_result'].confidence}")
-
-# Using ImageParser directly
+# Using ImageParser
 image_parser = ImageParser()
 image_data = image_parser.parse("image.jpg", extract_text=True, ocr_language="eng")
 
@@ -489,20 +403,15 @@ print(f"Confidence: {ocr_result.confidence}")
 ### Media File Parsing
 
 ```python
-from semantica.parse import parse_media, MediaParser
+from semantica.parse import MediaParser
 
-# Using convenience function
-media = parse_media("video.mp4", method="default")
-print(f"Type: {media.get('media_type', '')}")
-print(f"Metadata: {media.get('metadata', {})}")
-
-# Using MediaParser directly
+# Using MediaParser
 media_parser = MediaParser()
 media_data = media_parser.parse_media("image.jpg", media_type="image")
 
-# Get supported formats
-formats = media_parser.get_supported_formats()
-print(f"Supported formats: {formats}")
+# Parse audio/video similarly by specifying media_type
+video = media_parser.parse_media("video.mp4", media_type="video")
+audio = media_parser.parse_media("audio.mp3", media_type="audio")
 ```
 
 ## Format-Specific Parsers
@@ -647,42 +556,7 @@ if "ocr_result" in image_data:
     print(f"Language: {ocr.language}")
 ```
 
-## Using Methods
-
-### Method Selection
-
-```python
-from semantica.parse import parse_document, parse_web_content, parse_json
-
-# Use default method
-doc = parse_document("document.pdf", method="default")
-
-# Use specific method (if registered)
-doc = parse_document("document.pdf", method="custom_pdf_parser")
-
-# List available methods
-from semantica.parse import list_available_methods
-
-methods = list_available_methods("document")
-print(f"Available document methods: {methods}")
-```
-
-### Custom Method Registration
-
-```python
-from semantica.parse import method_registry, parse_document
-
-# Define custom parsing method
-def custom_document_parser(file_path, file_type=None, **kwargs):
-    # Custom parsing logic
-    return {"text": "Custom parsed text", "metadata": {}}
-
-# Register custom method
-method_registry.register("document", "custom", custom_document_parser)
-
-# Use custom method
-doc = parse_document("document.pdf", method="custom")
-```
+ 
 
 ## Using Registry
 
@@ -726,15 +600,10 @@ print(f"Web methods: {web_methods}")
 ### Getting Methods
 
 ```python
-from semantica.parse import method_registry, get_parse_method
+from semantica.parse import method_registry
 
 # Get method directly
 method = method_registry.get("document", "default")
-if method:
-    result = method("document.pdf")
-
-# Using convenience function
-method = get_parse_method("document", "default")
 if method:
     result = method("document.pdf")
 ```
@@ -838,16 +707,18 @@ print(f"All config: {all_config}")
 ### Batch Document Processing
 
 ```python
-from semantica.parse import parse_document
+from semantica.parse import DocumentParser
 from pathlib import Path
 
 # Process multiple documents
 documents = ["doc1.pdf", "doc2.docx", "doc3.html"]
 results = []
 
+doc_parser = DocumentParser()
+
 for doc_path in documents:
     try:
-        result = parse_document(doc_path, method="default")
+        result = doc_parser.parse_document(doc_path)
         results.append({
             "file": doc_path,
             "text": result.get("full_text", ""),
@@ -861,35 +732,36 @@ pdf_dir = Path("documents")
 pdf_files = list(pdf_dir.glob("*.pdf"))
 
 for pdf_file in pdf_files:
-    result = parse_document(pdf_file, method="default")
+    result = doc_parser.parse_document(pdf_file)
     print(f"Processed: {pdf_file.name} ({result.get('total_pages', 0)} pages)")
 ```
 
 ### Multi-Format Data Extraction
 
 ```python
-from semantica.parse import (
-    parse_document, parse_json, parse_csv, parse_xml
-)
+from semantica.parse import DocumentParser, JSONParser, CSVParser, XMLParser
 
-# Extract data from multiple formats
-files = {
-    "document.pdf": parse_document,
-    "data.json": parse_json,
-    "data.csv": parse_csv,
-    "data.xml": parse_xml,
-}
+doc_parser = DocumentParser()
+json_parser = JSONParser()
+csv_parser = CSVParser()
+xml_parser = XMLParser()
+
+files = [
+    ("document.pdf", lambda p: doc_parser.parse_document(p)),
+    ("data.json", lambda p: json_parser.parse(p)),
+    ("data.csv", lambda p: csv_parser.parse(p)),
+    ("data.xml", lambda p: xml_parser.parse(p)),
+]
 
 extracted_data = {}
 
-for file_path, parser_func in files.items():
+for file_path, parse_fn in files:
     try:
-        data = parser_func(file_path, method="default")
+        data = parse_fn(file_path)
         extracted_data[file_path] = data
     except Exception as e:
         print(f"Error parsing {file_path}: {e}")
 
-# Process extracted data
 for file_path, data in extracted_data.items():
     print(f"File: {file_path}")
     if isinstance(data, dict):
@@ -966,7 +838,7 @@ print(f"Total imports: {len(set(all_imports))}")
 ### OCR Batch Processing
 
 ```python
-from semantica.parse import parse_image
+from semantica.parse import ImageParser
 from pathlib import Path
 
 # Process all images in a directory
@@ -975,9 +847,11 @@ image_files = list(image_dir.glob("*.jpg")) + list(image_dir.glob("*.png"))
 
 ocr_results = []
 
+parser = ImageParser()
+
 for image_file in image_files:
     try:
-        image_data = parse_image(image_file, method="default", extract_text=True)
+        image_data = parser.parse(image_file, extract_text=True)
         
         if "ocr_result" in image_data:
             ocr_results.append({
@@ -998,36 +872,33 @@ for result in ocr_results:
 ### Custom Parser Pipeline
 
 ```python
-from semantica.parse import (
-    parse_document, parse_json, parse_csv,
-    method_registry
-)
+from semantica.parse import DocumentParser, StructuredDataParser, method_registry
 
-# Define custom pipeline
+doc_parser = DocumentParser()
+data_parser = StructuredDataParser()
+
 def pipeline_parser(file_path, file_type=None, **kwargs):
-    # Step 1: Parse document
-    doc = parse_document(file_path, file_type=file_type, **kwargs)
-    
-    # Step 2: Extract structured data if available
+    doc = doc_parser.parse_document(file_path, file_type=file_type, **kwargs)
     structured_data = {}
-    if "json" in str(file_path):
-        structured_data = parse_json(file_path, **kwargs)
-    elif "csv" in str(file_path):
-        structured_data = parse_csv(file_path, **kwargs)
-    
-    # Step 3: Combine results
+    suffix = str(file_path).lower()
+    if suffix.endswith(".json"):
+        structured_data = data_parser.parse_data(file_path, data_format="json")
+    elif suffix.endswith(".csv"):
+        structured_data = data_parser.parse_data(file_path, data_format="csv")
+    elif suffix.endswith(".xml"):
+        structured_data = data_parser.parse_data(file_path, data_format="xml")
     return {
         "document": doc,
         "structured": structured_data,
         "combined_text": doc.get("full_text", "") + str(structured_data)
     }
 
-# Register pipeline
 method_registry.register("document", "pipeline", pipeline_parser)
 
-# Use pipeline
-result = parse_document("document.pdf", method="pipeline")
-print(f"Combined text: {result['combined_text']}")
+method = method_registry.get("document", "pipeline")
+if method:
+    result = method("document.pdf")
+    print(f"Combined text: {result['combined_text']}")
 ```
 
 This comprehensive guide covers all major features of the data parsing module. For more specific use cases or advanced scenarios, refer to the individual parser class documentation or explore the source code.

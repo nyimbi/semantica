@@ -81,11 +81,12 @@ Unified interface for document formats.
 
 **Methods:**
 
-| Method | Description | Supported Formats |
-|--------|-------------|-------------------|
-| `parse_document(path)` | Auto-detect and parse | PDF, DOCX, PPTX, TXT |
-| `parse_pdf(path)` | PDF specific parsing | PDF |
-| `parse_docx(path)` | Word specific parsing | DOCX |
+| Method | Description |
+|--------|-------------|
+| `parse_document(path)` | Auto-detect format and parse |
+| `extract_text(path)` | Extract text from PDF/DOCX/HTML/TXT |
+| `extract_metadata(path)` | Extract document metadata |
+| `parse_batch(paths)` | Parse multiple documents |
 
 **Example:**
 
@@ -94,8 +95,8 @@ from semantica.parse import DocumentParser
 
 parser = DocumentParser()
 doc = parser.parse_document("report.pdf")
-print(f"Title: {doc.metadata.title}")
-print(f"Text: {doc.text[:100]}...")
+print(doc.get("metadata", {}).get("title"))
+print(doc.get("full_text", "")[:100])
 ```
 
 ### WebParser
@@ -106,8 +107,10 @@ Parses web content.
 
 | Method | Description |
 |--------|-------------|
-| `parse_html(url)` | Static HTML parsing |
-| `parse_dynamic(url)` | JS-rendered parsing |
+| `parse_web_content(content, content_type)` | Parse HTML/XML |
+| `extract_text(content)` | Clean text from HTML |
+| `extract_links(content)` | Extract hyperlinks |
+| `render_javascript(url)` | Render JS for dynamic pages |
 
 ### StructuredDataParser
 
@@ -117,8 +120,17 @@ Parses data files.
 
 | Method | Description |
 |--------|-------------|
-| `parse_json(path)` | JSON with nesting |
-| `parse_csv(path)` | CSV with type inference |
+| `parse_data(path, data_format)` | Parse JSON/CSV/XML/YAML |
+
+**Example:**
+
+```python
+from semantica.parse import StructuredDataParser
+
+parser = StructuredDataParser()
+data = parser.parse_data("data.json", data_format="json")
+print(type(data.get("data"))).__name__
+```
 
 ### CodeParser
 
@@ -128,22 +140,111 @@ Parses source code.
 
 | Method | Description |
 |--------|-------------|
-| `parse_code(path)` | Extract AST & symbols |
-| `get_dependencies(path)` | Find imports |
+| `parse_code(path)` | Parse code file; returns structure, comments, dependencies |
+
+**Example:**
+
+```python
+from semantica.parse import CodeParser
+
+parser = CodeParser()
+data = parser.parse_code("script.py", language="python")
+print(data.get("structure", {}).get("functions", []))
+print(data.get("dependencies", {}))
+```
+
+### EmailParser
+
+Parses email messages.
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `parse_email(path)` | Parse full email (headers/body/attachments) |
+| `parse_headers(path)` | Extract headers only |
+| `extract_body(path)` | Extract text/HTML body |
+| `analyze_thread(path)` | Thread reconstruction |
+
+**Example:**
+
+```python
+from semantica.parse import EmailParser
+
+parser = EmailParser()
+email = parser.parse_email("email.eml", extract_attachments=True)
+print(email.headers.subject)
+print(email.body.text[:120])
+```
+
+### MediaParser
+
+Parses media files.
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `parse_media(path, media_type)` | Parse image/audio/video |
+
+**Example:**
+
+```python
+from semantica.parse import MediaParser
+
+parser = MediaParser()
+image = parser.parse_media("image.jpg", media_type="image")
+print(image.get("metadata", {}))
+```
+
+### Format-Specific Parsers
+
+- `PDFParser`, `DOCXParser`, `PPTXParser`, `ExcelParser`
+- `HTMLParser`, `XMLParser`
+- `JSONParser`, `CSVParser`
+- `ImageParser`
+
+**Examples:**
+
+```python
+from semantica.parse import DocumentParser, WebParser, StructuredDataParser
+
+# Document
+doc = DocumentParser().parse_document("document.pdf")
+print(doc.get("full_text", "")[:120])
+
+# Web
+web = WebParser().parse_web_content("https://example.com", content_type="html")
+print(web.get("text", "")[:120])
+
+# Structured Data (JSON)
+data = StructuredDataParser().parse_data("data.json", data_format="json")
+print(list(data.get("data", {}).keys()))
+```
 
 ---
 
-## Convenience Functions
+## Usage Examples
+
+### WebParser
 
 ```python
-from semantica.parse import parse_document, parse_json, parse_web_content
+from semantica.parse import WebParser
 
-# Auto-detect format
-doc = parse_document("file.pdf")
+parser = WebParser()
+html = parser.parse_web_content("https://example.com", content_type="html")
+links = parser.extract_links("https://example.com")
+```
 
-# Parse specific types
-data = parse_json("data.json")
-web = parse_web_content("https://google.com")
+### StructuredDataParser
+
+```python
+from semantica.parse import StructuredDataParser
+
+parser = StructuredDataParser()
+json = parser.parse_data("data.json", data_format="json")
+csv = parser.parse_data("data.csv", data_format="csv")
+xml = parser.parse_data("data.xml", data_format="xml")
 ```
 
 ---
@@ -177,37 +278,18 @@ parse:
 
 ---
 
-## Integration Examples
+## Integration
 
-### Ingest & Parse Pipeline
-
-```python
-from semantica.ingest import Ingestor
-from semantica.parse import DocumentParser, ImageParser
-
-# 1. Ingest Raw File
-ingestor = Ingestor()
-file_path = ingestor.ingest("scan.png")
-
-# 2. Parse (with OCR)
-if file_path.endswith(".png"):
-    parser = ImageParser(ocr_enabled=True)
-    content = parser.parse_image(file_path)
-else:
-    parser = DocumentParser()
-    content = parser.parse_document(file_path)
-
-print(content.text)
-```
+Use parser classes directly in pipelines and services. Avoid convenience functions for stronger type clarity and consistency.
 
 ---
 
 ## Best Practices
 
-1.  **Disable OCR if not needed**: OCR is slow. Only enable it (`ocr_enabled=True`) if you expect scanned documents.
-2.  **Use Specific Parsers**: If you know the format, use `parse_json` or `parse_pdf` directly for better type hinting.
-3.  **Handle Encodings**: The parser tries to auto-detect encoding, but for CSV/TXT, explicitly specifying it is safer.
-4.  **Clean Web Content**: Use `parse_web_content` which includes boilerplate removal, rather than raw HTML parsing.
+1.  Disable OCR if not needed; enable only for scanned documents.
+2.  Use specific parser classes like `JSONParser` or `PDFParser` when format is known.
+3.  Handle encodings explicitly for CSV/TXT where auto-detect may fail.
+4.  Clean web content using `WebParser` utilities rather than raw HTML parsing.
 
 ---
 
