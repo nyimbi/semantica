@@ -1,162 +1,145 @@
-# Embeddings
+# Embeddings Module Reference
 
 > **Text embedding generation with multiple model support.**
 
 ---
 
-## 🎯 Overview
+## 🎯 System Overview
+
+The **Embeddings Module** provides a unified interface for generating vector representations of text. It abstracts away the complexity of different providers (OpenAI, HuggingFace, FastEmbed) and ensures consistent formatting for vector databases.
+
+### Key Capabilities
 
 <div class="grid cards" markdown>
 
--   :material-text-box:{ .lg .middle } **Text Embeddings**
+-   :material-power-plug:{ .lg .middle } **Multi-Provider Support**
 
     ---
 
-    Sentence-transformers, OpenAI, BGE, and FastEmbed model support
+    Seamlessly switch between Sentence Transformers, FastEmbed, OpenAI, and BGE models.
 
--   :material-vector-square:{ .lg .middle } **Vector Databases**
-
-    ---
-
-    Specialized managers for vector database integration (FAISS, Pinecone, Qdrant, etc.)
-
--   :material-graph:{ .lg .middle } **Graph Databases**
+-   :material-api:{ .lg .middle } **Unified Interface**
 
     ---
 
-    Specialized managers for graph database integration (Neo4j, NetworkX, etc.)
+    Single API for all embedding backends with consistent normalization and output formatting.
 
--   :material-compress:{ .lg .middle } **Pooling Strategies**
+-   :material-rocket-launch:{ .lg .middle } **Efficient Batching**
 
     ---
 
-    Mean, Max, CLS, Attention, and Hierarchical pooling for aggregation
+    Optimized batch processing and pooling strategies for high-throughput embedding generation.
+
+-   :material-database-check:{ .lg .middle } **Vector DB Ready**
+
+    ---
+
+    Automatic formatting and validation for FAISS, Pinecone, Qdrant, and Weaviate.
 
 </div>
 
-!!! tip "When to Use"
-    - **Semantic Search**: Converting text to vectors for similarity search
-    - **Clustering**: Grouping similar documents
-    - **Classification**: Using embeddings as features for ML models
-    - **RAG**: Embedding chunks for retrieval
-    - **Vector Databases**: Preparing embeddings for FAISS, Pinecone, Qdrant, etc.
-    - **Graph Databases**: Creating node and edge embeddings for Neo4j, KuzuDB, FalkorDB, etc.
-
 ---
 
-## ⚙️ Algorithms Used
+## 🏗️ Architecture Components
 
-### Generation
-- **Transformer Encoding**: BERT/RoBERTa based models for text (sentence-transformers).
-- **FastEmbed Encoding**: Fast and efficient embedding generation using FastEmbed library.
-- **Provider Adapters**: OpenAI, BGE, Llama, and FastEmbed adapters for different providers.
+### 1. EmbeddingGenerator (The Orchestrator)
+The main entry point for generating embeddings. It manages the active model and routes requests to the appropriate provider adapter.
 
-### Pooling
-- **Mean Pooling**: Arithmetic mean across embedding dimension.
-- **Max Pooling**: Element-wise maximum across embedding dimension.
-- **CLS Token Pooling**: First token/embedding extraction (for transformer models).
-- **Attention-based Pooling**: Softmax-weighted sum using dot product attention scores.
-- **Hierarchical Pooling**: Two-level pooling (chunk-level then global-level mean pooling).
+#### **Constructor Parameters**
+*   `method` (Default: `"fastembed"`): The embedding provider to use (e.g., `"sentence_transformers"`, `"openai"`, `"fastembed"`).
+*   `model_name` (Optional): Specific model name (e.g., `"all-MiniLM-L6-v2"`, `"text-embedding-3-small"`).
+*   `device` (Default: `"cpu"`): Computing device (`"cpu"`, `"cuda"`, `"mps"`).
+*   `normalize` (Default: `True`): Whether to L2-normalize embeddings (crucial for cosine similarity).
 
----
+#### **Core Methods**
+*   **`generate_embeddings(data, data_type="text")`**: Generates an embedding for a single item.
+*   **`process_batch(items)`**: Generates embeddings for a list of items (optimized).
+*   **`compare_embeddings(emb1, emb2)`**: Calculates cosine similarity between two vectors.
+*   **`get_text_method()`**: Returns the active embedding strategy.
 
-## Main Classes
-
-### EmbeddingGenerator
-
-Unified interface for text embedding generation.
-
-**Methods:**
-
-| Method | Description |
-|--------|-------------|
-| `generate_embeddings(data, data_type="text")` | Generate embedding |
-| `process_batch(items)` | Batch generation |
-| `compare_embeddings(emb1, emb2, method="cosine")` | Calculate similarity |
-| `get_text_method()` | Get active text embedding method |
-| `get_methods_info()` | Get detailed method information |
-
-**Example:**
-
+#### **Code Example**
 ```python
 from semantica.embeddings import EmbeddingGenerator
 
-gen = EmbeddingGenerator()
-vec = gen.generate_embeddings("Hello world", data_type="text")
+# 1. Initialize
+gen = EmbeddingGenerator(
+    method="sentence_transformers",
+    model_name="all-MiniLM-L6-v2"
+)
+
+# 2. Generate
+vector = gen.generate_embeddings("Hello world")
+
+# 3. Compare
+vec1 = gen.generate_embeddings("AI is great")
+vec2 = gen.generate_embeddings("Machine learning is awesome")
+similarity = gen.compare_embeddings(vec1, vec2)
+print(f"Similarity: {similarity}")
 ```
 
-### TextEmbedder
+---
 
-Specialized text embedding generation.
+### 2. TextEmbedder (The Worker)
+A specialized class focused purely on text-to-vector operations. It wraps the `EmbeddingGenerator` with text-specific logic and simplified methods.
 
-**Methods:**
+#### **Core Methods**
+*   **`embed_text(text)`**: Returns a list of floats for the input string.
+*   **`embed_batch(texts)`**: Returns a list of lists (vectors) for the input strings.
+*   **`get_embedding_dimension()`**: Returns the size of the output vector (e.g., 384, 768, 1536).
 
-| Method | Description |
-|--------|-------------|
-| `embed_text(text)` | Generate vector for single text |
-| `embed_batch(texts)` | Batch processing |
-| `get_method()` | Get active embedding method |
-| `get_model_info()` | Get detailed model information |
-| `get_embedding_dimension()` | Get embedding dimension |
-
-**Example:**
-
+#### **Code Example**
 ```python
 from semantica.embeddings import TextEmbedder
 
+# Initialize with FastEmbed (lightweight, fast)
 embedder = TextEmbedder(method="fastembed")
-vec = embedder.embed_text("Hello world")
+
+# Single text
+vector = embedder.embed_text("Semantica is powerful")
+
+# Batch processing (Recommended for speed)
+texts = ["Document 1", "Document 2", "Document 3"]
+vectors = embedder.embed_batch(texts)
+
+print(f"Dimension: {embedder.get_embedding_dimension()}")
 ```
-
-### VectorEmbeddingManager
-
-Manages embeddings for vector databases.
-
-**Methods:**
-
-| Method | Description |
-|--------|-------------|
-| `prepare_for_vector_db(embeddings, backend, ...)` | Prepare embeddings for vector DB |
-| `batch_prepare(embeddings_list, ...)` | Batch preparation |
-| `validate_dimensions(embeddings, expected_dim)` | Validate embedding dimensions |
-
-### GraphEmbeddingManager
-
-Manages embeddings for graph databases.
-
-**Methods:**
-
-| Method | Description |
-|--------|-------------|
-| `prepare_for_graph_db(entities, relationships, ...)` | Prepare embeddings for graph DB |
-| `embed_entities(entities, ...)` | Generate entity embeddings |
-| `embed_relationships(relationships, ...)` | Generate relationship embeddings |
 
 ---
 
-## Convenience Functions
+### 3. VectorEmbeddingManager (The Bridge)
+A utility class that prepares raw embeddings for insertion into specific vector databases. It handles formatting differences between backends like FAISS and Pinecone.
 
+#### **Core Methods**
+*   **`prepare_for_vector_db(embeddings, backend, ...)`**: Formats data for the target DB.
+*   **`validate_dimensions(embeddings, expected_dim)`**: Ensures vectors match the index configuration.
+*   **`batch_prepare(embeddings_list)`**: Prepares a batch of embeddings for storage.
+
+#### **Code Example**
 ```python
-from semantica.embeddings import embed_text, calculate_similarity, check_available_providers
+from semantica.embeddings import VectorEmbeddingManager, TextEmbedder
 
-# Generate embeddings
-emb1 = embed_text("text1", method="sentence_transformers")
-emb2 = embed_text("text2", method="fastembed")
+# 1. Generate Embeddings
+embedder = TextEmbedder()
+texts = ["Doc A", "Doc B"]
+embeddings = embedder.embed_batch(texts)
 
-# Similarity
-score = calculate_similarity(emb1, emb2)
+# 2. Format for FAISS
+manager = VectorEmbeddingManager()
+formatted_data = manager.prepare_for_vector_db(
+    embeddings,
+    metadata=[{"id": 1, "text": "Doc A"}, {"id": 2, "text": "Doc B"}],
+    backend="faiss"
+)
 
-# Check available providers
-providers = check_available_providers()
-if providers["fastembed"]:
-    print("FastEmbed is available")
+# formatted_data is now ready to be passed to VectorStore
 ```
 
 ---
 
-## Configuration
+## ⚙️ Configuration & Tuning
 
 ### Environment Variables
+You can configure defaults globally using `.env` files.
 
 ```bash
 export EMBEDDING_MODEL=all-MiniLM-L6-v2
@@ -165,6 +148,7 @@ export OPENAI_API_KEY=sk-...
 ```
 
 ### YAML Configuration
+For project-specific settings.
 
 ```yaml
 embeddings:
@@ -177,76 +161,27 @@ embeddings:
 
 ---
 
-## Integration Examples
+## 🚀 Best Practices
 
-### Text Embedding with Multiple Methods
+1.  **Batch Processing**: Always use `embed_batch` or `process_batch` when dealing with multiple items. It is significantly faster, especially on GPUs.
+2.  **Normalization**: Keep `normalize=True` (default) if you intend to use Cosine Similarity.
+3.  **Dimension Matching**: Ensure your `VectorStore` index is created with the same dimension as your embedding model (e.g., 384 for MiniLM, 1536 for OpenAI Ada).
+4.  **Caching**: Embeddings are compute-intensive. Cache results where possible to avoid re-computing vectors for the same text.
+
+---
+
+## 🧩 Advanced Usage
+
+### Checking Available Providers
+Dynamically check which embedding backends are installed and available.
 
 ```python
-from semantica.embeddings import TextEmbedder, check_available_providers
-from semantica.vector_store import VectorStore
+from semantica.embeddings import check_available_providers
 
-# Check available providers
 providers = check_available_providers()
 
-# Use FastEmbed if available, otherwise sentence-transformers
 if providers["fastembed"]:
-    embedder = TextEmbedder(method="fastembed", model_name="BAAI/bge-small-en-v1.5")
-else:
-    embedder = TextEmbedder(method="sentence_transformers")
-
-# Generate embeddings
-texts = ["Machine learning", "Artificial intelligence", "Deep learning"]
-embeddings = embedder.embed_batch(texts)
-
-# Store in vector database
-store = VectorStore()
-store.store_vectors(embeddings, metadata=[{"text": t} for t in texts])
-
-# Search
-query_emb = embedder.embed_text("neural networks")
-results = store.search(query_emb, k=2)
-print(f"Found {len(results)} similar texts")
+    print("FastEmbed is ready!")
+if providers["openai"]:
+    print("OpenAI is configured!")
 ```
-
-### Using Vector Embedding Manager
-
-```python
-from semantica.embeddings import VectorEmbeddingManager, TextEmbedder
-
-# Generate embeddings
-embedder = TextEmbedder()
-texts = ["Document 1", "Document 2", "Document 3"]
-embeddings = embedder.embed_batch(texts)
-
-# Prepare for vector database
-manager = VectorEmbeddingManager()
-formatted = manager.prepare_for_vector_db(
-    embeddings,
-    metadata=[{"id": i, "text": t} for i, t in enumerate(texts)],
-    backend="faiss"
-)
-
-# Use formatted data with your vector database
-print(f"Prepared {len(formatted['ids'])} vectors for {formatted['backend']}")
-```
-
----
-
-## Best Practices
-
-1.  **Batch Processing**: Always use batch methods (`embed_batch`, `process_batch`) for >1 item. It's much faster on GPU.
-2.  **Use Caching**: Embeddings are expensive to compute. Cache them if possible.
-3.  **Match Dimensions**: Ensure your vector store is configured with the correct dimension for your chosen model.
-4.  **Normalize**: L2 normalization is usually required for Cosine Similarity to work correctly.
-
----
-
-## See Also
-
-- [Vector Store Module](vector_store.md) - Storing the generated vectors
-- [Ingest Module](ingest.md) - Loading data to embed
-- [Pipeline Module](pipeline.md) - Orchestrating the embedding process
-
-## Cookbook
-
-- [Embedding Generation](https://github.com/Hawksight-AI/semantica/blob/main/cookbook/introduction/12_Embedding_Generation.ipynb)

@@ -10,11 +10,39 @@ The **Context Module** provides agents with a persistent, searchable, and struct
 
 ### Key Capabilities
 
-*   **Hierarchical Memory**: A two-tier memory system that mimics human memory (Short-term "Working" Memory + Long-term "Episodic" Memory).
-*   **GraphRAG**: Combines unstructured vector search with structured knowledge graph traversal for richer context.
-*   **Hybrid Retrieval**: Intelligently blends results from keyword matching, vector similarity, and graph connections.
-*   **Token Management**: Automatically prunes short-term memory to fit within LLM context windows using token-based constraints.
-*   **Entity Linking**: Resolves ambiguities by linking text mentions to unique entities in the knowledge graph.
+<div class="grid cards" markdown>
+
+-   :material-brain:{ .lg .middle } **Hierarchical Memory**
+
+    ---
+
+    Mimics human memory with a fast, token-limited Short-Term buffer and infinite Long-Term vector storage.
+
+-   :material-graph-outline:{ .lg .middle } **GraphRAG**
+
+    ---
+
+    Combines unstructured vector search with structured knowledge graph traversal for deep contextual understanding.
+
+-   :material-scale-balance:{ .lg .middle } **Hybrid Retrieval**
+
+    ---
+
+    Intelligently blends Keyword (BM25), Vector (Dense), and Graph (Relational) scores for optimal relevance.
+
+-   :material-lightning-bolt:{ .lg .middle } **Token Management**
+
+    ---
+
+    Automatic FIFO and importance-based pruning to keep context within LLM window limits.
+
+-   :material-link-variant:{ .lg .middle } **Entity Linking**
+
+    ---
+
+    Resolves ambiguities by linking text mentions to unique entities in the knowledge graph.
+
+</div>
 
 ---
 
@@ -42,6 +70,29 @@ The high-level facade that unifies all context operations. It routes data to the
     *   *Reranking*: Merges and ranks results based on relevance scores.
     *   *Context Window Optimization*: Returns results that fit within the agent's context window.
 
+#### **Code Example**
+```python
+from semantica.context import AgentContext
+from semantica.vector_store import VectorStore
+
+# 1. Initialize
+vs = VectorStore(backend="faiss", dimension=768)
+context = AgentContext(
+    vector_store=vs,
+    token_limit=2000
+)
+
+# 2. Store Memory
+context.store(
+    "User is working on a React project.",
+    conversation_id="session_1",
+    user_id="user_123"
+)
+
+# 3. Retrieve Context
+results = context.retrieve("What is the user building?")
+```
+
 ---
 
 ### 2. AgentMemory (The Storage Engine)
@@ -67,6 +118,21 @@ Manages the storage and lifecycle of memory items. It implements the **Hierarchi
 *   `_prune_short_term_memory()`: Internal algorithm that enforces token and count limits.
 *   `get_conversation_history()`: Retrieves a chronological list of interactions for a specific session.
 
+#### **Code Example**
+```python
+# Accessing via AgentContext
+memory = context.memory
+
+# Get conversation history
+history = memory.get_conversation_history("session_1")
+for item in history:
+    print(f"[{item.timestamp}] {item.content}")
+
+# Get statistics
+stats = memory.get_statistics()
+print(f"Stored Memories: {stats['total_memories']}")
+```
+
 ---
 
 ### 3. ContextGraph (The Knowledge Structure)
@@ -88,6 +154,39 @@ Manages the structured relationships between entities. It provides the "World Mo
 *   `get_neighbors(node_id, hops)`: Returns connected nodes within a specified distance.
 *   `query(query_str)`: Performs keyword-based search specifically on graph nodes.
 
+#### **Code Example**
+```python
+from semantica.context import ContextGraph
+
+graph = ContextGraph()
+
+# Add Nodes
+graph.add_nodes([
+    {
+        "id": "Python", 
+        "type": "Language", 
+        "properties": {"paradigm": "OO"}
+    },
+    {
+        "id": "FastAPI", 
+        "type": "Framework", 
+        "properties": {"language": "Python"}
+    }
+])
+
+# Add Edges
+graph.add_edges([
+    {
+        "source": "FastAPI", 
+        "target": "Python", 
+        "type": "WRITTEN_IN"
+    }
+])
+
+# Find Neighbors
+neighbors = graph.get_neighbors("FastAPI", hops=1)
+```
+
 ---
 
 ### 4. ContextRetriever (The Search Engine)
@@ -103,6 +202,44 @@ The retrieval logic that powers the `retrieve()` command. It implements the **Hy
 4.  **Hybrid Scoring**:
     *   Formula: `Final_Score = (Vector_Score * (1 - α)) + (Graph_Score * α)`
     *   Allows tuning the balance between semantic similarity and structural relevance.
+
+#### **Code Example**
+```python
+# The retriever is automatically used by AgentContext.retrieve()
+# But can be accessed directly if needed:
+
+retriever = context.retriever
+
+# Perform a manual retrieval
+results = retriever.retrieve(
+    query="web frameworks",
+    max_results=5
+)
+```
+
+---
+
+### 5. EntityLinker (The Connector)
+Resolves text mentions to unique entities and assigns URIs.
+
+#### **Key Methods**
+*   `link_entities(source, target, type)`: Creates a link between two entities.
+*   `assign_uri(entity_name, type)`: Generates a consistent URI for an entity.
+
+#### **Code Example**
+```python
+from semantica.context import EntityLinker
+
+linker = EntityLinker(knowledge_graph=graph)
+
+# Link two entities
+linker.link_entities(
+    source_entity_id="Python",
+    target_entity_id="Programming",
+    link_type="IS_A",
+    confidence=0.95
+)
+```
 
 ---
 
@@ -158,4 +295,35 @@ class MemoryItem:
     "type": "related_to",
     "weight": 0.8
 }
+```
+
+---
+
+## 🧩 Advanced Usage
+
+### Method Registry (Extensibility)
+Register custom implementations for graph building, memory management, or retrieval.
+
+#### **Code Example**
+```python
+from semantica.context import registry
+
+def custom_graph_builder(entities, relationships):
+    # Custom logic to build graph
+    return "my_graph_structure"
+
+# Register the new method
+registry.register("graph", "custom_builder", custom_graph_builder)
+```
+
+### Configuration Manager
+Programmatically manage configuration settings.
+
+#### **Code Example**
+```python
+from semantica.context.config import context_config
+
+# Update configuration at runtime
+context_config.set("retention_days", 60)
+context_config.set("hybrid_alpha", 0.8)
 ```
