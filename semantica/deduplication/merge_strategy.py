@@ -43,7 +43,7 @@ License: MIT
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
