@@ -64,6 +64,7 @@ The main entry point for generating embeddings. It manages the active model and 
 | `process_batch(items)` | Generates embeddings for a list of items (optimized). |
 | `compare_embeddings(emb1, emb2)` | Calculates cosine similarity between two vectors. |
 | `get_text_method()` | Returns the active embedding strategy. |
+| `set_text_model(method, model_name, **config)` | Dynamically switches the text embedding model. |
 
 #### **Code Example**
 ```python
@@ -97,6 +98,9 @@ A specialized class focused purely on text-to-vector operations. It wraps the `E
 | `embed_text(text)` | Returns a list of floats for the input string. |
 | `embed_batch(texts)` | Returns a list of lists (vectors) for the input strings. |
 | `get_embedding_dimension()` | Returns the size of the output vector (e.g., 384, 768, 1536). |
+| `set_model(method, model_name, **config)` | Switches the underlying embedding model. |
+| `get_method()` | Returns the current method name. |
+| `get_model_info()` | Returns details about the current model. |
 
 #### **Code Example**
 ```python

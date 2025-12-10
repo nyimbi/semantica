@@ -87,6 +87,18 @@ class EmbeddingGenerator:
 
         self.logger.info("Embedding generator initialized")
 
+    def set_text_model(self, method: str, model_name: str, **config) -> None:
+        """
+        Set the text embedding model dynamically.
+
+        Args:
+            method: Embedding method ("sentence_transformers", "fastembed")
+            model_name: Model name
+            **config: Additional configuration
+        """
+        self.text_embedder.set_model(method, model_name, **config)
+        self.logger.info(f"Switched text model to: {method}/{model_name}")
+
     def get_text_method(self) -> str:
         """
         Get the active text embedding method being used.

@@ -130,6 +130,29 @@ embs_fast = embed_text(texts, method="fastembed")  # Faster batch processing
 
 ## Checking Embedding Methods
 
+### Dynamic Model Switching
+
+You can switch the embedding model and provider dynamically without creating a new instance.
+
+```python
+from semantica.embeddings import TextEmbedder, EmbeddingGenerator
+
+# 1. Switch model in TextEmbedder
+embedder = TextEmbedder(method="sentence_transformers")
+print(f"Current method: {embedder.get_method()}")
+
+# Switch to FastEmbed
+try:
+    embedder.set_model(method="fastembed", model_name="BAAI/bge-small-en-v1.5")
+    print(f"Switched to: {embedder.get_method()}")
+except ImportError:
+    print("FastEmbed not installed")
+
+# 2. Switch model in EmbeddingGenerator
+generator = EmbeddingGenerator()
+generator.set_text_model(method="sentence_transformers", model_name="all-MiniLM-L6-v2")
+```
+
 ### Checking Active Method in TextEmbedder
 
 ```python

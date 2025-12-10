@@ -68,13 +68,18 @@ class VectorStore:
         self.backend = backend
         self.vectors: Dict[str, np.ndarray] = {}
         self.metadata: Dict[str, Dict[str, Any]] = {}
-        self.dimension = config.get("dimension", 768) if config else 768
+        self.dimension = self.config.get("dimension", 768)
 
         # Initialize backend-specific indexer
+        # Avoid duplicate dimension argument
+        indexer_config = self.config.copy()
+        if "dimension" in indexer_config:
+            del indexer_config["dimension"]
+
         self.indexer = VectorIndexer(
-            backend=backend, dimension=self.dimension, **config
+            backend=backend, dimension=self.dimension, **indexer_config
         )
-        self.retriever = VectorRetriever(backend=backend, **config)
+        self.retriever = VectorRetriever(backend=backend, **self.config)
 
     def store_vectors(
         self,

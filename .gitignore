@@ -106,3 +106,6 @@ sample_data/
 .personal/
 .local/
 *.local
+
+# Test Results
+test_results.txt

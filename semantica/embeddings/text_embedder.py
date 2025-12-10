@@ -166,6 +166,37 @@ class TextEmbedder:
                     "Using fallback embedding method."
                 )
 
+    def get_method(self) -> str:
+        """Get current embedding method."""
+        return self.method
+
+    def get_model_info(self) -> Dict[str, Any]:
+        """Get current model information."""
+        return {
+            "method": self.method,
+            "model_name": self.model_name,
+            "device": self.device,
+            "normalize": self.normalize
+        }
+
+    def set_model(self, method: str, model_name: str, **config) -> None:
+        """
+        Dynamically switch embedding model.
+        
+        Args:
+            method: New method ("sentence_transformers" or "fastembed")
+            model_name: New model name
+            **config: Additional configuration
+        """
+        self.method = method.lower()
+        self.model_name = model_name
+        if "device" in config:
+            self.device = config["device"]
+        if "normalize" in config:
+            self.normalize = config["normalize"]
+            
+        self._initialize_model()
+
     def embed_text(self, text: str, **options) -> np.ndarray:
         """
         Generate embedding for a single text string.
