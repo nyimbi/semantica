@@ -202,8 +202,8 @@ class Config:
         """
         # Remove prefix and convert to lowercase
         key = env_key[len(prefix):].lower()
-        # Convert underscores to dots for nested access
-        return key.replace("_", ".")
+        # Convert double underscores to dots for nested access
+        return key.replace("__", ".")
 
     def _parse_env_value(self, value: str) -> Union[str, int, float, bool]:
         """

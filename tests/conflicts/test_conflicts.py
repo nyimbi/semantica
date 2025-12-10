@@ -1,5 +1,6 @@
 import unittest
 from datetime import datetime
+from unittest.mock import MagicMock, patch
 from semantica.conflicts.source_tracker import SourceTracker, SourceReference
 from semantica.conflicts.conflict_detector import ConflictDetector, ConflictType, Conflict
 from semantica.conflicts.conflict_resolver import ConflictResolver, ResolutionStrategy
@@ -9,6 +10,18 @@ from semantica.conflicts.investigation_guide import InvestigationGuideGenerator
 class TestConflictsModule(unittest.TestCase):
 
     def setUp(self):
+        # Mock progress tracker
+        self.mock_tracker_patcher = patch("semantica.utils.progress_tracker.get_progress_tracker")
+        self.mock_get_tracker = self.mock_tracker_patcher.start()
+        self.mock_tracker = MagicMock()
+        self.mock_get_tracker.return_value = self.mock_tracker
+        
+        self.setUp_data()
+
+    def tearDown(self):
+        self.mock_tracker_patcher.stop()
+
+    def setUp_data(self):
         # Setup common data for tests
         self.entities = [
             {

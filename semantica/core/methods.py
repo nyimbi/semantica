@@ -136,9 +136,10 @@ def build_knowledge_base(
         sources = [sources]
 
     # Check for custom method in registry
-    custom_method = method_registry.get("knowledge_base", method)
-    if custom_method:
-        return custom_method(sources, config=config, **kwargs)
+    if method != "default":
+        custom_method = method_registry.get("knowledge_base", method)
+        if custom_method:
+            return custom_method(sources, config=config, **kwargs)
 
     # Use default Semantica framework
     framework = Semantica(config=config)
@@ -197,9 +198,10 @@ def run_pipeline(
         ... )
     """
     # Check for custom method in registry
-    custom_method = method_registry.get("pipeline", method)
-    if custom_method:
-        return custom_method(pipeline, data, config=config, **kwargs)
+    if method != "default":
+        custom_method = method_registry.get("pipeline", method)
+        if custom_method:
+            return custom_method(pipeline, data, config=config, **kwargs)
 
     # Use default Semantica framework
     framework = Semantica(config=config)
@@ -240,9 +242,10 @@ def initialize_framework(
         >>> status = framework.get_status()
     """
     # Check for custom method in registry
-    custom_method = method_registry.get("orchestration", method)
-    if custom_method:
-        return custom_method(config=config, **kwargs)
+    if method != "default":
+        custom_method = method_registry.get("orchestration", method)
+        if custom_method:
+            return custom_method(config=config, **kwargs)
 
     # Use default initialization
     framework = Semantica(config=config, **kwargs)

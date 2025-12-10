@@ -111,7 +111,7 @@ class GraphBuilder:
         # Initialize conflict detector if conflict resolution is enabled
         # This helps detect and resolve conflicting information in the graph
         if self.resolve_conflicts:
-            from .conflict_detector import ConflictDetector
+            from ..conflicts.conflict_detector import ConflictDetector
 
             conflict_detection_config = kwargs.get("conflict_detection", {})
             self.conflict_detector = ConflictDetector(**conflict_detection_config)

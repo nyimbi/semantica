@@ -359,6 +359,15 @@ class LifecycleManager:
         Returns:
             HealthStatus object for the component
         """
+        # Prevent infinite recursion if checking self
+        if component is self:
+            return HealthStatus(
+                component=component_name,
+                healthy=True,
+                message="LifecycleManager is active",
+                details={"state": self.state.value},
+            )
+
         try:
             if hasattr(component, "health_check"):
                 # Component has its own health check method

@@ -31,6 +31,7 @@ from typing import Any, Dict, List, Optional, Type, Union
 
 from ..utils.exceptions import ConfigurationError, ValidationError
 from ..utils.logging import get_logger
+from ..utils.progress_tracker import get_progress_tracker
 
 
 @dataclass

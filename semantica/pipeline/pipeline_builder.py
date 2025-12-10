@@ -190,8 +190,8 @@ class PipelineBuilder:
                 tracking_id, message="Validating pipeline structure..."
             )
             validation_result = self.validator.validate_pipeline(self)
-            if not validation_result.get("valid", False):
-                errors = validation_result.get("errors", [])
+            if not validation_result.valid:
+                errors = validation_result.errors
                 raise ValidationError(f"Pipeline validation failed: {errors}")
 
             self.progress_tracker.update_tracking(
