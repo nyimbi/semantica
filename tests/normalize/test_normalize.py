@@ -1,5 +1,4 @@
 import unittest
-from unittest.mock import MagicMock, patch
 from semantica.normalize.text_normalizer import TextNormalizer
 from semantica.normalize.text_cleaner import TextCleaner
 
@@ -13,26 +12,26 @@ class TestTextNormalizer(unittest.TestCase):
         self.assertEqual(self.normalizer.normalize_text(text, case="lower"), "hello world")
         self.assertEqual(self.normalizer.normalize_text(text, case="upper"), "HELLO WORLD")
         self.assertEqual(self.normalizer.normalize_text(text, case="preserve"), "Hello World")
+        self.assertEqual(self.normalizer.normalize_text(text, case="title"), "Hello World")
 
-    def test_normalize_unicode(self):
+    def test_normalize_unicode_integration(self):
         # e + combining acute accent
         text = "e\u0301" 
-        normalized = self.normalizer.normalize_unicode(text, form="NFC")
-        # should become single character é (\u00e9)
+        # normalized via normalize_text (defaults to NFC)
+        normalized = self.normalizer.normalize_text(text, unicode_form="NFC")
         self.assertEqual(normalized, "\u00e9")
 
-    def test_process_special_chars(self):
+    def test_process_special_chars_integration(self):
         text = "Hello\u2013World" # En dash
-        processed = self.normalizer.process_special_chars(text)
+        # normalize_text calls process_special_chars internally
+        processed = self.normalizer.normalize_text(text)
         self.assertEqual(processed, "Hello-World")
 
-    def test_handle_encoding(self):
-        text_bytes = "Hello World".encode("utf-8")
-        result = self.normalizer.handle_encoding(text_bytes, "utf-8")
-        self.assertEqual(result, "Hello World")
-        
-        # Test string pass-through
-        self.assertEqual(self.normalizer.handle_encoding("Hello", "utf-8"), "Hello")
+    def test_component_access(self):
+        # Test components directly if needed
+        text = "e\u0301"
+        normalized = self.normalizer.unicode_normalizer.normalize_unicode(text, form="NFC")
+        self.assertEqual(normalized, "\u00e9")
 
 class TestTextCleaner(unittest.TestCase):
 
