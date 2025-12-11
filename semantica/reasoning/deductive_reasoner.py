@@ -32,6 +32,7 @@ License: MIT
 
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set
+import re
 
 from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
@@ -148,12 +149,16 @@ class DeductiveReasoner:
             rules = self.rule_manager.get_all_rules()
 
             for rule in rules:
-                # Check if rule can be applied
-                if self._can_apply_rule(rule, premises):
-                    conclusion = self._apply_rule_to_premises(rule, premises)
+                # Find all matches (bindings) for the rule
+                matches = self._find_matches(rule.conditions, {})
+                
+                for bindings in matches:
+                    conclusion = self._apply_rule_to_premises(rule, premises, bindings)
                     if conclusion:
-                        conclusions.append(conclusion)
-                        self.known_facts.add(conclusion.statement)
+                        # Check if conclusion is new (not in known facts)
+                        if conclusion.statement not in self.known_facts:
+                            conclusions.append(conclusion)
+                            self.known_facts.add(conclusion.statement)
 
             self.progress_tracker.stop_tracking(
                 tracking_id,
@@ -168,39 +173,127 @@ class DeductiveReasoner:
             )
             raise
 
-    def _can_apply_rule(self, rule: Rule, premises: List[Premise]) -> bool:
-        """Check if rule can be applied to premises."""
-        # Check if all rule conditions match premises
-        premise_statements = {p.statement for p in premises}
+    def _parse_predicate(self, text: str) -> tuple[str, List[str]]:
+        """Parse 'Predicate(arg1, arg2)' into ('Predicate', ['arg1', 'arg2'])."""
+        if not isinstance(text, str):
+            return text, []
+        match = re.match(r"(\w+)\((.+)\)", text)
+        if not match:
+            return text, []
+        predicate = match.group(1)
+        args = [arg.strip() for arg in match.group(2).split(",")]
+        return predicate, args
 
-        for condition in rule.conditions:
-            if (
-                condition not in premise_statements
-                and condition not in self.known_facts
-            ):
-                return False
+    def _unify(self, condition: str, fact: str, bindings: Dict[str, str]) -> Optional[Dict[str, str]]:
+        """
+        Try to unify a condition (with vars) against a fact.
+        Returns new bindings if successful, None otherwise.
+        """
+        if condition == fact:
+            return bindings
+            
+        cond_pred, cond_args = self._parse_predicate(condition)
+        fact_pred, fact_args = self._parse_predicate(fact)
+        
+        if cond_pred != fact_pred:
+            return None
+        if len(cond_args) != len(fact_args):
+            return None
+            
+        new_bindings = bindings.copy()
+        for c_arg, f_arg in zip(cond_args, fact_args):
+            if c_arg.startswith("?"):
+                if c_arg in new_bindings:
+                    if new_bindings[c_arg] != f_arg:
+                        return None # Conflict
+                else:
+                    new_bindings[c_arg] = f_arg
+            else:
+                if c_arg != f_arg:
+                    return None # Constant mismatch
+        return new_bindings
 
-        return True
+    def _substitute_bindings(self, text: str, bindings: Dict[str, str]) -> str:
+        """Substitute variables in text with bindings."""
+        if not isinstance(text, str):
+            return text
+        pred, args = self._parse_predicate(text)
+        if not args:
+            return text
+            
+        new_args = []
+        for arg in args:
+            if arg in bindings:
+                new_args.append(bindings[arg])
+            else:
+                new_args.append(arg)
+        
+        return f"{pred}({', '.join(new_args)})"
+
+    def _find_matches(self, conditions: List[str], bindings: Dict[str, str]) -> List[Dict[str, str]]:
+        """
+        Recursively find all bindings that satisfy the conditions.
+        """
+        if not conditions:
+            return [bindings]
+            
+        first = conditions[0]
+        # Substitute current bindings into first condition before matching
+        first_substituted = self._substitute_bindings(first, bindings)
+        rest = conditions[1:]
+        
+        valid_bindings = []
+        
+        # Try to match 'first' against all known facts
+        for fact in self.known_facts:
+            # Skip if fact is not a string (unhashable/objects) for now
+            if not isinstance(fact, str):
+                continue
+                
+            unified = self._unify(first_substituted, fact, bindings)
+            if unified is not None:
+                # Recursive step
+                results = self._find_matches(rest, unified)
+                valid_bindings.extend(results)
+                
+        return valid_bindings
 
     def _apply_rule_to_premises(
-        self, rule: Rule, premises: List[Premise]
+        self, rule: Rule, premises: List[Premise], bindings: Dict[str, str]
     ) -> Optional[Conclusion]:
         """Apply rule to premises and generate conclusion."""
-        # Find matching premises
-        matching_premises = [
-            p
-            for p in premises
-            if p.statement in rule.conditions or p.statement in self.known_facts
-        ]
-
+        # Find matching premises (those that support the bindings)
+        # This is a bit approximate, ideally we track which premise supported which condition
+        matching_premises = []
+        
+        # Instantiate conclusion
+        conclusion_stmt = rule.conclusion
+        if bindings:
+            conclusion_stmt = self._substitute_bindings(conclusion_stmt, bindings)
+        
+        # Find premises that match the conditions (instantiated)
+        for cond in rule.conditions:
+            instantiated = self._substitute_bindings(cond, bindings)
+            for p in premises:
+                if p.statement == instantiated:
+                    matching_premises.append(p)
+                    break
+            # Note: some conditions might be matched by self.known_facts which are not in 'premises' arg
+            # but are in self.known_facts. 
+            # If a premise is not in the passed list but in known_facts, we can't add it to matching_premises list 
+            # unless we find the Premise object. 
+            # But known_facts stores strings. 
+            # So matching_premises might be incomplete if we rely on known_facts.
+            # However, for this method signature, we return a Conclusion with premises.
+        
         conclusion = Conclusion(
-            conclusion_id=f"conc_{len(matching_premises)}",
-            statement=rule.conclusion,
+            conclusion_id=f"conc_{rule.name}_{len(matching_premises)}",
+            statement=conclusion_stmt,
             premises=matching_premises,
             rule_applied=rule,
             confidence=rule.confidence,
-            proof_steps=[f"Applied rule: {rule.name}"],
-            metadata={"rule_id": rule.rule_id},
+            proof_steps=[f"Applied rule: {rule.name} with bindings {bindings}"],
+            metadata={"rule_id": rule.rule_id, "bindings": bindings},
         )
 
         return conclusion
@@ -272,6 +365,7 @@ class DeductiveReasoner:
             return None
 
         # Check if goal is already known
+        # Try direct match
         if goal in self.known_facts:
             return Conclusion(
                 conclusion_id=f"known_{goal}",
@@ -279,35 +373,65 @@ class DeductiveReasoner:
                 confidence=1.0,
                 proof_steps=["Known fact"],
             )
+        
+        # Try unification with known facts
+        if isinstance(goal, str) and "?" in goal:
+            for fact in self.known_facts:
+                if isinstance(fact, str):
+                    if self._unify(goal, fact, {}) is not None:
+                         return Conclusion(
+                            conclusion_id=f"known_{fact}",
+                            statement=fact,
+                            confidence=1.0,
+                            proof_steps=[f"Known fact (matched pattern {goal})"],
+                        )
 
         # Find rules that can prove goal
         rules = self.rule_manager.get_all_rules()
-        applicable_rules = [r for r in rules if r.conclusion == goal]
+        
+        # Use unified matching for finding applicable rules
+        applicable_rules_and_bindings = []
+        for r in rules:
+            bindings = self._unify(r.conclusion, goal, {})
+            if bindings is not None:
+                applicable_rules_and_bindings.append((r, bindings))
 
-        for rule in applicable_rules:
+        for rule, initial_bindings in applicable_rules_and_bindings:
             # Try to prove all premises
             premise_conclusions = []
             all_proven = True
+            current_bindings = initial_bindings.copy()
 
             for condition in rule.conditions:
+                # Instantiate condition with current bindings
+                instantiated_cond = self._substitute_bindings(condition, current_bindings)
+                
                 premise_conclusion = self._prove_backward(
-                    condition, proof, depth + 1, max_depth, **options
+                    instantiated_cond, proof, depth + 1, max_depth, **options
                 )
                 if premise_conclusion:
                     premise_conclusions.append(premise_conclusion)
+                    # Update bindings if we proved something more specific
+                    new_bindings = self._unify(instantiated_cond, premise_conclusion.statement, current_bindings)
+                    if new_bindings:
+                        current_bindings = new_bindings
                 else:
                     all_proven = False
                     break
 
             if all_proven:
                 # All premises proven, rule can fire
+                # Instantiate conclusion with final bindings
+                final_conclusion = self._substitute_bindings(rule.conclusion, current_bindings)
+                
                 conclusion = Conclusion(
                     conclusion_id=f"conc_{goal}",
-                    statement=goal,
-                    premises=[Premise(p, p) for p in rule.conditions],
+                    statement=final_conclusion,
+                    premises=[p for p in premise_conclusions], # Use actual premises found
                     rule_applied=rule,
                     confidence=rule.confidence,
-                    proof_steps=[f"Proved using rule: {rule.name}"],
+                    proof_steps=[f"Proved using rule: {rule.name} with bindings {current_bindings}"],
+                    metadata={"rule_id": rule.rule_id, "bindings": current_bindings}
                 )
                 return conclusion
 

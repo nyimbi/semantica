@@ -34,6 +34,7 @@ License: MIT
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional
+import re
 
 from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
@@ -203,9 +204,58 @@ class AbductiveReasoner:
 
     def _rule_explains_observation(self, rule: Rule, observation: Observation) -> bool:
         """Check if rule can explain observation."""
-        # Simple check: rule conclusion matches observation
-        # Can be enhanced with more sophisticated matching
-        return True
+        # Check if rule conclusion matches observation description
+        # Try exact match first
+        if rule.conclusion == observation.description:
+            return True
+            
+        # Try unification if variables are involved
+        if "?" in rule.conclusion:
+             bindings = self._unify(rule.conclusion, observation.description, {})
+             if bindings is not None:
+                 return True
+                 
+        return False
+
+    def _parse_predicate(self, text: str) -> tuple[str, List[str]]:
+        """Parse 'Predicate(arg1, arg2)' into ('Predicate', ['arg1', 'arg2'])."""
+        if not isinstance(text, str):
+            return text, []
+        match = re.match(r"(\w+)\((.+)\)", text)
+        if not match:
+            return text, []
+        predicate = match.group(1)
+        args = [arg.strip() for arg in match.group(2).split(",")]
+        return predicate, args
+
+    def _unify(self, condition: str, fact: str, bindings: Dict[str, str]) -> Optional[Dict[str, str]]:
+        """
+        Try to unify a condition (with vars) against a fact.
+        Returns new bindings if successful, None otherwise.
+        """
+        if condition == fact:
+            return bindings
+            
+        cond_pred, cond_args = self._parse_predicate(condition)
+        fact_pred, fact_args = self._parse_predicate(fact)
+        
+        if cond_pred != fact_pred:
+            return None
+        if len(cond_args) != len(fact_args):
+            return None
+            
+        new_bindings = bindings.copy()
+        for c_arg, f_arg in zip(cond_args, fact_args):
+            if c_arg.startswith("?"):
+                if c_arg in new_bindings:
+                    if new_bindings[c_arg] != f_arg:
+                        return None # Conflict
+                else:
+                    new_bindings[c_arg] = f_arg
+            else:
+                if c_arg != f_arg:
+                    return None # Constant mismatch
+        return new_bindings
 
     def _calculate_coverage(self, rule: Rule, observation: Observation) -> float:
         """Calculate how well rule covers observation."""

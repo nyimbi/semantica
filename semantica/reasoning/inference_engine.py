@@ -29,6 +29,7 @@ Author: Semantica Contributors
 License: MIT
 """
 
+import re
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Set
@@ -194,10 +195,12 @@ class InferenceEngine:
                 )
 
                 for rule in rules:
-                    # Check if rule can fire
-                    if self._can_rule_fire(rule):
-                        # Apply rule
-                        result = self._apply_rule(rule)
+                    # Find all matches for the rule
+                    matches = self._find_matches(rule.conditions, {})
+                    
+                    for bindings in matches:
+                        # Apply rule with bindings
+                        result = self._apply_rule(rule, bindings=bindings)
                         if result:
                             # Only consider it a new inference if the fact wasn't already known
                             if self.add_fact(result.conclusion):
@@ -244,47 +247,83 @@ class InferenceEngine:
                 tracking_id, message="Checking if goal is already a fact..."
             )
             
-            is_fact = False
+            # Check for direct match or unification with facts
+            found_fact = None
+            
+            # First try direct match (fastest)
             try:
                 if goal in self.facts:
-                    is_fact = True
+                    found_fact = goal
             except TypeError:
                 if goal in self.unhashable_facts:
-                    is_fact = True
-                    
-            if is_fact:
+                    found_fact = goal
+            
+            # If not found and goal looks like a pattern (string with ?), try unification
+            if found_fact is None and isinstance(goal, str) and "?" in goal:
+                for fact in self.facts:
+                    if isinstance(fact, str):
+                        # Try to unify to see if it matches
+                        if self._unify(goal, fact, {}) is not None:
+                            found_fact = fact
+                            break
+            
+            if found_fact:
                 self.progress_tracker.stop_tracking(
-                    tracking_id, status="completed", message="Goal is already a fact"
+                    tracking_id, status="completed", message=f"Goal proven by fact: {found_fact}"
                 )
-                return InferenceResult(conclusion=goal, confidence=1.0)
+                return InferenceResult(conclusion=found_fact, confidence=1.0)
 
             # Find rules that can prove the goal
             self.progress_tracker.update_tracking(
                 tracking_id, message="Finding rules that can prove the goal..."
             )
             rules = self.rule_manager.get_all_rules()
-            applicable_rules = [r for r in rules if self._rule_concludes(r, goal)]
+            
+            # Use unified matching for finding applicable rules
+            applicable_rules_and_bindings = []
+            for r in rules:
+                bindings = self._unify(r.conclusion, goal, {})
+                if bindings is not None:
+                    applicable_rules_and_bindings.append((r, bindings))
 
             self.progress_tracker.update_tracking(
                 tracking_id,
-                message=f"Found {len(applicable_rules)} applicable rules, trying to prove premises...",
+                message=f"Found {len(applicable_rules_and_bindings)} applicable rules, trying to prove premises...",
             )
-            for rule in applicable_rules:
-                # Try to prove premises
-                premises = []
+            
+            for rule, initial_bindings in applicable_rules_and_bindings:
+                # Try to prove premises with bindings, propagating bindings between premises
+                current_bindings = initial_bindings.copy()
+                premises_results = []
                 all_premises_proven = True
-
-                for premise in rule.conditions:
-                    premise_result = self.backward_chain(premise, **options)
+                
+                for cond in rule.conditions:
+                    # Instantiate condition with current bindings
+                    instantiated_cond = self._substitute_bindings(cond, current_bindings)
+                    
+                    # Recursively prove this condition
+                    premise_result = self.backward_chain(instantiated_cond, **options)
+                    
                     if premise_result:
-                        premises.append(premise_result.conclusion)
+                        premises_results.append(premise_result.conclusion)
+                        
+                        # If the premise had variables, update bindings based on the proven fact
+                        # We unify the instantiated condition (which might still have vars) with the proven conclusion
+                        new_bindings = self._unify(instantiated_cond, premise_result.conclusion, current_bindings)
+                        if new_bindings is not None:
+                            current_bindings = new_bindings
+                        else:
+                            # This implies a conflict, which shouldn't happen if backward_chain returned success
+                            # on instantiated_cond, but good to be safe
+                            all_premises_proven = False
+                            break
                     else:
                         all_premises_proven = False
                         break
 
                 if all_premises_proven:
                     # All premises proven, rule can fire
-                    result = self._apply_rule(rule, premises)
+                    result = self._apply_rule(rule, premises=premises_results, bindings=current_bindings)
                     if result:
                         self.progress_tracker.stop_tracking(
                             tracking_id,
@@ -304,37 +343,114 @@ class InferenceEngine:
             )
             raise
 
-    def _can_rule_fire(self, rule: Rule) -> bool:
-        """Check if rule can fire (all conditions met)."""
-        for condition in rule.conditions:
-            try:
-                if condition not in self.facts:
-                    return False
-            except TypeError:
-                if condition not in self.unhashable_facts:
-                    return False
-        return True
+    def _parse_predicate(self, text: str) -> tuple[str, List[str]]:
+        """Parse 'Predicate(arg1, arg2)' into ('Predicate', ['arg1', 'arg2'])."""
+        if not isinstance(text, str):
+            return text, []
+        match = re.match(r"(\w+)\((.+)\)", text)
+        if not match:
+            return text, []
+        predicate = match.group(1)
+        args = [arg.strip() for arg in match.group(2).split(",")]
+        return predicate, args
 
-    def _rule_concludes(self, rule: Rule, goal: Any) -> bool:
-        """Check if rule concludes the goal."""
-        return rule.conclusion == goal
+    def _unify(self, condition: str, fact: str, bindings: Dict[str, str]) -> Optional[Dict[str, str]]:
+        """
+        Try to unify a condition (with vars) against a fact.
+        Returns new bindings if successful, None otherwise.
+        """
+        # Handle exact string match shortcut
+        if condition == fact:
+            return bindings
+            
+        cond_pred, cond_args = self._parse_predicate(condition)
+        fact_pred, fact_args = self._parse_predicate(fact)
+        
+        if cond_pred != fact_pred:
+            return None
+        if len(cond_args) != len(fact_args):
+            return None
+            
+        new_bindings = bindings.copy()
+        for c_arg, f_arg in zip(cond_args, fact_args):
+            if c_arg.startswith("?"):
+                if c_arg in new_bindings:
+                    if new_bindings[c_arg] != f_arg:
+                        return None # Conflict
+                else:
+                    new_bindings[c_arg] = f_arg
+            else:
+                if c_arg != f_arg:
+                    return None # Constant mismatch
+        return new_bindings
+
+    def _find_matches(self, conditions: List[str], bindings: Dict[str, str]) -> List[Dict[str, str]]:
+        """
+        Recursively find all bindings that satisfy the conditions.
+        """
+        if not conditions:
+            return [bindings]
+            
+        first = conditions[0]
+        # Substitute current bindings into first condition before matching
+        first_substituted = self._substitute_bindings(first, bindings)
+        rest = conditions[1:]
+        
+        valid_bindings = []
+        
+        # Try to match 'first' against all facts
+        for fact in self.facts:
+            # Skip if fact is not a string (unhashable/objects) for now, or handle str()
+            if not isinstance(fact, str):
+                continue
+                
+            unified = self._unify(first_substituted, fact, bindings)
+            if unified is not None:
+                # Recursive step
+                results = self._find_matches(rest, unified)
+                valid_bindings.extend(results)
+                
+        return valid_bindings
+
+    def _substitute_bindings(self, text: str, bindings: Dict[str, str]) -> str:
+        """Substitute variables in text with bindings."""
+        if not isinstance(text, str):
+            return text
+        pred, args = self._parse_predicate(text)
+        if not args:
+            return text
+            
+        new_args = []
+        for arg in args:
+            if arg in bindings:
+                new_args.append(bindings[arg])
+            else:
+                new_args.append(arg)
+        
+        return f"{pred}({', '.join(new_args)})"
 
     def _apply_rule(
-        self, rule: Rule, premises: Optional[List[Any]] = None
+        self, rule: Rule, premises: Optional[List[Any]] = None, bindings: Optional[Dict[str, str]] = None
     ) -> Optional[InferenceResult]:
         """Apply rule and return inference result."""
+        conclusion = rule.conclusion
+        if bindings:
+            conclusion = self._substitute_bindings(conclusion, bindings)
+
         if premises is None:
-            premises = list(rule.conditions)
+            # Reconstruct premises from bindings if not provided (approximate)
+            premises = [self._substitute_bindings(c, bindings or {}) for c in rule.conditions]
 
         result = InferenceResult(
-            conclusion=rule.conclusion,
+            conclusion=conclusion,
             premises=premises,
             rule_used=rule,
             confidence=rule.confidence,
-            metadata={"rule_name": rule.name, "rule_id": rule.rule_id},
+            metadata={"rule_name": rule.name, "rule_id": rule.rule_id, "bindings": bindings},
         )
 
         return result
+
 
     def infer(self, query: Any, **options) -> List[InferenceResult]:
         """
