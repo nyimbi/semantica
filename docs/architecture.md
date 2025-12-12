@@ -66,7 +66,7 @@ graph TB
 
 ### Knowledge Graphs
 - **`semantica.kg`** - Knowledge graph construction
-- **`semantica.vector_store`** - Vector storage (Pinecone, Weaviate, FAISS)
+- **`semantica.vector_store`** - Vector storage (Weaviate, FAISS)
 - **`semantica.triplet_store`** - RDF triplet storage (Jena, Blazegraph)
 - **`semantica.graph_store`** - Property graphs (Neo4j, FalkorDB)
 

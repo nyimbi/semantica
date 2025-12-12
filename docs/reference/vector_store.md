@@ -1,6 +1,6 @@
 # Vector Store
 
-> **Unified vector database interface supporting FAISS, Pinecone, Weaviate, Qdrant, and Milvus with Hybrid Search.**
+> **Unified vector database interface supporting FAISS, Weaviate, Qdrant, and Milvus with Hybrid Search.**
 
 ---
 
@@ -12,7 +12,7 @@
 
     ---
 
-    Seamlessly switch between FAISS (Local), Pinecone, Weaviate, Qdrant, and Milvus
+    Seamlessly switch between FAISS (Local), Weaviate, Qdrant, and Milvus
 
 -   :material-magnify-plus:{ .lg .middle } **Hybrid Search**
 
@@ -230,7 +230,6 @@ results = searcher.search(
 
 Backend-specific implementations:
 - `FAISSAdapter`: Local, in-memory/disk.
-- `PineconeAdapter`: Managed cloud service.
 - `WeaviateAdapter`: Schema-aware vector DB.
 - `QdrantAdapter`: Rust-based high-performance DB.
 - `MilvusAdapter`: Scalable cloud-native DB.
@@ -263,41 +262,6 @@ adapter.add_vectors(index, vectors, ids=[f"vec_{i}" for i in range(1000)])
 # Search
 query = np.random.rand(768).astype('float32')
 distances, indices = adapter.search(index, query, k=10)
-```
-
-#### PineconeAdapter
-
-Managed cloud vector database.
-
-**Helper Classes:**
-- `PineconeIndex`: Index management
-- `PineconeQuery`: Query operations
-- `PineconeMetadata`: Metadata handling
-
-**Example:**
-
-```python
-from semantica.vector_store import PineconeAdapter
-
-adapter = PineconeAdapter(api_key="your-key", environment="us-west1-gcp")
-adapter.connect()
-
-# Create index
-index = adapter.create_index("my-index", dimension=768, metric="cosine")
-
-# Upsert with metadata
-adapter.upsert_vectors(
-    vectors=[[0.1, 0.2, ...], ...],
-    ids=["vec_1", "vec_2"],
-    metadata=[{"category": "news"}, ...]
-)
-
-# Query with filter
-results = adapter.query_vectors(
-    query_vector=[0.1, 0.2, ...],
-    top_k=10,
-    filter={"category": {"$eq": "news"}}
-)
 ```
 
 #### WeaviateAdapter
@@ -716,25 +680,23 @@ print(f"Available methods: {methods}")
 ### Environment Variables
 
 ```bash
-export VECTOR_STORE_BACKEND=pinecone
-export PINECONE_API_KEY=sk-...
-export PINECONE_ENV=us-west1-gcp
+export VECTOR_STORE_BACKEND=weaviate
+export WEAVIATE_URL=http://localhost:8080
 ```
 
 ### YAML Configuration
 
 ```yaml
 vector_store:
-  backend: faiss # or pinecone, weaviate, etc.
+  backend: faiss # or weaviate, qdrant, milvus
   dimension: 1536
   metric: cosine
   
   faiss:
     index_type: HNSW
     
-  pinecone:
-    environment: us-west1-gcp
-    index_name: my-index
+  weaviate:
+    url: http://localhost:8080
 ```
 
 ---
@@ -777,7 +739,7 @@ print(f"Context: {context}")
 **Solution**: Ensure your embedding model dimension (e.g., 1536 for OpenAI) matches the VectorStore dimension.
 
 **Issue**: FAISS index not saved.
-**Solution**: Call `store.save("index.faiss")` explicitly for local FAISS indices, or use a persistent backend like Pinecone/Qdrant.
+**Solution**: Call `store.save("index.faiss")` explicitly for local FAISS indices, or use a persistent backend like Weaviate/Qdrant.
 
 ---
 

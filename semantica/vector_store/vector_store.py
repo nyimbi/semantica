@@ -58,8 +58,16 @@ class VectorStore:
     • Provides vector store operations
     """
 
+    SUPPORTED_BACKENDS = {"faiss", "weaviate", "qdrant", "milvus", "inmemory"}
+
     def __init__(self, backend="faiss", config=None, **kwargs):
         """Initialize vector store."""
+        if backend.lower() not in self.SUPPORTED_BACKENDS:
+            raise ValueError(
+                f"Unsupported backend: {backend}. "
+                f"Supported backends are: {', '.join(sorted(self.SUPPORTED_BACKENDS))}"
+            )
+
         self.logger = get_logger("vector_store")
         self.config = config or {}
         self.config.update(kwargs)

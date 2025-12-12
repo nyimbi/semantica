@@ -9,7 +9,7 @@ Key Features:
     - Validate embedding dimensions for different backends
     - Normalize embeddings for vector DB requirements
     - Create metadata compatible with vector DBs
-    - Integration helpers for FAISS, Pinecone, Weaviate, Qdrant, Milvus
+    - Integration helpers for FAISS, Weaviate, Qdrant, Milvus
 
 Example Usage:
     >>> from semantica.embeddings import VectorEmbeddingManager
@@ -36,7 +36,6 @@ class VectorEmbeddingManager:
 
     Supported Backends:
         - FAISS: Local vector storage
-        - Pinecone: Cloud vector database
         - Weaviate: GraphQL-based vector database
         - Qdrant: Vector similarity search engine
         - Milvus: Open-source vector database
@@ -50,7 +49,7 @@ class VectorEmbeddingManager:
         ...     backend="faiss"
         ... )
         >>> # Validate dimensions
-        >>> is_valid = manager.validate_dimensions(embeddings, backend="pinecone")
+        >>> is_valid = manager.validate_dimensions(embeddings, backend="weaviate")
     """
 
     def __init__(self, embedding_generator: Optional[EmbeddingGenerator] = None):
@@ -67,7 +66,6 @@ class VectorEmbeddingManager:
         # Backend-specific dimension requirements
         self.backend_requirements = {
             "faiss": {"min_dim": 1, "max_dim": None, "dtype": np.float32},
-            "pinecone": {"min_dim": 1, "max_dim": 20000, "dtype": np.float32},
             "weaviate": {"min_dim": 1, "max_dim": None, "dtype": np.float32},
             "qdrant": {"min_dim": 1, "max_dim": None, "dtype": np.float32},
             "milvus": {"min_dim": 1, "max_dim": 32768, "dtype": np.float32},
@@ -90,7 +88,7 @@ class VectorEmbeddingManager:
         Args:
             embeddings: Embeddings array (n_samples, embedding_dim) or (embedding_dim,)
             metadata: Optional list of metadata dictionaries (one per embedding)
-            backend: Vector DB backend ("faiss", "pinecone", "weaviate", "qdrant", "milvus")
+            backend: Vector DB backend ("faiss", "weaviate", "qdrant", "milvus")
             normalize: Whether to normalize embeddings (default: True)
             **options: Additional backend-specific options
 
@@ -108,7 +106,7 @@ class VectorEmbeddingManager:
             >>> embeddings = np.random.rand(10, 384).astype(np.float32)
             >>> metadata = [{"text": f"doc_{i}"} for i in range(10)]
             >>> result = manager.prepare_for_vector_db(
-            ...     embeddings, metadata, backend="pinecone"
+            ...     embeddings, metadata, backend="weaviate"
             ... )
         """
         if backend.lower() not in self.backend_requirements:
@@ -228,7 +226,7 @@ class VectorEmbeddingManager:
             bool: True if dimensions are valid, False otherwise
 
         Example:
-            >>> is_valid = manager.validate_dimensions(embeddings, backend="pinecone")
+            >>> is_valid = manager.validate_dimensions(embeddings, backend="weaviate")
         """
         if backend.lower() not in self.backend_requirements:
             self.logger.warning(f"Unknown backend: {backend}, skipping validation")
@@ -312,7 +310,7 @@ class VectorEmbeddingManager:
 
         Example:
             >>> metadata = [{"text": "doc1", "category": "science"}]
-            >>> formatted = manager.create_metadata(metadata, backend="pinecone")
+            >>> formatted = manager.create_metadata(metadata, backend="weaviate")
         """
         formatted = []
 
@@ -321,16 +319,7 @@ class VectorEmbeddingManager:
             formatted_meta = meta.copy()
 
             # Backend-specific formatting
-            if backend.lower() == "pinecone":
-                # Pinecone has specific metadata requirements
-                # Remove None values and ensure types are compatible
-                formatted_meta = {
-                    k: v
-                    for k, v in formatted_meta.items()
-                    if v is not None
-                    and isinstance(v, (str, int, float, bool, list))
-                }
-            elif backend.lower() == "weaviate":
+            if backend.lower() == "weaviate":
                 # Weaviate uses specific property types
                 # Ensure values are compatible
                 formatted_meta = {
@@ -374,8 +363,6 @@ class VectorEmbeddingManager:
         # Add backend-specific details
         if backend.lower() == "faiss":
             info["index_type"] = options.get("index_type", "flat")
-        elif backend.lower() == "pinecone":
-            info["namespace"] = options.get("namespace", "default")
         elif backend.lower() == "weaviate":
             info["class_name"] = options.get("class_name", "Document")
 

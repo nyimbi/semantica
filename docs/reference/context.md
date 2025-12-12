@@ -57,7 +57,7 @@ The **Context Module** provides agents with a persistent, searchable, and struct
 The high-level facade that unifies all context operations. It routes data to the appropriate subsystems (Memory, Graph, Vector Store) and manages the lifecycle of context.
 
 #### **Constructor Parameters**
-*   `vector_store` (Required): The backing vector database instance (e.g., FAISS, Pinecone).
+*   `vector_store` (Required): The backing vector database instance (e.g., FAISS, Weaviate).
 *   `knowledge_graph` (Optional): The graph store instance for structured knowledge.
 *   `token_limit` (Default: `2000`): The maximum number of tokens allowed in short-term memory before pruning occurs.
 *   `short_term_limit` (Default: `10`): The maximum number of distinct memory items in short-term memory.

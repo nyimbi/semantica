@@ -1,6 +1,6 @@
 # Vector Store Module Usage Guide
 
-This comprehensive guide demonstrates how to use the vector store module for vector storage and retrieval, supporting multiple vector store backends (FAISS, Pinecone, Weaviate, Qdrant, Milvus), hybrid search combining vector similarity and metadata filtering, metadata management, and namespace isolation.
+This comprehensive guide demonstrates how to use the vector store module for vector storage and retrieval, supporting multiple vector store backends (FAISS, Weaviate, Qdrant, Milvus), hybrid search combining vector similarity and metadata filtering, metadata management, and namespace isolation.
 
 ## Table of Contents
 
@@ -687,34 +687,6 @@ distances, indices = adapter.search(index, query_vector, k=10)
 print(f"Found {len(indices)} similar vectors")
 ```
 
-### Pinecone Adapter
-
-```python
-from semantica.vector_store import PineconeAdapter
-import numpy as np
-
-# Create Pinecone adapter
-adapter = PineconeAdapter(api_key="your-api-key", environment="us-west1-gcp")
-
-# Connect
-adapter.connect()
-
-# Create index
-index = adapter.create_index("my-index", dimension=768, metric="cosine")
-
-# Upsert vectors
-vectors = [np.random.rand(768).tolist() for _ in range(100)]
-ids = [f"vec_{i}" for i in range(100)]
-metadata = [{"category": "science"} for _ in range(100)]
-adapter.upsert_vectors(vectors, ids, metadata)
-
-# Query
-query_vector = np.random.rand(768).tolist()
-results = adapter.query_vectors(query_vector, top_k=10, include_metadata=True)
-
-print(f"Found {len(results)} results")
-```
-
 ### Weaviate Adapter
 
 ```python
@@ -1104,10 +1076,6 @@ export VECTOR_STORE_NAMESPACE=default
 # FAISS configuration
 export VECTOR_STORE_FAISS_INDEX_TYPE=flat
 
-# Pinecone configuration
-export VECTOR_STORE_PINECONE_API_KEY=your-api-key
-export VECTOR_STORE_PINECONE_ENVIRONMENT=us-west1-gcp
-
 # Weaviate configuration
 export VECTOR_STORE_WEAVIATE_URL=http://localhost:8080
 
@@ -1153,8 +1121,6 @@ vector_store:
   enable_hybrid_search: true
   default_namespace: default
   faiss_index_type: flat
-  pinecone_api_key: your-api-key
-  pinecone_environment: us-west1-gcp
   weaviate_url: http://localhost:8080
   qdrant_url: http://localhost:6333
   milvus_host: localhost
@@ -1204,7 +1170,7 @@ print(f"Found {len(results)} hybrid search results")
 ### Multi-Backend Vector Store
 
 ```python
-from semantica.vector_store import FAISSAdapter, PineconeAdapter
+from semantica.vector_store import FAISSAdapter, WeaviateAdapter
 import numpy as np
 
 # Local FAISS store
@@ -1213,17 +1179,17 @@ faiss_index = faiss_adapter.create_index(index_type="flat", metric="L2")
 faiss_vectors = np.random.rand(1000, 768).astype('float32')
 faiss_adapter.add_vectors(faiss_index, faiss_vectors, ids=[f"faiss_{i}" for i in range(1000)])
 
-# Cloud Pinecone store
-pinecone_adapter = PineconeAdapter(api_key="your-key")
-pinecone_adapter.connect()
-pinecone_index = pinecone_adapter.create_index("my-index", dimension=768)
-pinecone_vectors = [np.random.rand(768).tolist() for _ in range(1000)]
-pinecone_adapter.upsert_vectors(pinecone_vectors, [f"pinecone_{i}" for i in range(1000)])
+# Self-hosted Weaviate store
+weaviate_adapter = WeaviateAdapter(url="http://localhost:8080")
+weaviate_adapter.connect()
+weaviate_index = weaviate_adapter.create_index("my-index", dimension=768)
+weaviate_vectors = [np.random.rand(768).tolist() for _ in range(1000)]
+weaviate_adapter.upsert_vectors(weaviate_vectors, [f"weaviate_{i}" for i in range(1000)])
 
 # Search both
 query_vector = np.random.rand(768)
 faiss_results = faiss_adapter.search(faiss_index, query_vector, k=10)
-pinecone_results = pinecone_adapter.query_vectors(query_vector, top_k=10)
+weaviate_results = weaviate_adapter.query_vectors(query_vector, top_k=10)
 ```
 
 ### Hybrid Search with Custom Ranking

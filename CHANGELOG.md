@@ -58,7 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Production-ready quality assurance modules
 - Comprehensive documentation with MkDocs
 - Cookbook with interactive tutorials
-- Support for multiple vector stores (Pinecone, Weaviate, Qdrant, FAISS)
+- Support for multiple vector stores (Weaviate, Qdrant, FAISS)
 - Support for multiple graph databases (Neo4j, NetworkX, RDFLib)
 - Temporal knowledge graph support
 - Conflict detection and resolution

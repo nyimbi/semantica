@@ -447,14 +447,6 @@ from semantica.embeddings import VectorEmbeddingManager
 
 manager = VectorEmbeddingManager()
 
-# Prepare for Pinecone
-pinecone_data = manager.prepare_for_vector_db(
-    embeddings,
-    metadata=metadata,
-    backend="pinecone",
-    namespace="my_namespace"
-)
-
 # Prepare for Weaviate
 weaviate_data = manager.prepare_for_vector_db(
     embeddings,
@@ -486,9 +478,9 @@ from semantica.embeddings import VectorEmbeddingManager
 manager = VectorEmbeddingManager()
 
 # Validate dimensions for specific backend
-is_valid = manager.validate_dimensions(embeddings, backend="pinecone")
+is_valid = manager.validate_dimensions(embeddings, backend="weaviate")
 if is_valid:
-    print("Embeddings meet Pinecone requirements")
+    print("Embeddings meet Weaviate requirements")
 else:
     print("Embeddings do not meet requirements")
 ```

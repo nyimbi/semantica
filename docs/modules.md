@@ -468,7 +468,7 @@ print(f"Similarity: {similarity:.3f}")
 
 **Key Features:**
 
-- Multiple backend support (FAISS, Pinecone, Weaviate, Qdrant, Milvus)
+- Multiple backend support (FAISS, Weaviate, Qdrant, Milvus)
 - Hybrid search (vector + keyword)
 - Metadata filtering
 - Batch operations
@@ -480,7 +480,6 @@ print(f"Similarity: {similarity:.3f}")
 
 - `VectorStore` — Main vector store interface
 - `FAISSAdapter` — FAISS integration
-- `PineconeAdapter` — Pinecone integration
 - `WeaviateAdapter` — Weaviate integration
 - `HybridSearch` — Combine vector and keyword search
 - `VectorRetriever` — Retrieve relevant vectors

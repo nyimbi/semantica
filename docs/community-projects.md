@@ -25,7 +25,6 @@ Projects and integrations from the Semantica community.
 ## 🔌 Integrations
 
 ### Vector Databases
-- Pinecone
 - Weaviate
 - Qdrant
 - FAISS

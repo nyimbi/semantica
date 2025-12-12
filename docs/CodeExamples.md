@@ -32,7 +32,7 @@ from semantica import Semantica
 core = Semantica(
     llm_provider="openai",
     embedding_model="text-embedding-3-large",
-    vector_store="pinecone",
+    vector_store="weaviate",
     graph_db="neo4j"
 )
 
@@ -357,7 +357,7 @@ semantic_chunks = embedder.semantic_chunk(documents)
 embeddings = embedder.generate_embeddings(semantic_chunks)
 
 # Store in vector database
-vector_store = core.get_vector_store("pinecone")
+vector_store = core.get_vector_store("weaviate")
 vector_store.store_embeddings(semantic_chunks, embeddings)
 
 # Semantic search

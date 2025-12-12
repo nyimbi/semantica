@@ -71,7 +71,6 @@ SUPPORTED_RDF_FORMATS = ["turtle", "rdfxml", "jsonld", "n3", "ntriples"]
 # Supported Vector Store Backends
 SUPPORTED_VECTOR_STORES = [
     "faiss",
-    "pinecone",
     "weaviate",
     "qdrant",
     "milvus",

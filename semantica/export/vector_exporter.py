@@ -7,7 +7,7 @@ embedding systems.
 
 Key Features:
     - Multiple vector format export (JSON, NumPy, Binary, FAISS)
-    - Vector store integration (Pinecone, Weaviate, Qdrant, FAISS)
+    - Vector store integration (Weaviate, Qdrant, FAISS)
     - Metadata and document association
     - Batch vector export
     - Multi-dimensional vector support
@@ -16,7 +16,7 @@ Example Usage:
     >>> from semantica.export import VectorExporter
     >>> exporter = VectorExporter(format="json", include_metadata=True)
     >>> exporter.export(vectors, "vectors.json")
-    >>> exporter.export_for_vector_store(vectors, "pinecone.json", vector_store_type="pinecone")
+    >>> exporter.export_for_vector_store(vectors, "weaviate.json", vector_store_type="weaviate")
 
 Author: Semantica Contributors
 License: MIT
@@ -43,7 +43,7 @@ class VectorExporter:
 
     Features:
         - Multiple vector format export (JSON, NumPy, Binary, FAISS)
-        - Vector store integration (Pinecone, Weaviate, Qdrant, FAISS)
+        - Vector store integration (Weaviate, Qdrant, FAISS)
         - Metadata and document association
         - Batch vector export
         - Multi-dimensional vector support
@@ -471,7 +471,7 @@ class VectorExporter:
         self,
         vectors: List[Dict[str, Any]],
         file_path: Union[str, Path],
-        vector_store_type: str = "pinecone",
+        vector_store_type: str = "weaviate",
         **options,
     ) -> None:
         """
@@ -480,12 +480,10 @@ class VectorExporter:
         Args:
             vectors: List of vector dictionaries
             file_path: Output file path
-            vector_store_type: Vector store type ('pinecone', 'weaviate', 'qdrant', 'faiss')
+            vector_store_type: Vector store type ('weaviate', 'qdrant', 'faiss')
             **options: Additional options
         """
-        if vector_store_type == "pinecone":
-            self._export_pinecone_format(vectors, file_path, **options)
-        elif vector_store_type == "weaviate":
+        if vector_store_type == "weaviate":
             self._export_weaviate_format(vectors, file_path, **options)
         elif vector_store_type == "qdrant":
             self._export_qdrant_format(vectors, file_path, **options)
@@ -494,27 +492,6 @@ class VectorExporter:
         else:
             # Default to JSON
             self._export_json(vectors, Path(file_path), {}, **options)
-
-    def _export_pinecone_format(
-        self, vectors: List[Dict[str, Any]], file_path: Path, **options
-    ) -> None:
-        """Export in Pinecone format."""
-        pinecone_data = []
-
-        for vec_data in vectors:
-            vector_id = vec_data.get("id") or vec_data.get("vector_id", "")
-            vector = vec_data.get("vector") or vec_data.get("embedding", [])
-            metadata = vec_data.get("metadata", {})
-
-            if "text" in vec_data and self.include_text:
-                metadata["text"] = vec_data["text"]
-
-            pinecone_data.append(
-                {"id": vector_id, "values": vector, "metadata": metadata}
-            )
-
-        export_data = {"vectors": pinecone_data}
-        write_json_file(export_data, file_path, indent=2)
 
     def _export_weaviate_format(
         self, vectors: List[Dict[str, Any]], file_path: Path, **options

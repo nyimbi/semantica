@@ -62,7 +62,7 @@ OWL Export:
 
 Vector Export:
     - Vector Serialization: Multiple format support (JSON, NumPy, Binary, FAISS)
-    - Vector Store Integration: Format conversion for Pinecone, Weaviate, Qdrant, FAISS
+    - Vector Store Integration: Format conversion for Weaviate, Qdrant, FAISS
     - Metadata Association: Vector-to-metadata mapping and serialization
     - Batch Export: Efficient batch vector export processing
     - Multi-dimensional Support: Variable dimension vector handling

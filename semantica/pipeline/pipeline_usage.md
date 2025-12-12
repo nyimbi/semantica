@@ -632,7 +632,7 @@ builder = template_manager.create_pipeline_from_template(
     "rag_pipeline",
     chunk={"chunk_size": 512},
     embed={"model": "text-embedding-3-large"},
-    store_vectors={"store": "pinecone"}
+    store_vectors={"store": "weaviate"}
 )
 
 pipeline = builder.build()
@@ -1124,7 +1124,8 @@ builder = template_manager.create_pipeline_from_template(
     ingest={"source": "./documents"},
     chunk={"chunk_size": 512, "overlap": 50},
     embed={"model": "text-embedding-3-large", "batch_size": 32},
-    store_vectors={"store": "pinecone", "index_name": "documents"}
+    # Step-specific overrides
+    store_vectors={"store": "weaviate", "index_name": "documents"}
 )
 
 pipeline = builder.build()

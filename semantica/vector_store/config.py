@@ -116,8 +116,6 @@ class VectorStoreConfig:
             "VECTOR_STORE_ENABLE_HYBRID_SEARCH": "enable_hybrid_search",
             "VECTOR_STORE_NAMESPACE": "default_namespace",
             "VECTOR_STORE_FAISS_INDEX_TYPE": "faiss_index_type",
-            "VECTOR_STORE_PINECONE_API_KEY": "pinecone_api_key",
-            "VECTOR_STORE_PINECONE_ENVIRONMENT": "pinecone_environment",
             "VECTOR_STORE_WEAVIATE_URL": "weaviate_url",
             "VECTOR_STORE_QDRANT_URL": "qdrant_url",
             "VECTOR_STORE_MILVUS_HOST": "milvus_host",

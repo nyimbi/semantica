@@ -148,7 +148,7 @@ class PipelineTemplateManager:
                 {
                     "name": "store_vectors",
                     "type": "store_vectors",
-                    "config": {"store": "pinecone"},
+                    "config": {"store": "weaviate"},
                     "dependencies": ["embed"],
                 },
             ],

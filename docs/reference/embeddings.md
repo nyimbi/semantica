@@ -34,7 +34,7 @@ The **Embeddings Module** provides a unified interface for generating vector rep
 
     ---
 
-    Automatic formatting and validation for FAISS, Pinecone, Qdrant, and Weaviate.
+    Automatic formatting and validation for FAISS, Qdrant, and Weaviate.
 
 </div>
 
@@ -122,13 +122,13 @@ print(f"Dimension: {embedder.get_embedding_dimension()}")
 ---
 
 ### VectorEmbeddingManager (The Bridge)
-A utility class that prepares raw embeddings for insertion into specific vector databases. It handles formatting differences between backends like FAISS and Pinecone.
+A utility class that prepares raw embeddings for insertion into specific vector databases. It handles formatting differences between backends like FAISS and Weaviate.
 
 #### **Core Methods**
 
 | Method | Description |
 |--------|-------------|
-| `prepare_for_vector_db(embeddings, backend, ...)` | Formats data for the target DB. |
+| `prepare_for_vector_db(embeddings, metadata, backend)` | Formats data for the target DB. |
 | `validate_dimensions(embeddings, expected_dim)` | Ensures vectors match the index configuration. |
 | `batch_prepare(embeddings_list)` | Prepares a batch of embeddings for storage. |
 
