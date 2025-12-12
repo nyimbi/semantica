@@ -822,6 +822,7 @@ def get_entity_method(method_name: str):
         "regex": extract_entities_regex,
         "rules": extract_entities_rules,
         "ml": extract_entities_ml,
+        "spacy": extract_entities_ml,  # Alias for ml
         "huggingface": extract_entities_huggingface,
         "llm": extract_entities_llm,
     }
@@ -848,6 +849,8 @@ def get_relation_method(method_name: str):
         "regex": extract_relations_regex,
         "cooccurrence": extract_relations_cooccurrence,
         "dependency": extract_relations_dependency,
+        "ml": extract_relations_dependency,  # Alias for dependency
+        "spacy": extract_relations_dependency,  # Alias for dependency
         "huggingface": extract_relations_huggingface,
         "llm": extract_relations_llm,
     }

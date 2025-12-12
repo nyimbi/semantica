@@ -150,7 +150,7 @@ TextSplitter(
     similarity_threshold=0.7,    # Semantic boundary threshold
     
     # Entity-aware options
-    ner_method="spacy",          # NER method (spacy, llm, transformers)
+    ner_method="ml",             # NER method (ml/spacy, llm, pattern)
     preserve_entities=True,      # Don't split entities
     
     # LLM options
@@ -183,7 +183,7 @@ for i, chunk in enumerate(chunks):
 # Entity-aware for GraphRAG
 splitter = TextSplitter(
     method="entity_aware",
-    ner_method="llm",
+    ner_method="ml",
     chunk_size=1000,
     preserve_entities=True
 )
@@ -250,8 +250,6 @@ Preserve entity boundaries during chunking for GraphRAG.
 | Method | Description | Algorithm |
 |--------|-------------|-----------|
 | `chunk(text, entities)` | Chunk preserving entities | Entity boundary detection |
-| `extract_entities(text)` | Extract entities | NER extraction |
-| `find_safe_split_points(text, entities)` | Find split points | Entity span checking |
 
 **Example:**
 
@@ -260,14 +258,14 @@ from semantica.split import EntityAwareChunker
 from semantica.semantic_extract import NERExtractor
 
 # Extract entities first
-ner = NERExtractor(method="llm")
+ner = NERExtractor(method="ml")
 entities = ner.extract(text)
 
 # Chunk preserving entities
 chunker = EntityAwareChunker(
     chunk_size=1000,
     chunk_overlap=200,
-    ner_method="llm"
+    ner_method="ml"
 )
 
 chunks = chunker.chunk(text, entities=entities)
@@ -360,8 +358,7 @@ Structure-aware chunking respecting document hierarchy.
 | Method | Description | Algorithm |
 |--------|-------------|-----------|
 | `chunk(text)` | Chunk by structure | Heading/section detection |
-| `detect_structure(text)` | Detect document structure | Markdown/HTML parsing |
-| `build_hierarchy(sections)` | Build section hierarchy | Tree construction |
+| `_extract_structure(text)` | Extract structural elements | Markdown/HTML parsing |
 
 **Example:**
 
@@ -369,17 +366,16 @@ Structure-aware chunking respecting document hierarchy.
 from semantica.split import StructuralChunker
 
 chunker = StructuralChunker(
-    respect_headings=True,
-    respect_paragraphs=True,
-    respect_lists=True,
+    respect_headers=True,
+    respect_sections=True,
     max_chunk_size=2000
 )
 
 chunks = chunker.chunk(markdown_text)
 
 for chunk in chunks:
-    print(f"Section: {chunk.metadata.get('section_title')}")
-    print(f"Level: {chunk.metadata.get('heading_level')}")
+    print(f"Structure preserved: {chunk.metadata.get('structure_preserved')}")
+    print(f"Elements: {chunk.metadata.get('element_types')}")
 ```
 
 ---
@@ -393,7 +389,6 @@ Multi-level hierarchical chunking.
 | Method | Description | Algorithm |
 |--------|-------------|-----------|
 | `chunk(text)` | Multi-level chunking | Recursive hierarchical split |
-| `create_hierarchy(chunks)` | Create chunk hierarchy | Tree structure |
 
 **Example:**
 
@@ -470,16 +465,15 @@ Fixed-size sliding window chunking with configurable step size.
 | Method | Description | Algorithm |
 |--------|-------------|-----------|
 | `chunk(text)` | Sliding window chunking | Fixed-size window with step |
-| `calculate_windows(text_length)` | Calculate window positions | Window position calculation |
+| `chunk_with_overlap(text)` | Chunk with specific overlap | Window position calculation |
 
 **Parameters:**
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `window_size` | int | 1000 | Size of sliding window |
-| `step_size` | int | 800 | Step size (window_size - overlap) |
-| `min_chunk_size` | int | 100 | Minimum chunk size |
-| `preserve_sentences` | bool | False | Preserve sentence boundaries |
+| `chunk_size` | int | 1000 | Size of sliding window |
+| `overlap` | int | 0 | Overlap size |
+| `stride` | int | chunk_size - overlap | Step size |
 
 **Example:**
 
@@ -488,25 +482,18 @@ from semantica.split import SlidingWindowChunker
 
 # Basic sliding window
 chunker = SlidingWindowChunker(
-    window_size=1000,
-    step_size=800,  # 200 overlap
-    min_chunk_size=100
+    chunk_size=1000,
+    overlap=200
 )
 
 chunks = chunker.chunk(long_text)
 
 for i, chunk in enumerate(chunks):
-    print(f"Window {i}: chars {chunk.start}-{chunk.end}")
-    print(f"Overlap with previous: {chunk.metadata.get('overlap_chars')}")
+    print(f"Window {i}: chars {chunk.start_index}-{chunk.end_index}")
+    print(f"Has overlap: {chunk.metadata.get('has_overlap')}")
 
-# Sentence-preserving sliding window
-chunker = SlidingWindowChunker(
-    window_size=1000,
-    step_size=750,
-    preserve_sentences=True
-)
-
-chunks = chunker.chunk(text)
+# Boundary-preserving sliding window
+chunks = chunker.chunk(text, preserve_boundaries=True)
 ```
 
 ---
@@ -519,18 +506,17 @@ Table-specific chunking preserving table structure.
 
 | Method | Description | Algorithm |
 |--------|-------------|-----------|
-| `chunk(text)` | Chunk tables | Table detection and splitting |
-| `detect_tables(text)` | Detect tables in text | Table boundary detection |
-| `split_table(table, max_rows)` | Split large tables | Row-based table splitting |
+| `chunk_table(table_data)` | Chunk tables | Row/Column-based splitting |
+| `chunk_to_text_chunks(table_data)` | Convert table chunks to text | Table to text conversion |
+| `extract_table_schema(table_data)` | Extract schema | Type inference and schema extraction |
 
 **Parameters:**
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
+| `max_rows` | int | 100 | Maximum rows per table chunk |
 | `preserve_headers` | bool | True | Keep headers in each chunk |
-| `max_rows_per_chunk` | int | 50 | Maximum rows per table chunk |
-| `include_context` | bool | True | Include surrounding text context |
-| `table_format` | str | "auto" | Table format (markdown, html, csv, auto) |
+| `chunk_by_columns` | bool | False | Chunk by columns instead of rows |
 
 **Example:**
 
@@ -538,31 +524,25 @@ Table-specific chunking preserving table structure.
 from semantica.split import TableChunker
 
 chunker = TableChunker(
+    max_rows=50,
     preserve_headers=True,
-    max_rows_per_chunk=50,
-    include_context=True,
-    table_format="markdown"
+    chunk_by_columns=False
 )
 
-text_with_tables = \"\"\"
-Document with tables...
+table_data = {
+    "headers": ["Col1", "Col2", "Col3"],
+    "rows": [["Val1", "Val2", "Val3"], ...]
+}
 
-| Column 1 | Column 2 | Column 3 |
-|----------|----------|----------|
-| Value 1  | Value 2  | Value 3  |
-| ...      | ...      | ...      |
-\"\"\"
+# Get structured table chunks
+table_chunks = chunker.chunk_table(table_data)
 
-chunks = chunker.chunk(text_with_tables)
+# Get text chunks for RAG
+text_chunks = chunker.chunk_to_text_chunks(table_data)
 
-for chunk in chunks:
-    if chunk.metadata.get('is_table'):
-        print(f"Table chunk:")
-        print(f"  Rows: {chunk.metadata.get('row_count')}")
-        print(f"  Columns: {chunk.metadata.get('column_count')}")
-        print(f"  Headers: {chunk.metadata.get('headers')}")
-    else:
-        print(f"Text chunk: {len(chunk.text)} chars")
+for chunk in text_chunks:
+    print(f"Table chunk {chunk.metadata.get('chunk_index')}")
+    print(f"Rows: {chunk.metadata.get('row_count')}")
 ```
 
 ---
@@ -663,7 +643,7 @@ print(f"Available methods: {methods}")
 # Quick splitting
 chunks = split_recursive(text, chunk_size=1000, chunk_overlap=200)
 chunks = split_by_sentences(text, sentences_per_chunk=5)
-chunks = split_entity_aware(text, ner_method="llm")
+chunks = split_entity_aware(text, ner_method="ml")
 ```
 
 ---
@@ -683,7 +663,7 @@ export SPLIT_EMBEDDING_MODEL=all-MiniLM-L6-v2
 export SPLIT_SIMILARITY_THRESHOLD=0.7
 
 # Entity-aware
-export SPLIT_NER_METHOD=spacy
+export SPLIT_NER_METHOD=ml  # or spacy
 export SPLIT_PRESERVE_ENTITIES=true
 
 # LLM-based
@@ -712,7 +692,7 @@ split:
     max_chunk_size: 2000
     
   entity_aware:
-    ner_method: spacy
+    ner_method: ml  # or spacy
     preserve_entities: true
     min_entity_gap: 50
     

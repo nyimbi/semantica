@@ -160,6 +160,15 @@ try:
 except ImportError:
     SEMANTIC_EXTRACT_AVAILABLE = False
 
+# Import specialized chunkers
+try:
+    from .structural_chunker import StructuralChunker
+    from .sliding_window_chunker import SlidingWindowChunker
+    
+    SPECIALIZED_CHUNKERS_AVAILABLE = True
+except ImportError:
+    SPECIALIZED_CHUNKERS_AVAILABLE = False
+
 
 # ============================================================================
 # Standard Splitting Methods
@@ -1012,9 +1021,14 @@ def split_relation_aware(
         return split_recursive(text, chunk_size=chunk_size, **kwargs)
 
     try:
+        # Extract entities first (required for relation extraction)
+        ner_method = kwargs.get("ner_method", "ml")
+        ner_extractor = NERExtractor(method=ner_method, **kwargs)
+        entities = ner_extractor.extract(text)
+
         # Extract relations/triples
         relation_extractor = RelationExtractor(method=relation_method, **kwargs)
-        relations = relation_extractor.extract(text)
+        relations = relation_extractor.extract(text, entities)
 
         # Create triple boundaries (subject, relation, object must be in same chunk)
         triple_boundaries = []
@@ -1412,13 +1426,23 @@ def split_hierarchical(
 
     # Fall back to paragraph level
     if "paragraph" in levels:
+        # Remove chunk_size from kwargs to avoid multiple values error
+        para_kwargs = kwargs.copy()
+        if "chunk_size" in para_kwargs:
+            del para_kwargs["chunk_size"]
+            
         return split_by_paragraphs(
-            text, chunk_size=chunk_sizes[0] if chunk_sizes else 1000, **kwargs
+            text, chunk_size=chunk_sizes[0] if chunk_sizes else 1000, **para_kwargs
         )
 
     # Fall back to sentence level
+    # Remove chunk_size from kwargs to avoid multiple values error
+    sent_kwargs = kwargs.copy()
+    if "chunk_size" in sent_kwargs:
+        del sent_kwargs["chunk_size"]
+        
     return split_by_sentences(
-        text, chunk_size=chunk_sizes[0] if chunk_sizes else 1000, **kwargs
+        text, chunk_size=chunk_sizes[0] if chunk_sizes else 1000, **sent_kwargs
     )
 
 
@@ -1515,6 +1539,91 @@ def split_topic_based(
     return split_semantic_transformer(text, chunk_size=chunk_size, **kwargs)
 
 
+def split_structural(
+    text: str,
+    max_chunk_size: int = 2000,
+    respect_headers: bool = True,
+    respect_sections: bool = True,
+    **kwargs,
+) -> List[Chunk]:
+    """
+    Structure-aware chunking respecting document hierarchy.
+
+    Args:
+        text: Input text
+        max_chunk_size: Maximum chunk size
+        respect_headers: Whether to respect heading hierarchy
+        respect_sections: Whether to respect section boundaries
+        **kwargs: Additional options
+
+    Returns:
+        List of chunks
+    """
+    if not SPECIALIZED_CHUNKERS_AVAILABLE:
+        logger.warning(
+            "StructuralChunker not available, falling back to recursive splitting"
+        )
+        return split_recursive(text, chunk_size=max_chunk_size, **kwargs)
+
+    try:
+        chunker = StructuralChunker(
+            max_chunk_size=max_chunk_size,
+            respect_headers=respect_headers,
+            respect_sections=respect_sections,
+            **kwargs,
+        )
+        return chunker.chunk(text, **kwargs)
+    except Exception as e:
+        logger.warning(
+            f"Error in structural splitting: {e}, falling back to recursive splitting"
+        )
+        return split_recursive(text, chunk_size=max_chunk_size, **kwargs)
+
+
+def split_sliding_window(
+    text: str,
+    chunk_size: int = 1000,
+    overlap: int = 200,
+    stride: Optional[int] = None,
+    preserve_boundaries: bool = True,
+    **kwargs,
+) -> List[Chunk]:
+    """
+    Sliding window chunking with optional boundary preservation.
+
+    Args:
+        text: Input text
+        chunk_size: Chunk size in characters
+        overlap: Overlap size in characters
+        stride: Stride size (default: chunk_size - overlap)
+        preserve_boundaries: Whether to preserve word/sentence boundaries
+        **kwargs: Additional options
+
+    Returns:
+        List of chunks
+    """
+    if not SPECIALIZED_CHUNKERS_AVAILABLE:
+        logger.warning(
+            "SlidingWindowChunker not available, falling back to recursive splitting"
+        )
+        return split_recursive(
+            text, chunk_size=chunk_size, chunk_overlap=overlap, **kwargs
+        )
+
+    try:
+        chunker = SlidingWindowChunker(
+            chunk_size=chunk_size, overlap=overlap, stride=stride, **kwargs
+        )
+        return chunker.chunk(text, preserve_boundaries=preserve_boundaries, **kwargs)
+    except Exception as e:
+        logger.warning(
+            f"Error in sliding window splitting: {e}, falling back to recursive splitting"
+        )
+        return split_recursive(
+            text, chunk_size=chunk_size, chunk_overlap=overlap, **kwargs
+        )
+
+
 # ============================================================================
 # Method Dispatcher
 # ============================================================================
@@ -1542,6 +1651,9 @@ _SPLIT_METHODS = {
     "centrality_based": split_centrality_based,
     "subgraph": split_subgraph,
     "topic_based": split_topic_based,
+    # Specialized methods
+    "structural": split_structural,
+    "sliding_window": split_sliding_window,
 }
 
 

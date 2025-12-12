@@ -209,7 +209,7 @@ chunks = split_entity_aware(
     text,
     chunk_size=1000,
     chunk_overlap=200,
-    ner_method="llm",  # or "spacy", "huggingface"
+    ner_method="ml",  # "ml" (spaCy), "llm", or "pattern"
     preserve_entities=True
 )
 
@@ -324,7 +324,7 @@ chunks = table_chunker.chunk(text_with_tables)
 entity_chunker = EntityAwareChunker(
     chunk_size=1000,
     chunk_overlap=200,
-    ner_method="llm",
+    ner_method="ml",
     preserve_entities=True
 )
 chunks = entity_chunker.chunk(text)
@@ -408,7 +408,7 @@ chunks6 = split_by_words(text, chunk_size=500, chunk_overlap=50)
 # Advanced methods
 chunks7 = split_semantic_transformer(text, chunk_size=1000, chunk_overlap=200)
 chunks8 = split_llm(text, chunk_size=1000, provider="openai")
-chunks9 = split_entity_aware(text, chunk_size=1000, ner_method="llm")
+chunks9 = split_entity_aware(text, chunk_size=1000, ner_method="ml")
 chunks10 = split_relation_aware(text, chunk_size=1000)
 chunks11 = split_graph_based(text, chunk_size=1000)
 chunks12 = split_ontology_aware(text, chunk_size=1000)
