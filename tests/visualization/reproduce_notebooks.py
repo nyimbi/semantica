@@ -6,7 +6,6 @@ from datetime import datetime
 import logging
 
 import pytest
-
 # Add project root to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
@@ -24,7 +23,7 @@ from semantica.ontology import OntologyGenerator
 from semantica.embeddings import EmbeddingGenerator
 
 pytestmark = pytest.mark.integration
-
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("reproduce_notebooks")
 
