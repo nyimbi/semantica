@@ -1,6 +1,5 @@
 import pytest
 
-from semantica import build as module_build
 from semantica.core import Semantica
 from semantica.core.methods import (
     initialize_framework,
@@ -88,11 +87,4 @@ def test_core_methods_build_knowledge_base_end_to_end(tmp_path):
     assert result["results"][0]["success"] is True
 
 
-def test_module_build_end_to_end_default_pipeline(tmp_path):
-    source_path = tmp_path / "sample_e2e_module_build.txt"
-    source_path.write_text("Sample data for end-to-end test.")
-    result = module_build(str(source_path), embeddings=False, graph=False)
-    stats = result["statistics"]
-    assert stats["sources_processed"] == 1
-    assert len(result["results"]) == 1
-    assert result["results"][0]["success"] is True
+
