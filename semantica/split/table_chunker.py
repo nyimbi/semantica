@@ -68,6 +68,49 @@ class TableChunker:
         self.preserve_headers = config.get("preserve_headers", True)
         self.chunk_by_columns = config.get("chunk_by_columns", False)
 
+    def chunk(self, text: str) -> List[Chunk]:
+        """
+        Chunk text containing a table (alias for compatibility).
+        Attempts to parse markdown table from text.
+
+        Args:
+            text: Text containing a markdown table
+
+        Returns:
+            list: List of text chunks
+        """
+        # Simple markdown table parser
+        lines = text.strip().split("\n")
+        headers = []
+        rows = []
+        
+        # Find header line (starts with | and not a separator line)
+        header_idx = -1
+        for i, line in enumerate(lines):
+            if line.strip().startswith("|") and "---" not in line:
+                headers = [c.strip() for c in line.strip().strip("|").split("|")]
+                header_idx = i
+                break
+        
+        if header_idx != -1:
+            # Parse rows
+            for line in lines[header_idx + 1:]:
+                if line.strip().startswith("|") and "---" not in line:
+                    row = [c.strip() for c in line.strip().strip("|").split("|")]
+                    if len(row) == len(headers):
+                        rows.append(row)
+            
+            table_data = {"headers": headers, "rows": rows}
+            return self.chunk_to_text_chunks(table_data)
+        
+        # If no table found, return as single chunk
+        return [Chunk(
+            text=text,
+            start_index=0,
+            end_index=len(text),
+            metadata={"chunk_type": "text", "error": "No table found"}
+        )]
+
     def chunk_table(
         self, table_data: Union[Dict[str, Any], List[List[str]]], **options
     ) -> List[TableChunk]:

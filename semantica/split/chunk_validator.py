@@ -29,7 +29,7 @@ License: MIT
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from ..utils.exceptions import ProcessingError
 from ..utils.logging import get_logger
@@ -46,6 +46,16 @@ class ValidationResult:
     errors: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
     metrics: Dict[str, Any] = field(default_factory=dict)
+
+    def get(self, key: str, default: Any = None) -> Any:
+        """Get attribute or metric value (dict-like access)."""
+        if hasattr(self, key):
+            return getattr(self, key)
+        return self.metrics.get(key, default)
+
+    def __getitem__(self, key: str) -> Any:
+        """Get item (dict-like access)."""
+        return self.get(key)
 
 
 class ChunkValidator:
@@ -69,17 +79,20 @@ class ChunkValidator:
         self.max_size = config.get("max_size", 10000)
         self.min_score = config.get("min_score", 0.5)
 
-    def validate(self, chunk: Chunk, **options) -> ValidationResult:
+    def validate(self, chunk: Union[Chunk, List[Chunk]], **options) -> ValidationResult:
         """
-        Validate a single chunk.
+        Validate a chunk or list of chunks.
 
         Args:
-            chunk: Chunk to validate
+            chunk: Chunk or list of chunks to validate
             **options: Validation options
 
         Returns:
-            ValidationResult: Validation result
+            ValidationResult: Validation result (aggregated if list)
         """
+        if isinstance(chunk, list):
+            return self._validate_batch(chunk, **options)
+
         tracking_id = self.progress_tracker.start_tracking(
             module="split", submodule="ChunkValidator", message="Validating chunk"
         )
@@ -195,6 +208,36 @@ class ChunkValidator:
                 else 0.0,
             },
         }
+
+    def _validate_batch(self, chunks: List[Chunk], **options) -> ValidationResult:
+        """Validate a batch of chunks."""
+        results = []
+        all_errors = []
+        all_warnings = []
+        
+        for chunk in chunks:
+            result = self.validate(chunk, **options)
+            results.append(result)
+            if not result.valid:
+                all_errors.extend(result.errors)
+            all_warnings.extend(result.warnings)
+            
+        avg_score = sum(r.score for r in results) / len(results) if results else 0.0
+        valid_count = sum(1 for r in results if r.valid)
+        overall_valid = valid_count == len(results)
+        
+        return ValidationResult(
+            valid=overall_valid,
+            score=avg_score,
+            errors=all_errors,
+            warnings=all_warnings,
+            metrics={
+                "total_chunks": len(results),
+                "valid_chunks": valid_count,
+                "invalid_chunks": len(results) - valid_count,
+                "quality_score": avg_score  # For compatibility
+            }
+        )
 
     def _check_coherence(self, text: str) -> float:
         """

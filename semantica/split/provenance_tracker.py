@@ -28,7 +28,7 @@ License: MIT
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 from uuid import uuid4
 
 from ..utils.exceptions import ProcessingError
@@ -116,6 +116,19 @@ class ProvenanceTracker:
         self._chunk_registry[chunk_id] = provenance_id
 
         return provenance_id
+
+    def track(self, **kwargs) -> Union[str, List[str]]:
+        """
+        Track provenance (alias for track_chunk/track_chunks).
+        Delegates based on input arguments.
+        """
+        if "chunks" in kwargs:
+            return self.track_chunks(**kwargs)
+        if "chunk" in kwargs and isinstance(kwargs["chunk"], list):
+             # Handle list passed to chunk arg
+             kwargs["chunks"] = kwargs.pop("chunk")
+             return self.track_chunks(**kwargs)
+        return self.track_chunk(**kwargs)
 
     def track_chunks(
         self,
@@ -222,6 +235,60 @@ class ProvenanceTracker:
             current_chunk_id = provenance.parent_chunk_id
 
         return lineage
+
+    def get_lineage(self, chunk_id: str) -> Dict[str, Any]:
+        """
+        Get lineage info in format expected by some consumers.
+        Adapts internal representation to dict with 'source' key.
+        """
+        lineage_list = self.get_chunk_lineage(chunk_id)
+        if not lineage_list:
+            return {}
+        
+        # Return the most recent provenance info (the chunk itself)
+        # wrapped in a structure that matches notebook expectation
+        latest_prov = lineage_list[-1] # List is parent -> child (wait, let me check get_chunk_lineage implementation)
+        # get_chunk_lineage inserts at 0, so [grandparent, parent, child]. 
+        # But wait, logic: lineage.insert(0, provenance) while walking up parents.
+        # So index 0 is oldest ancestor? 
+        # Let's re-read get_chunk_lineage logic.
+        
+        # Logic:
+        # current = chunk_id
+        # while current:
+        #    prov = get(current)
+        #    lineage.insert(0, prov)
+        #    current = prov.parent
+        
+        # So if we have C -> B -> A (A is parent of B, B is parent of C)
+        # 1. current=C. prov=C. lineage=[C]. current=B.
+        # 2. current=B. prov=B. lineage=[B, C]. current=A.
+        # 3. current=A. prov=A. lineage=[A, B, C]. current=None.
+        # So list is [Oldest, ..., Newest].
+        
+        # The notebook wants source info.
+        # The chunk's immediate provenance info contains the source document/path.
+        # So we want the info for the chunk itself (which is the last element).
+        
+        # Note: if lineage list is empty (shouldn't happen if chunk exists), return empty.
+        # Actually, get_chunk_lineage calls get_provenance(chunk_id) first.
+        
+        if not lineage_list:
+            return {}
+
+        # Use the provenance info of the chunk itself
+        prov = lineage_list[-1]
+        
+        return {
+            "source": {
+                "document_id": prov.source_document,
+                "file_path": prov.source_path,
+                "timestamp": prov.timestamp,
+                "method": prov.metadata.get("method"), # method is often in metadata
+                **prov.metadata
+            },
+            "lineage_chain": [self._provenance_to_dict(p) for p in lineage_list]
+        }
 
     def link_chunks(
         self, chunk_id1: str, chunk_id2: str, relationship: str = "related"

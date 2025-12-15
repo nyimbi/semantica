@@ -93,6 +93,17 @@ class ConsoleProgressDisplay(ProgressDisplay):
 
     def __init__(self, use_emoji: bool = True, update_interval: float = 0.1):
         self.use_emoji = use_emoji
+        
+        # Check if stdout supports emojis (especially on Windows)
+        if self.use_emoji:
+            try:
+                # Try encoding a test emoji with stdout's encoding
+                encoding = getattr(sys.stdout, "encoding", None)
+                if encoding:
+                    "🧠".encode(encoding)
+            except (UnicodeEncodeError, LookupError, AttributeError):
+                self.use_emoji = False
+
         self.update_interval = update_interval
         self.last_update = 0.0
         self.current_lines: Dict[str, str] = {}
@@ -192,6 +203,17 @@ class ConsoleProgressDisplay(ProgressDisplay):
         action = action_map.get(module or "", "is processing")
         return f"Semantica {action}"
 
+    def _safe_write(self, text: str) -> None:
+        """Safely write text to stdout handling encoding errors."""
+        try:
+            sys.stdout.write(text)
+        except UnicodeEncodeError:
+            # Fallback: encode with replacement and write decoded
+            # Use ascii as safe fallback if encoding is unknown or caused error
+            encoding = getattr(sys.stdout, "encoding", None) or "ascii"
+            safe_text = text.encode(encoding, errors="replace").decode(encoding)
+            sys.stdout.write(safe_text)
+
     def update(self, item: ProgressItem) -> None:
         """Update console progress display."""
         if not self._should_update():
@@ -243,27 +265,27 @@ class ConsoleProgressDisplay(ProgressDisplay):
             self.current_lines[key] = line
 
             # Print all current lines (overwrite previous)
-            sys.stdout.write("\r" + " " * 100 + "\r")  # Clear line
+            self._safe_write("\r" + " " * 100 + "\r")  # Clear line
             if len(self.current_lines) == 1:
-                sys.stdout.write(line)
+                self._safe_write(line)
             else:
                 # Multiple items - show all
                 lines_list = list(self.current_lines.values())
-                sys.stdout.write("\n".join(lines_list[-3:]))  # Show last 3
+                self._safe_write("\n".join(lines_list[-3:]))  # Show last 3
             sys.stdout.flush()
 
     def show_summary(self, items: List[ProgressItem]) -> None:
         """Show final summary."""
         with self.lock:
             # Clear current display
-            sys.stdout.write("\n" + "=" * 80 + "\n")
+            self._safe_write("\n" + "=" * 80 + "\n")
 
             # Summary header
             if self.use_emoji:
-                sys.stdout.write("🧠 Semantica - 📊 Progress Summary\n")
+                self._safe_write("🧠 Semantica - 📊 Progress Summary\n")
             else:
-                sys.stdout.write("Semantica - Progress Summary\n")
-            sys.stdout.write("=" * 80 + "\n")
+                self._safe_write("Semantica - Progress Summary\n")
+            self._safe_write("=" * 80 + "\n")
 
             # Group by module
             by_module: Dict[str, List[ProgressItem]] = {}
@@ -281,10 +303,10 @@ class ConsoleProgressDisplay(ProgressDisplay):
             for module, module_items in by_module.items():
                 if self.use_emoji:
                     emoji = self._get_emoji_for_module(module)
-                    sys.stdout.write(f"\n{emoji} {module.upper()}\n")
+                    self._safe_write(f"\n{emoji} {module.upper()}\n")
                 else:
-                    sys.stdout.write(f"\n{module.upper()}\n")
-                sys.stdout.write("-" * 80 + "\n")
+                    self._safe_write(f"\n{module.upper()}\n")
+                self._safe_write("-" * 80 + "\n")
 
                 for item in module_items:
                     status_emoji = self._get_status_emoji(item.status)
@@ -298,7 +320,8 @@ class ConsoleProgressDisplay(ProgressDisplay):
                     if item.file:
                         line += f" - {Path(item.file).name}"
                     line += duration
-                    sys.stdout.write(line + "\n")
+
+                    self._safe_write(line + "\n")
 
                     if item.status == "completed":
                         completed += 1
@@ -309,22 +332,22 @@ class ConsoleProgressDisplay(ProgressDisplay):
                         total_time += item.end_time - item.start_time
 
             # Final stats
-            sys.stdout.write("\n" + "=" * 80 + "\n")
+            self._safe_write("\n" + "=" * 80 + "\n")
             if self.use_emoji:
-                sys.stdout.write(
+                self._safe_write(
                     f"✅ Completed: {completed} | ❌ Failed: {failed} | ⏱️  Total Time: {total_time:.2f}s\n"
                 )
             else:
-                sys.stdout.write(
+                self._safe_write(
                     f"Completed: {completed} | Failed: {failed} | Total Time: {total_time:.2f}s\n"
                 )
-            sys.stdout.write("=" * 80 + "\n")
+            self._safe_write("=" * 80 + "\n")
             sys.stdout.flush()
 
     def clear(self) -> None:
         """Clear console display."""
         with self.lock:
-            sys.stdout.write("\r" + " " * 100 + "\r")
+            self._safe_write("\r" + " " * 100 + "\r")
             sys.stdout.flush()
             self.current_lines.clear()
 
