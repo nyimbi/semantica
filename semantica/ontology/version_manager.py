@@ -165,7 +165,10 @@ class VersionManager:
         base_uri = base_uri.rstrip("/")
 
         # Add version to IRI
-        return f"{base_uri}/v{version}"
+        suffix = f"/v{version}"
+        if base_uri.endswith(suffix):
+            return base_uri
+        return f"{base_uri}{suffix}"
 
     def generate_element_iri(
         self, element_name: str, element_type: str = "class"

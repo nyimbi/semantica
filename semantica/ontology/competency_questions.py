@@ -239,16 +239,21 @@ class CompetencyQuestionsManager:
         self, ontology: Dict[str, Any], question: CompetencyQuestion
     ) -> bool:
         """Check if ontology can answer the question (basic heuristic)."""
-        # Extract keywords from question
-        question_lower = question.question.lower()
+        # Helper to clean text
+        def clean_text(text):
+            import string
+            return text.translate(str.maketrans("", "", string.punctuation))
 
+        # Extract keywords from question
+        question_clean = clean_text(question.question.lower())
+        
         # Check if ontology has relevant classes
         classes = ontology.get("classes", [])
         for cls in classes:
             class_name_lower = cls.get("name", "").lower()
             if any(
                 word in class_name_lower
-                for word in question_lower.split()
+                for word in question_clean.split()
                 if len(word) > 3
             ):
                 return True
@@ -259,7 +264,7 @@ class CompetencyQuestionsManager:
             prop_name_lower = prop.get("name", "").lower()
             if any(
                 word in prop_name_lower
-                for word in question_lower.split()
+                for word in question_clean.split()
                 if len(word) > 3
             ):
                 return True
@@ -290,8 +295,9 @@ class CompetencyQuestionsManager:
             ```
         """
         elements = []
-        question_lower = question.question.lower()
-        keywords = [w for w in question_lower.split() if len(w) > 3]
+        import string
+        question_clean = question.question.lower().translate(str.maketrans("", "", string.punctuation))
+        keywords = [w for w in question_clean.split() if len(w) > 3]
 
         # Find relevant classes
         classes = ontology.get("classes", [])
