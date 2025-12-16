@@ -462,6 +462,7 @@ class OntologyGenerator:
             "version": self.namespace_manager.version,
             "classes": classes,
             "properties": properties,
+            "imports": [],
             "metadata": {
                 **typed_definitions.get("metadata", {}),
                 "class_count": len(classes),
