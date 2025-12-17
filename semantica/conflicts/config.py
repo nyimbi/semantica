@@ -6,7 +6,8 @@ resolution operations, supporting multiple configuration sources including envir
 variables, config files, and programmatic configuration.
 
 Supported Configuration Sources:
-    - Environment variables: CONFLICT_CONFIDENCE_THRESHOLD, CONFLICT_DEFAULT_STRATEGY, etc.
+    - Environment variables: CONFLICT_CONFIDENCE_THRESHOLD,
+      CONFLICT_DEFAULT_STRATEGY, etc.
     - Config files: YAML, JSON, TOML formats
     - Programmatic: Python API for setting conflict configurations
 
@@ -47,7 +48,11 @@ from ..utils.logging import get_logger
 
 
 class ConflictsConfig:
-    """Configuration manager for conflicts module - supports .env files, environment variables, and programmatic config."""
+    """
+    Configuration manager for conflicts module.
+
+    Supports .env files, environment variables, and programmatic config.
+    """
 
     def __init__(self, config_file: Optional[str] = None):
         """Initialize configuration manager."""

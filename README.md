@@ -399,13 +399,14 @@ result = ExecutionEngine().execute_pipeline(pipeline, parallel=True)
 from semantica.deduplication import DuplicateDetector
 from semantica.conflicts import ConflictDetector
 
-conflicts = ConflictDetector().detect_conflicts(kg)
-duplicates = DuplicateDetector().find_duplicates(entities=kg.entities, similarity_threshold=0.85)
+entities = kg.get("entities", [])
+conflicts = ConflictDetector().detect_conflicts(entities)
+duplicates = DuplicateDetector(similarity_threshold=0.85).detect_duplicates(entities)
 
 print(f"Conflicts: {len(conflicts)} | Duplicates: {len(duplicates)}")
 ```
 
-[**Cookbook: Conflict Detection**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/17_Conflict_Detection.ipynb) • [**Deduplication**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/18_Deduplication.ipynb) • [**Conflict Resolution**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/advanced/04_Conflict_Resolution_Strategies.ipynb)
+[**Cookbook: Conflict Detection & Resolution**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/17_Conflict_Detection_and_Resolution.ipynb) • [**Deduplication**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/18_Deduplication.ipynb)
 
 ### Export & Integration
 

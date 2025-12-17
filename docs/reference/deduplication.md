@@ -676,13 +676,14 @@ Configuration is loaded in the following priority order:
 ### Ingestion Pipeline
 
 ```python
-from semantica.ingest import Ingestor
+from semantica.core import Semantica
 from semantica.deduplication import DuplicateDetector, EntityMerger, MergeStrategy
-from semantica.kg import KnowledgeGraph
 
-# 1. Ingest
-ingestor = Ingestor()
-raw_entities = ingestor.ingest_batch(files)
+# 1. Build knowledge base
+semantica = Semantica()
+result = semantica.build_knowledge_base(files)
+kg = result["knowledge_graph"]
+raw_entities = kg.get("entities", [])
 
 # 2. Deduplicate
 detector = DuplicateDetector(similarity_threshold=0.85)
@@ -696,10 +697,6 @@ merge_operations = merger.merge_duplicates(
 
 # Extract merged entities
 merged_entities = [op.merged_entity for op in merge_operations]
-
-# 3. Load to KG
-kg = KnowledgeGraph()
-kg.add_entities(merged_entities)
 ```
 
 ---

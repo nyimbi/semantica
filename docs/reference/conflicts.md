@@ -255,22 +255,20 @@ conflicts:
 
 ```python
 from semantica.conflicts import ConflictDetector, ConflictResolver
-from semantica.ingest import Ingestor
+from semantica.core import Semantica
 
-# 1. Ingest from multiple sources
-ingestor = Ingestor()
-data1 = ingestor.ingest("source1.pdf")
-data2 = ingestor.ingest("source2.html")
-
-# 2. Combine entities (assuming same IDs)
-combined_entities = data1.entities + data2.entities
+# 1. Build knowledge base from multiple sources
+semantica = Semantica()
+result = semantica.build_knowledge_base(["source1.pdf", "source2.html"])
+kg = result["knowledge_graph"]
+entities = kg.get("entities", [])
 
 # 3. Detect conflicts
 detector = ConflictDetector()
-conflicts = detector.detect_value_conflicts(combined_entities, "revenue")
+conflicts = detector.detect_value_conflicts(entities, "revenue")
 
 # 4. Resolve conflicts
-resolver = ConflictResolver()
+resolver = ConflictResolver(default_strategy="credibility_weighted")
 resolutions = resolver.resolve_conflicts(
     conflicts,
     strategy="credibility_weighted"
@@ -322,5 +320,4 @@ tracker.set_source_credibility("bad_source", 0.1)
 
 ## Cookbook
 
-- [Conflict Detection](https://github.com/Hawksight-AI/semantica/blob/main/cookbook/introduction/17_Conflict_Detection.ipynb)
-- [Conflict Resolution Strategies](https://github.com/Hawksight-AI/semantica/blob/main/cookbook/advanced/04_Conflict_Resolution_Strategies.ipynb)
+- [Conflict Detection & Resolution](https://github.com/Hawksight-AI/semantica/blob/main/cookbook/introduction/17_Conflict_Detection_and_Resolution.ipynb)

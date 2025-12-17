@@ -2286,24 +2286,25 @@ flowchart LR
     Find conflicts in your knowledge graph:
     
     ```python
-    from semantica.kg import ConflictDetector
-    from semantica.conflicts import ConflictAnalyzer, detect_conflicts
+    from semantica.conflicts import ConflictAnalyzer, ConflictDetector
     
     # Sample knowledge graph with conflicts
     kg = {
         "entities": [
             {
-                "id": "e1", 
-                "text": "Apple Inc.", 
+                "id": "e1",
+                "text": "Apple Inc.",
                 "type": "Organization",
-                "properties": {"founded": "1976", "employees": "160000"},
+                "founded": "1976",
+                "employees": "160000",
                 "source": "wikipedia"
             },
             {
-                "id": "e2", 
-                "text": "Apple Inc.", 
+                "id": "e1",
+                "text": "Apple Inc.",
                 "type": "Organization",
-                "properties": {"founded": "1977", "employees": "164000"},
+                "founded": "1977",
+                "employees": "164000",
                 "source": "bloomberg"
             },
         ],
@@ -2315,14 +2316,6 @@ flowchart LR
         ]
     }
     
-    # Method 1: Using convenience function
-    conflicts = detect_conflicts(
-        kg["entities"],
-        method="value",
-        property_name="founded"
-    )
-    
-    # Method 2: Using ConflictDetector class
     detector = ConflictDetector()
     all_conflicts = detector.detect_value_conflicts(kg["entities"], "founded")
     
@@ -2331,17 +2324,17 @@ flowchart LR
         print(f"  Type: {conflict.conflict_type.value}")
         print(f"  Entity: {conflict.entity_id}")
         print(f"  Property: {conflict.property_name}")
-        print(f"  Values: {[v['value'] for v in conflict.values]}")
+        print(f"  Values: {conflict.conflicting_values}")
         print(f"  Sources: {conflict.sources}")
     
     # Analyze conflicts
     analyzer = ConflictAnalyzer()
-    analysis = analyzer.analyze(all_conflicts)
+    analysis = analyzer.analyze_conflicts(all_conflicts)
     
     print(f"Conflict Analysis:")
     print(f"  Total conflicts: {analysis['total_conflicts']}")
-    print(f"  By type: {analysis['by_type']}")
-    print(f"  By severity: {analysis['by_severity']}")
+    print(f"  By type: {analysis.get('by_type', {}).get('counts')}")
+    print(f"  By severity: {analysis.get('by_severity', {}).get('counts')}")
     ```
 
 === "Resolution Strategies"
@@ -2350,7 +2343,6 @@ flowchart LR
     ```python
     from semantica.conflicts import (
         ConflictResolver,
-        ResolutionStrategy,
         Conflict,
         ConflictType
     )
@@ -2360,95 +2352,76 @@ flowchart LR
         Conflict(
             conflict_id="c1",
             entity_id="e1",
-            conflict_type=ConflictType.VALUE,
+            conflict_type=ConflictType.VALUE_CONFLICT,
             property_name="founded",
-            values=[
-                {"value": "1976", "source": "wikipedia", "confidence": 0.95},
-                {"value": "1976", "source": "sec_filing", "confidence": 0.99},
-                {"value": "1977", "source": "news_article", "confidence": 0.70}
+            conflicting_values=["1976", "1976", "1977"],
+            sources=[
+                {"document": "wikipedia", "confidence": 0.95},
+                {"document": "sec_filing", "confidence": 0.99},
+                {"document": "news_article", "confidence": 0.70},
             ],
-            sources=["wikipedia", "sec_filing", "news_article"]
         )
     ]
     
     # Strategy 1: Voting (most common value wins)
-    resolver_voting = ConflictResolver(strategy=ResolutionStrategy.VOTING)
-    resolved_voting = resolver_voting.resolve(conflicts)
+    resolver = ConflictResolver()
+    resolved_voting = resolver.resolve_conflicts(conflicts, strategy="voting")
     
     print("Voting Resolution:")
     for r in resolved_voting:
-        print(f"  {r.property_name}: {r.resolved_value}")
+        print(f"  {r.conflict_id}: {r.resolved_value} (confidence: {r.confidence:.2f})")
     
     # Strategy 2: Highest confidence
-    resolver_conf = ConflictResolver(strategy=ResolutionStrategy.HIGHEST_CONFIDENCE)
-    resolved_conf = resolver_conf.resolve(conflicts)
+    resolved_conf = resolver.resolve_conflicts(conflicts, strategy="highest_confidence")
     
     print("Highest Confidence Resolution:")
     for r in resolved_conf:
-        print(f"  {r.property_name}: {r.resolved_value} (confidence: {r.confidence:.2f})")
+        print(f"  {r.conflict_id}: {r.resolved_value} (confidence: {r.confidence:.2f})")
     
-    # Strategy 3: Source priority
-    resolver_priority = ConflictResolver(
-        strategy=ResolutionStrategy.SOURCE_PRIORITY,
-        source_priority=["sec_filing", "wikipedia", "news_article"]
-    )
-    resolved_priority = resolver_priority.resolve(conflicts)
+    # Strategy 3: Credibility weighted
+    resolved_cred = resolver.resolve_conflicts(conflicts, strategy="credibility_weighted")
     
-    print("Source Priority Resolution:")
-    for r in resolved_priority:
-        print(f"  {r.property_name}: {r.resolved_value} (source: {r.selected_source})")
+    print("Credibility Weighted Resolution:")
+    for r in resolved_cred:
+        print(f"  {r.conflict_id}: {r.resolved_value} (confidence: {r.confidence:.2f})")
     ```
 
 === "Custom Resolution Rules"
     Define custom resolution rules per property:
     
     ```python
-    from semantica.conflicts import (
-        ConflictResolver,
-        ResolutionStrategy,
-        resolve_conflicts
-    )
+    from semantica.conflicts import ConflictResolver
     
     # Define property-specific resolution rules
     resolution_config = {
         "founded": {
-            "strategy": ResolutionStrategy.SOURCE_PRIORITY,
-            "source_priority": ["official_records", "sec_filing", "wikipedia"]
+            "strategy": "highest_confidence",
         },
         "revenue": {
-            "strategy": ResolutionStrategy.MOST_RECENT,
+            "strategy": "most_recent",
         },
         "employees": {
-            "strategy": ResolutionStrategy.VOTING,
+            "strategy": "voting",
         },
         "ceo": {
-            "strategy": ResolutionStrategy.HIGHEST_CONFIDENCE,
+            "strategy": "highest_confidence",
         }
     }
     
-    # Create resolver with custom config
-    resolver = ConflictResolver(
-        strategy=ResolutionStrategy.HIGHEST_CONFIDENCE,
-        min_confidence=0.7
-    )
+    resolver = ConflictResolver()
     
     # Resolve conflicts for each property
     resolved_values = {}
     for property_name, config in resolution_config.items():
-        property_resolver = ConflictResolver(
-            strategy=config["strategy"],
-            source_priority=config.get("source_priority")
-        )
-        
         # Get conflicts for this property
         property_conflicts = [c for c in conflicts if c.property_name == property_name]
         
         if property_conflicts:
-            results = property_resolver.resolve(property_conflicts)
+            results = resolver.resolve_conflicts(property_conflicts, strategy=config["strategy"])
             for result in results:
                 resolved_values[property_name] = {
                     "value": result.resolved_value,
-                    "strategy": config["strategy"].value,
+                    "strategy": config["strategy"],
                     "confidence": result.confidence
                 }
     
@@ -2462,54 +2435,45 @@ flowchart LR
     
     ```python
     from semantica.conflicts import SourceTracker, SourceReference
+    from datetime import datetime
     
     # Initialize source tracker
     tracker = SourceTracker()
     
-    # Add entities from different sources
-    tracker.add_source(SourceReference(
-        entity_id="e1",
-        property_name="founded",
-        value="1976",
-        source="wikipedia",
-        timestamp="2024-01-15",
-        confidence=0.95
-    ))
+    tracker.track_property_source(
+        "e1",
+        "founded",
+        "1976",
+        SourceReference(document="wikipedia", confidence=0.95, timestamp=datetime(2024, 1, 15)),
+    )
+    tracker.track_property_source(
+        "e1",
+        "founded",
+        "1976",
+        SourceReference(document="sec_filing", confidence=0.99, timestamp=datetime(2024, 3, 1)),
+    )
+    tracker.track_property_source(
+        "e1",
+        "founded",
+        "1977",
+        SourceReference(document="news_article", confidence=0.70, timestamp=datetime(2024, 2, 20)),
+    )
     
-    tracker.add_source(SourceReference(
-        entity_id="e1",
-        property_name="founded",
-        value="1976",
-        source="sec_filing",
-        timestamp="2024-03-01",
-        confidence=0.99
-    ))
-    
-    tracker.add_source(SourceReference(
-        entity_id="e1",
-        property_name="founded",
-        value="1977",
-        source="news_article",
-        timestamp="2024-02-20",
-        confidence=0.70
-    ))
-    
-    # Get all sources for an entity
-    sources = tracker.get_sources("e1")
+    sources = tracker.get_entity_sources("e1")
     
     print("Entity Sources:")
     for source in sources:
-        print(f"  Source: {source.source}")
-        print(f"  Property: {source.property_name}")
-        print(f"  Value: {source.value}")
+        print(f"  Source: {source.document}")
         print(f"  Confidence: {source.confidence}")
     
     # Get property-specific sources
     property_sources = tracker.get_property_sources("e1", "founded")
     
     print("Property Sources for 'founded':")
-    for ps in property_sources:
-        print(f"  {ps.value} from {ps.source} ({ps.timestamp})")
+    if property_sources:
+        print(f"  Value: {property_sources.value}")
+        for ps in property_sources.sources:
+            print(f"  {ps.document} ({ps.timestamp})")
     ```
 
 === "Conflict Investigation"
@@ -2518,7 +2482,6 @@ flowchart LR
     ```python
     from semantica.conflicts import (
         InvestigationGuideGenerator,
-        ConflictDetector,
         Conflict,
         ConflictType
     )
@@ -2530,14 +2493,14 @@ flowchart LR
     conflict = Conflict(
         conflict_id="c1",
         entity_id="e1",
-        conflict_type=ConflictType.VALUE,
+        conflict_type=ConflictType.VALUE_CONFLICT,
         property_name="founded",
-        values=[
-            {"value": "1976", "source": "wikipedia", "confidence": 0.95},
-            {"value": "1977", "source": "news", "confidence": 0.70}
+        conflicting_values=["1976", "1977"],
+        sources=[
+            {"document": "wikipedia", "confidence": 0.95},
+            {"document": "news", "confidence": 0.70},
         ],
-        sources=["wikipedia", "news"],
-        severity=0.6
+        severity="medium"
     )
     
     # Generate investigation guide
@@ -2546,25 +2509,14 @@ flowchart LR
     print("Conflict Investigation Guide:")
     print(f"  Conflict ID: {guide.conflict_id}")
     print(f"  Title: {guide.title}")
-    print(f"  Summary: {guide.summary}")
+    print(f"  Summary: {guide.conflict_summary}")
     
     print("Investigation Steps:")
-    for i, step in enumerate(guide.steps, 1):
+    for i, step in enumerate(guide.investigation_steps, 1):
         print(f"  {i}. {step.description}")
-        print(f"     Priority: {step.priority}")
         if step.expected_outcome:
             print(f"     Expected: {step.expected_outcome}")
-    
-    print("Checklist:")
-    for item in guide.checklist:
-        print(f"  [ ] {item}")
-    
-    # Get context for the conflict
-    context = guide_generator.get_conflict_context(conflict)
-    print(f"Context:")
-    print(f"  Entity: {context.get('entity_text', 'Unknown')}")
-    print(f"  Property: {context.get('property', 'Unknown')}")
-    print(f"  Value count: {len(conflict.values)}")
+    print(f"  Value count: {len(conflict.conflicting_values)}")
 
     ```
 

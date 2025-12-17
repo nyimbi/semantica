@@ -727,18 +727,13 @@ print(f"Reduced from {len(entities)} to {len(merged_entities)} entities")
 **Quick Example:**
 
 ```python
-from semantica.conflicts import detect_and_resolve, ConflictDetector
+from semantica.conflicts import ConflictDetector, ConflictResolver
 
-# Using convenience function
-conflicts, results = detect_and_resolve(
-    entities,
-    property_name="name",
-    resolution_strategy="voting"
-)
-
-# Using classes directly
 detector = ConflictDetector()
 conflicts = detector.detect_value_conflicts(entities, "name")
+
+resolver = ConflictResolver()
+results = resolver.resolve_conflicts(conflicts, strategy="voting")
 ```
 
 ---

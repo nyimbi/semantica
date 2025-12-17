@@ -22,7 +22,8 @@ Algorithms Used:
 
 Key Features:
     - Method registry for custom conflict methods
-    - Task-based method organization (detection, resolution, analysis, tracking, investigation)
+    - Task-based method organization (detection, resolution, analysis, tracking,
+      investigation)
     - Dynamic registration and unregistration
     - Easy discovery of available methods
     - Support for community-contributed extensions
@@ -35,14 +36,16 @@ Global Instances:
 
 Example Usage:
     >>> from semantica.conflicts.registry import method_registry
-    >>> method_registry.register("resolution", "custom_method", custom_resolution_function)
+    >>> method_registry.register(
+    ...     "resolution", "custom_method", custom_resolution_function
+    ... )
     >>> available = method_registry.list_all("resolution")
 
 Author: Semantica Contributors
 License: MIT
 """
 
-from typing import Any, Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 
 class MethodRegistry:
@@ -62,7 +65,8 @@ class MethodRegistry:
         Register a custom conflict method.
 
         Args:
-            task: Task type ("detection", "resolution", "analysis", "tracking", "investigation")
+            task: Task type ("detection", "resolution", "analysis", "tracking",
+                "investigation")
             name: Method name
             method_func: Method function
         """
@@ -76,7 +80,8 @@ class MethodRegistry:
         Get method by task and name.
 
         Args:
-            task: Task type ("detection", "resolution", "analysis", "tracking", "investigation")
+            task: Task type ("detection", "resolution", "analysis", "tracking",
+                "investigation")
             name: Method name
 
         Returns:
@@ -105,7 +110,8 @@ class MethodRegistry:
         Unregister a method.
 
         Args:
-            task: Task type ("detection", "resolution", "analysis", "tracking", "investigation")
+            task: Task type ("detection", "resolution", "analysis", "tracking",
+                "investigation")
             name: Method name
         """
         if task in cls._methods and name in cls._methods[task]:

@@ -11,11 +11,14 @@ Algorithms Used:
 Conflict Detection:
     - Value Comparison: Property value comparison across sources with equality checking
     - Type Mismatch Detection: Entity type comparison and mismatch identification
-    - Relationship Consistency: Relationship property comparison and inconsistency detection
+    - Relationship Consistency: Relationship property comparison and inconsistency
+      detection
     - Temporal Analysis: Time-based conflict detection using timestamp comparison
     - Logical Consistency: Logical rule validation and inconsistency detection
-    - Severity Calculation: Multi-factor severity scoring (property importance, value difference, source count)
-    - Confidence Scoring: Confidence calculation based on source credibility and value diversity
+    - Severity Calculation: Multi-factor severity scoring (property importance,
+      value difference, source count)
+    - Confidence Scoring: Confidence calculation based on source credibility and
+      value diversity
 
 Conflict Resolution:
     - Voting Algorithm: Majority value selection using Counter-based frequency counting
@@ -25,7 +28,8 @@ Conflict Resolution:
     - Manual Flagging: Conflict flagging for human review workflow
 
 Conflict Analysis:
-    - Pattern Identification: Frequency-based pattern detection using Counter and defaultdict
+    - Pattern Identification: Frequency-based pattern detection using Counter and
+      defaultdict
     - Type Classification: Conflict type categorization and grouping
     - Severity Analysis: Severity-based grouping and analysis
     - Source Analysis: Source-based conflict aggregation and analysis
@@ -97,6 +101,14 @@ from .methods import (
 from .registry import MethodRegistry, method_registry
 from .source_tracker import PropertySource, SourceReference, SourceTracker
 
+voting = ResolutionStrategy.VOTING
+credibility_weighted = ResolutionStrategy.CREDIBILITY_WEIGHTED
+most_recent = ResolutionStrategy.MOST_RECENT
+first_seen = ResolutionStrategy.FIRST_SEEN
+highest_confidence = ResolutionStrategy.HIGHEST_CONFIDENCE
+manual_review = ResolutionStrategy.MANUAL_REVIEW
+expert_review = ResolutionStrategy.EXPERT_REVIEW
+
 
 __all__ = [
     # Core Classes
@@ -109,6 +121,13 @@ __all__ = [
     "ConflictResolver",
     "ResolutionResult",
     "ResolutionStrategy",
+    "voting",
+    "credibility_weighted",
+    "most_recent",
+    "first_seen",
+    "highest_confidence",
+    "manual_review",
+    "expert_review",
     "InvestigationGuideGenerator",
     "InvestigationGuide",
     "InvestigationStep",

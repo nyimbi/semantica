@@ -150,45 +150,20 @@ print(f"Resolved {resolution_result.get('resolved_count')} conflicts")
 ### Using Detection Methods
 
 ```python
-from semantica.conflicts.methods import detect_conflicts
+from semantica.conflicts import ConflictDetector
 
-# Value conflict detection
-conflicts = detect_conflicts(
-    entities,
-    method="value",
-    property_name="name"
-)
+detector = ConflictDetector()
 
-# Type conflict detection
-conflicts = detect_conflicts(
-    entities,
-    method="type"
-)
+value_conflicts = detector.detect_value_conflicts(entities, property_name="name")
+type_conflicts = detector.detect_type_conflicts(entities)
+relationship_conflicts = detector.detect_relationship_conflicts(relationships)
+temporal_conflicts = detector.detect_temporal_conflicts(entities)
 
-# Relationship conflict detection
-conflicts = detect_conflicts(
-    entities,
-    method="relationship",
-    relationships=relationships
-)
-
-# Temporal conflict detection
-conflicts = detect_conflicts(
-    entities,
-    method="temporal"
-)
-
-# Logical conflict detection
-conflicts = detect_conflicts(
-    entities,
-    method="logical"
-)
-
-# Entity-wide conflict detection
-conflicts = detect_conflicts(
-    entities,
-    method="entity",
-    entity_type="Company"
+conflicts = (
+    value_conflicts
+    + type_conflicts
+    + relationship_conflicts
+    + temporal_conflicts
 )
 ```
 
@@ -291,28 +266,10 @@ for result in results:
 ### Using Resolution Methods
 
 ```python
-from semantica.conflicts.methods import resolve_conflicts
+from semantica.conflicts import ConflictResolver
 
-# Voting resolution
-results = resolve_conflicts(conflicts, method="voting")
-
-# Credibility weighted resolution
-results = resolve_conflicts(conflicts, method="credibility_weighted")
-
-# Most recent resolution
-results = resolve_conflicts(conflicts, method="most_recent")
-
-# First seen resolution
-results = resolve_conflicts(conflicts, method="first_seen")
-
-# Highest confidence resolution
-results = resolve_conflicts(conflicts, method="highest_confidence")
-
-# Manual review
-results = resolve_conflicts(conflicts, method="manual_review")
-
-# Expert review
-results = resolve_conflicts(conflicts, method="expert_review")
+resolver = ConflictResolver()
+results = resolver.resolve_conflicts(conflicts, strategy="voting")
 ```
 
 ## Conflict Analysis
@@ -327,7 +284,7 @@ analyzer = ConflictAnalyzer()
 # Analyze conflict patterns
 analysis = analyzer.analyze_conflicts(conflicts)
 
-print(f"Total conflicts: {analysis['statistics']['total_conflicts']}")
+print(f"Total conflicts: {analysis['total_conflicts']}")
 print(f"Patterns found: {len(analysis['patterns'])}")
 
 for pattern in analysis['patterns']:
@@ -346,7 +303,7 @@ analyzer = ConflictAnalyzer()
 analysis = analyzer.analyze_conflicts(conflicts)
 
 print("Conflicts by type:")
-for conflict_type, count in analysis['by_type'].items():
+for conflict_type, count in analysis['by_type']['counts'].items():
     print(f"  {conflict_type}: {count}")
 ```
 
@@ -361,8 +318,8 @@ analyzer = ConflictAnalyzer()
 analysis = analyzer.analyze_conflicts(conflicts)
 
 print("Conflicts by severity:")
-for severity, conflicts_list in analysis['by_severity'].items():
-    print(f"  {severity}: {len(conflicts_list)} conflicts")
+for severity, count in analysis['by_severity']['counts'].items():
+    print(f"  {severity}: {count} conflicts")
 ```
 
 ### Source Analysis
@@ -376,8 +333,8 @@ analyzer = ConflictAnalyzer()
 analysis = analyzer.analyze_conflicts(conflicts)
 
 print("Conflicts by source:")
-for source, conflicts_list in analysis['by_source'].items():
-    print(f"  {source}: {len(conflicts_list)} conflicts")
+for source, count in analysis['by_source']['counts'].items():
+    print(f"  {source}: {count} conflicts")
 ```
 
 ### Trend Analysis
@@ -399,22 +356,10 @@ for trend in trends:
 ### Using Analysis Methods
 
 ```python
-from semantica.conflicts.methods import analyze_conflicts
+from semantica.conflicts import ConflictAnalyzer
 
-# Pattern analysis
-analysis = analyze_conflicts(conflicts, method="pattern")
-
-# Type analysis
-analysis = analyze_conflicts(conflicts, method="type")
-
-# Severity analysis
-analysis = analyze_conflicts(conflicts, method="severity")
-
-# Source analysis
-analysis = analyze_conflicts(conflicts, method="source")
-
-# Trend analysis
-analysis = analyze_conflicts(conflicts, method="trend")
+analyzer = ConflictAnalyzer()
+analysis = analyzer.analyze_conflicts(conflicts)
 ```
 
 ## Source Tracking
@@ -446,8 +391,8 @@ tracker.track_property_source(
 )
 
 # Get property sources
-sources = tracker.get_property_sources("entity_1", "name")
-for prop_source in sources:
+prop_source = tracker.get_property_sources("entity_1", "name")
+if prop_source:
     print(f"Value: {prop_source.value}")
     print(f"Sources: {len(prop_source.sources)}")
 ```
@@ -517,40 +462,22 @@ chain = tracker.generate_traceability_chain("entity_1", "name")
 
 print("Traceability chain:")
 for step in chain:
-    print(f"  {step['type']}: {step['identifier']}")
-    print(f"    Sources: {step['sources']}")
+    print(f"  {step['type']}: {step['entity_id']}.{step.get('property_name')}")
+    print(f"    Source: {step.get('source', {}).get('document')}")
 ```
 
 ### Using Tracking Methods
 
 ```python
-from semantica.conflicts.methods import track_sources
-from semantica.conflicts import SourceReference
+from semantica.conflicts import SourceTracker, SourceReference
 
-# Property tracking
 source = SourceReference(document="doc1", confidence=0.9)
-track_sources(
-    "entity_1",
-    method="property",
-    property_name="name",
-    value="Apple Inc.",
-    source=source
-)
+tracker = SourceTracker()
+tracker.track_property_source("entity_1", "name", "Apple Inc.", source)
 
-# Entity tracking
-track_sources(
-    "entity_1",
-    method="entity",
-    source=source
-)
+tracker.track_entity_source("entity_1", source)
 
-# Relationship tracking
-track_sources(
-    "entity_1",
-    method="relationship",
-    relationship_id="rel_1",
-    source=source
-)
+tracker.track_relationship_source("rel_1", source)
 ```
 
 ## Investigation Guides
@@ -613,16 +540,14 @@ print(checklist_md)
 ### Using Investigation Methods
 
 ```python
-from semantica.conflicts.methods import generate_investigation_guide
+from semantica.conflicts import InvestigationGuideGenerator
 
-# Generate guide
-guide = generate_investigation_guide(conflict, method="guide")
+generator = InvestigationGuideGenerator()
+guide = generator.generate_guide(conflict)
 
-# Generate checklist
-checklist = generate_investigation_guide(conflict, method="checklist")
+checklist = generator.export_investigation_checklist(guide, format="text")
 
-# Extract context
-context = generate_investigation_guide(conflict, method="context")
+context = guide.context
 ```
 
 ## Using Methods
@@ -630,26 +555,37 @@ context = generate_investigation_guide(conflict, method="context")
 ### List Available Methods
 
 ```python
-from semantica.conflicts.methods import list_available_methods
+from semantica.conflicts import MethodRegistry
 
 # List all available methods
-all_methods = list_available_methods()
-print("Available methods:")
+all_methods = MethodRegistry.list_all()
+print("Registered methods:")
 for task, methods in all_methods.items():
     print(f"  {task}: {methods}")
 
 # List methods for specific task
-detection_methods = list_available_methods("detection")
+detection_methods = MethodRegistry.list_all("detection")
 print(f"Detection methods: {detection_methods}")
 ```
 
 ### Get Conflict Method
 
 ```python
-from semantica.conflicts.methods import get_conflict_method
+from semantica.conflicts import MethodRegistry, ResolutionResult
 
-# Get a specific method
-method = get_conflict_method("resolution", "voting")
+def custom_resolution_method(conflicts, **kwargs):
+    results = []
+    for conflict in conflicts:
+        result = ResolutionResult(
+            conflict_id=conflict.conflict_id,
+            resolved=True,
+            resolved_value="custom_value"
+        )
+        results.append(result)
+    return results
+
+MethodRegistry.register("resolution", "custom_method", custom_resolution_method)
+method = MethodRegistry.get("resolution", "custom_method")
 if method:
     results = method(conflicts)
 ```
@@ -659,7 +595,7 @@ if method:
 ### Register Custom Method
 
 ```python
-from semantica.conflicts import method_registry
+from semantica.conflicts import MethodRegistry, ResolutionResult
 
 def custom_resolution_method(conflicts, **kwargs):
     """Custom resolution method."""
@@ -676,36 +612,36 @@ def custom_resolution_method(conflicts, **kwargs):
     return results
 
 # Register custom method
-method_registry.register("resolution", "custom_method", custom_resolution_method)
+MethodRegistry.register("resolution", "custom_method", custom_resolution_method)
 
 # Use custom method
-from semantica.conflicts.methods import resolve_conflicts
-results = resolve_conflicts(conflicts, method="custom_method")
+method = MethodRegistry.get("resolution", "custom_method")
+results = method(conflicts) if method else []
 ```
 
 ### List Registered Methods
 
 ```python
-from semantica.conflicts import method_registry
+from semantica.conflicts import MethodRegistry
 
 # List all registered methods
-all_methods = method_registry.list_all()
+all_methods = MethodRegistry.list_all()
 print("Registered methods:")
 for task, methods in all_methods.items():
-    print(f"  {task}: {list(methods.keys())}")
+    print(f"  {task}: {methods}")
 
 # List methods for specific task
-resolution_methods = method_registry.list_all("resolution")
+resolution_methods = MethodRegistry.list_all("resolution")
 print(f"Resolution methods: {resolution_methods}")
 ```
 
 ### Unregister Method
 
 ```python
-from semantica.conflicts import method_registry
+from semantica.conflicts import MethodRegistry
 
 # Unregister a method
-method_registry.unregister("resolution", "custom_method")
+MethodRegistry.unregister("resolution", "custom_method")
 ```
 
 ## Configuration

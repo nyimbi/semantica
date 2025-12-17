@@ -8,13 +8,17 @@ conflicts to help domain experts investigate and resolve discrepancies.
 Algorithms Used:
 
 Guide Generation:
-    - Template-based Generation: Uses conflict type and severity to select appropriate templates
-    - Context Extraction: Extracts conflict context from Conflict object and SourceTracker
+    - Template-based Generation: Uses conflict type and severity to select appropriate
+      templates
+    - Context Extraction: Extracts conflict context from Conflict object and
+      SourceTracker
     - Step Generation: Generates investigation steps based on conflict characteristics
-    - Severity-based Recommendations: Provides recommendations based on conflict severity
+    - Severity-based Recommendations: Provides recommendations based on conflict
+      severity
 
 Checklist Generation:
-    - Step-by-step Checklist Creation: Converts investigation steps into checklist format
+    - Step-by-step Checklist Creation: Converts investigation steps into checklist
+      format
     - Action Item Extraction: Extracts actionable items from investigation steps
     - Priority Ordering: Orders checklist items by priority and severity
 
@@ -25,7 +29,8 @@ Context Extraction:
     - Related Conflicts: Identifies related conflicts for context
 
 Step Generation:
-    - Type-based Steps: Generates steps specific to conflict type (value, type, relationship, etc.)
+    - Type-based Steps: Generates steps specific to conflict type (value, type,
+      relationship, etc.)
     - Severity-based Steps: Adjusts steps based on conflict severity
     - Source Investigation Steps: Includes steps for investigating conflicting sources
     - Resolution Steps: Suggests resolution steps based on conflict characteristics
@@ -233,8 +238,12 @@ class InvestigationGuideGenerator:
             InvestigationStep(
                 step_number=1,
                 description="Review conflict details and context",
-                action="Examine the conflict summary and identify the conflicting values",
-                expected_outcome="Understanding of the nature and scope of the conflict",
+                action=(
+                    "Examine the conflict summary and identify the conflicting values"
+                ),
+                expected_outcome=(
+                    "Understanding of the nature and scope of the conflict"
+                ),
             )
         )
 
@@ -247,7 +256,10 @@ class InvestigationGuideGenerator:
                 InvestigationStep(
                     step_number=2,
                     description="Identify all source documents",
-                    action=f"Locate and review the following source documents: {source_list}",
+                    action=(
+                        "Locate and review the following source documents: "
+                        f"{source_list}"
+                    ),
                     expected_outcome="All source documents identified and accessible",
                 )
             )
@@ -258,7 +270,10 @@ class InvestigationGuideGenerator:
                 InvestigationStep(
                     step_number=3,
                     description="Compare conflicting information across sources",
-                    action="Review each source document and note the specific value and context for each",
+                    action=(
+                        "Review each source document and note the specific value and "
+                        "context for each"
+                    ),
                     expected_outcome="List of values and their sources with context",
                 )
             )
@@ -279,7 +294,10 @@ class InvestigationGuideGenerator:
             InvestigationStep(
                 step_number=5,
                 description="Determine resolution approach",
-                action="Choose resolution strategy based on source credibility, recency, and business rules",
+                action=(
+                    "Choose resolution strategy based on source credibility, "
+                    "recency, and business rules"
+                ),
                 expected_outcome="Resolution approach selected",
             )
         )

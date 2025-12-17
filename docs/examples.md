@@ -112,13 +112,15 @@ Resolve conflicts in data from multiple sources.
 
 ```python
 from semantica.core import Semantica
-from semantica.conflicts import ConflictResolver
+from semantica.conflicts import ConflictDetector, ConflictResolver
 
 semantica = Semantica()
 result = semantica.build_knowledge_base(["source1.pdf", "source2.pdf"])
 
 # Detect and resolve conflicts
-conflicts = semantica.kg.detect_conflicts(result["knowledge_graph"])
+kg = result["knowledge_graph"]
+detector = ConflictDetector()
+conflicts = detector.detect_conflicts(kg["entities"])
 resolver = ConflictResolver(default_strategy="voting")
 resolved = resolver.resolve_conflicts(conflicts)
 ```

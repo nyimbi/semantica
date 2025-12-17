@@ -19,9 +19,11 @@ Type Classification:
     - Type Distribution Analysis: Analyzes distribution of conflict types
 
 Severity Analysis:
-    - Severity-based Grouping: Groups conflicts by severity level (low, medium, high, critical)
+    - Severity-based Grouping: Groups conflicts by severity level (low, medium,
+      high, critical)
     - Severity Distribution: Calculates distribution of severities
-    - Critical Conflict Identification: Identifies critical conflicts requiring immediate attention
+    - Critical Conflict Identification: Identifies critical conflicts requiring
+      immediate attention
 
 Source Analysis:
     - Source-based Aggregation: Aggregates conflicts by source document
@@ -63,14 +65,14 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from collections import Counter, defaultdict
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
-from .conflict_detector import Conflict, ConflictType
+from .conflict_detector import Conflict
 
 
 @dataclass
@@ -304,7 +306,10 @@ class ConflictAnalyzer:
                         affected_properties=[prop],
                         affected_entities=list(entities),
                         metadata={
-                            "description": f"Property '{prop}' has conflicts across {len(entities)} entities"
+                            "description": (
+                                f"Property '{prop}' has conflicts across "
+                                f"{len(entities)} entities"
+                            )
                         },
                     )
                 )
@@ -341,7 +346,9 @@ class ConflictAnalyzer:
                     pattern_type="critical_conflict_cluster",
                     frequency=len(critical_conflicts),
                     metadata={
-                        "description": f"{len(critical_conflicts)} critical conflicts detected"
+                        "description": (
+                            f"{len(critical_conflicts)} critical conflicts detected"
+                        )
                     },
                 )
             )
@@ -365,8 +372,9 @@ class ConflictAnalyzer:
         if top_properties:
             top_prop = top_properties[0]
             recommendations.append(
-                f"Property '{top_prop['property_name']}' has {top_prop['conflict_count']} conflicts. "
-                f"Consider implementing stricter validation or source verification."
+                f"Property '{top_prop['property_name']}' has "
+                f"{top_prop['conflict_count']} conflicts. Consider implementing "
+                f"stricter validation or source verification."
             )
 
         # Recommendation 2: Problematic sources
@@ -376,8 +384,8 @@ class ConflictAnalyzer:
         if problematic_source_patterns:
             for pattern in problematic_source_patterns:
                 recommendations.append(
-                    f"Source '{pattern.common_sources[0]}' appears in multiple conflicts. "
-                    f"Review source quality and credibility."
+                    f"Source '{pattern.common_sources[0]}' appears in multiple "
+                    f"conflicts. Review source quality and credibility."
                 )
 
         # Recommendation 3: High-conflict entities
@@ -385,15 +393,17 @@ class ConflictAnalyzer:
         if top_entities:
             top_entity = top_entities[0]
             recommendations.append(
-                f"Entity '{top_entity['entity_id']}' has {top_entity['conflict_count']} conflicts. "
-                f"Review entity data sources and merge strategy."
+                f"Entity '{top_entity['entity_id']}' has "
+                f"{top_entity['conflict_count']} conflicts. Review entity data sources "
+                f"and merge strategy."
             )
 
         # Recommendation 4: Critical conflicts
         critical_count = len([c for c in conflicts if c.severity == "critical"])
         if critical_count > 0:
             recommendations.append(
-                f"{critical_count} critical conflicts detected. Immediate review required."
+                f"{critical_count} critical conflicts detected. Immediate review "
+                f"required."
             )
 
         if not recommendations:
@@ -453,7 +463,7 @@ class ConflictAnalyzer:
 
         # Group conflicts by time period
         from collections import defaultdict
-        from datetime import datetime, timedelta
+        from datetime import datetime
 
         trends = []
         conflict_by_period = defaultdict(list)
@@ -475,7 +485,9 @@ class ConflictAnalyzer:
             if timestamp:
                 if isinstance(timestamp, str):
                     try:
-                        timestamp = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+                        timestamp = datetime.fromisoformat(
+                            timestamp.replace("Z", "+00:00")
+                        )
                     except (ValueError, AttributeError):
                         try:
                             timestamp = datetime.strptime(timestamp, "%Y-%m-%d")
@@ -524,7 +536,9 @@ class ConflictAnalyzer:
                     "trend": trend,
                     "trend_direction": "up"
                     if trend == "increasing"
-                    else "down" if trend == "decreasing" else "stable",
+                    else "down"
+                    if trend == "decreasing"
+                    else "stable",
                 }
             )
 

@@ -220,7 +220,7 @@ Deep dive into advanced features, customization, and complex workflows.
     
     **Difficulty**: Advanced
     
-    [Open Notebook](https://github.com/Hawksight-AI/semantica/blob/main/cookbook/advanced/04_Conflict_Resolution_Strategies.ipynb)
+    [Open Notebook](https://github.com/Hawksight-AI/semantica/blob/main/cookbook/introduction/17_Conflict_Detection_and_Resolution.ipynb)
 
 -   :material-export: **Multi-Format Export**
     ---

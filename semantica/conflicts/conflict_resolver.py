@@ -58,12 +58,11 @@ License: MIT
 from collections import Counter
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
-from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
-from .conflict_detector import Conflict, ConflictType
+from .conflict_detector import Conflict
 from .source_tracker import SourceTracker
 
 
@@ -218,7 +217,10 @@ class ConflictResolver:
             strategy = normalized_strategy
 
             self.logger.info(
-                f"Resolving conflict {conflict.conflict_id} using strategy: {strategy.value}"
+                (
+                    f"Resolving conflict {conflict.conflict_id} using strategy: "
+                    f"{strategy.value}"
+                )
             )
 
             if strategy == ResolutionStrategy.VOTING:
@@ -310,7 +312,9 @@ class ConflictResolver:
             resolved_value=most_common_value,
             confidence=confidence,
             sources_used=sources_used,
-            resolution_notes=f"Resolved by voting: {count}/{total_votes} votes for this value",
+            resolution_notes=(
+                f"Resolved by voting: {count}/{total_votes} votes for this value"
+            ),
         )
 
     def _resolve_by_credibility(self, conflict: Conflict) -> ResolutionResult:
@@ -359,7 +363,10 @@ class ConflictResolver:
             resolved_value=resolved_value,
             confidence=confidence,
             sources_used=sources_used,
-            resolution_notes=f"Resolved by credibility-weighted voting (weight: {value_weights[resolved_value]:.2f})",
+            resolution_notes=(
+                "Resolved by credibility-weighted voting "
+                f"(weight: {value_weights[resolved_value]:.2f})"
+            ),
         )
 
     def _resolve_by_recency(self, conflict: Conflict) -> ResolutionResult:
