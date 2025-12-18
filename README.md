@@ -325,6 +325,28 @@ print(f"Nodes: {kg.node_count}, Answer: {result.answer}")
 
 [**Graph Analytics**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/10_Graph_Analytics.ipynb) • [**Advanced Graph Analytics**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/advanced/02_Advanced_Graph_Analytics.ipynb)
 
+### Triplet Store Integration
+
+> **SPARQL Support** • **Blazegraph, Jena, RDF4J** • **Reasoning & Inference**
+
+```python
+from semantica.triplet_store import TripletStore
+
+# Initialize store (Blazegraph, Jena, or RDF4J)
+store = TripletStore(backend="blazegraph", endpoint="http://localhost:9999/blazegraph")
+
+# Add triplets and execute SPARQL queries
+store.add_triplet({
+    "subject": "http://example.org/Alice",
+    "predicate": "http://example.org/knows",
+    "object": "http://example.org/Bob"
+})
+
+results = store.execute_query("SELECT ?s ?p ?o WHERE { ?s ?p ?o } LIMIT 10")
+```
+
+[**Cookbook: Triplet Store**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction/20_Triplet_Store.ipynb)
+
 ### Ontology Generation & Management
 
 > **6-Stage LLM Pipeline** • Automatic OWL Generation • HermiT/Pellet Validation

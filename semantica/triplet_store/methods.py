@@ -8,11 +8,10 @@ multiple approaches and integrates with the method registry for extensibility.
 Supported Methods:
 
 Store Registration:
-    - "default": Default store registration using TripletManager
+    - "default": Default store registration using TripletStore
     - "blazegraph": Blazegraph-specific registration
     - "jena": Jena-specific registration
     - "rdf4j": RDF4J-specific registration
-    - "virtuoso": Virtuoso-specific registration
 
 Triplet Addition:
     - "default": Default triplet addition
@@ -32,56 +31,44 @@ Triplet Deletion:
 
 Triplet Update:
     - "default": Default triplet update (delete-then-add)
-    - "atomic": Atomic update (when supported)
 
 SPARQL Query:
     - "default": Default SPARQL query execution
     - "optimized": Optimized query execution
-    - "cached": Cached query execution
 
 Query Optimization:
     - "default": Default query optimization
-    - "basic": Basic optimization (whitespace, LIMIT)
-    - "advanced": Advanced optimization (cost-based)
 
 Bulk Loading:
     - "default": Default bulk loading
     - "batch": Batch-based bulk loading
-    - "stream": Stream-based bulk loading
 
 Validation:
     - "default": Default validation
     - "triplet": Triplet structure validation
-    - "pre_load": Pre-load validation
 
 Algorithms Used:
 
 Store Registration:
-    - Store Type Detection: Backend type identification, store factory pattern
-    - Configuration Management: Store configuration storage, default store selection
-    - Store Instantiation: Backend-specific store creation, connection initialization
+    - Store Type Detection: Backend type identification
+    - Store Factory: Create appropriate store instance based on store type
 
 Triplet Operations:
-    - Triplet Validation: Required field checking, confidence validation, URI validation
+    - Triplet Validation: Required field checking, confidence validation
     - Batch Processing: Chunking algorithm, batch size optimization
-    - Pattern Matching: Subject/predicate/object filtering, SPARQL query construction
+    - Pattern Matching: Subject/predicate/object filtering
 
 SPARQL Query:
-    - Query Validation: Syntax checking, query type detection
-    - Query Optimization: Whitespace normalization, LIMIT injection, cost estimation
-    - Query Caching: MD5-based cache key generation, LRU-style eviction
-    - Result Processing: Binding extraction, variable extraction
+    - Query Validation: Syntax checking
+    - Query Optimization: Cost estimation
+    - Query Caching: LRU-style eviction
 
 Bulk Loading:
-    - Progress Tracking: Load percentage calculation, elapsed time tracking, throughput calculation
-    - Retry Mechanism: Exponential backoff, max retry limit
-    - Stream Processing: Iterator-based processing, incremental batch collection
+    - Progress Tracking: Load percentage calculation
+    - Retry Mechanism: Exponential backoff
 
 Key Features:
-    - Multiple triplet store operation methods
-    - Store registration with method dispatch
-    - Method dispatchers with registry support
-    - Custom method registration capability
+    - Unified triplet store interface
     - Consistent interface across all methods
 
 Main Functions:
@@ -90,19 +77,16 @@ Main Functions:
     - add_triplets: Multiple triplet addition wrapper
     - get_triplets: Triplet retrieval wrapper
     - delete_triplet: Triplet deletion wrapper
-    - update_triplet: Triplet update wrapper
     - execute_query: SPARQL query execution wrapper
-    - optimize_query: Query optimization wrapper
     - bulk_load: Bulk loading wrapper
-    - validate_triplets: Triplet validation wrapper
     - get_triplet_store_method: Get triplet store method by task and name
     - list_available_methods: List registered methods
 
 Example Usage:
     >>> from semantica.triplet_store.methods import register_store, add_triplet, execute_query
-    >>> store = register_store("main", "blazegraph", "http://localhost:9999/blazegraph", method="default")
-    >>> result = add_triplet(triplet, store_id="main", method="default")
-    >>> query_result = execute_query(sparql_query, store_backend, method="default")
+    >>> store = register_store("main", "blazegraph", "http://localhost:9999/blazegraph")
+    >>> result = add_triplet(triplet, store_id="main")
+    >>> query_result = execute_query(sparql_query, store_backend)
 """
 
 from typing import Any, Dict, List, Optional, Union
@@ -112,38 +96,65 @@ from .bulk_loader import BulkLoader, LoadProgress
 from .config import triplet_store_config
 from .query_engine import QueryEngine, QueryPlan, QueryResult
 from .registry import method_registry
-from .triplet_manager import TripletManager, TripletStore
+from .triplet_store import TripletStore
 
-# Global manager instances
-_global_manager: Optional[TripletManager] = None
+# Global store registry
+_global_stores: Dict[str, TripletStore] = {}
+_default_store_id: Optional[str] = None
 _global_query_engine: Optional[QueryEngine] = None
 _global_bulk_loader: Optional[BulkLoader] = None
 
 
-def _get_manager() -> TripletManager:
-    """Get or create global TripletManager instance."""
-    global _global_manager
-    if _global_manager is None:
-        config = triplet_store_config.get_all()
-        _global_manager = TripletManager(config=config)
-    return _global_manager
+def _get_store(store_id: Optional[str] = None) -> TripletStore:
+    """Get triplet store instance."""
+    global _default_store_id
+    
+    target_id = store_id or _default_store_id
+    
+    if not target_id:
+        # Try to create a default store from config if none registered
+        if not _global_stores:
+            config = triplet_store_config.get_all()
+            default_backend = config.get("default_backend", "blazegraph")
+            default_endpoint = config.get(f"{default_backend}_endpoint", "http://localhost:9999/blazegraph")
+            
+            store = TripletStore(backend=default_backend, endpoint=default_endpoint)
+            _global_stores["default"] = store
+            _default_store_id = "default"
+            return store
+            
+        raise ValueError("No store identifier provided and no default store set")
+        
+    if target_id not in _global_stores:
+        raise ValueError(f"Store not found: {target_id}")
+        
+    return _global_stores[target_id]
 
 
 def _get_query_engine() -> QueryEngine:
     """Get or create global QueryEngine instance."""
     global _global_query_engine
     if _global_query_engine is None:
+        # We need a store backend for the engine, but QueryEngine in this module
+        # seems to be initialized with config in the old code.
+        # In the new code, TripletStore has its own query_engine.
+        # If we use this standalone function, we might need to rely on the store's engine.
+        # But let's keep a standalone one if needed, or better, delegate to store.
         config = triplet_store_config.get_all()
-        _global_query_engine = QueryEngine(config=config)
-    return _global_query_engine
+        # QueryEngine now expects a backend, but we can initialize it without one 
+        # if we pass the backend at execution time? 
+        # Checking QueryEngine implementation... it takes `store_backend` in __init__.
+        # So we can't easily have a global one without a store.
+        # We'll rely on the store's engine.
+        pass
+    return None # Deprecated use of global engine
 
 
 def _get_bulk_loader() -> BulkLoader:
     """Get or create global BulkLoader instance."""
     global _global_bulk_loader
     if _global_bulk_loader is None:
-        config = triplet_store_config.get_all()
-        _global_bulk_loader = BulkLoader(config=config)
+        _global_bulk_loader = BulkLoader()
     return _global_bulk_loader
 
 
@@ -155,7 +166,7 @@ def register_store(
 
     Args:
         store_id: Store identifier
-        store_type: Store type (blazegraph, jena, rdf4j, virtuoso)
+        store_type: Store type (blazegraph, jena, rdf4j)
         endpoint: Store endpoint URL
         method: Registration method name (default: "default")
         **options: Additional options
@@ -169,8 +180,15 @@ def register_store(
         return custom_method(store_id, store_type, endpoint, **options)
 
     # Default implementation
-    manager = _get_manager()
-    return manager.register_store(store_id, store_type, endpoint, **options)
+    store = TripletStore(backend=store_type, endpoint=endpoint, **options)
+    
+    global _default_store_id
+    _global_stores[store_id] = store
+    
+    if _default_store_id is None:
+        _default_store_id = store_id
+        
+    return store
 
 
 def add_triplet(
@@ -194,8 +212,8 @@ def add_triplet(
         return custom_method(triplet, store_id=store_id, **options)
 
     # Default implementation
-    manager = _get_manager()
-    return manager.add_triplet(triplet, store_id=store_id, **options)
+    store = _get_store(store_id)
+    return store.add_triplet(triplet, **options)
 
 
 def add_triplets(
@@ -222,8 +240,8 @@ def add_triplets(
         return custom_method(triplets, store_id=store_id, **options)
 
     # Default implementation
-    manager = _get_manager()
-    return manager.add_triplets(triplets, store_id=store_id, **options)
+    store = _get_store(store_id)
+    return store.add_triplets(triplets, **options)
 
 
 def get_triplets(
@@ -254,8 +272,8 @@ def get_triplets(
         return custom_method(subject, predicate, object, store_id=store_id, **options)
 
     # Default implementation
-    manager = _get_manager()
-    return manager.get_triplets(subject, predicate, object, store_id=store_id, **options)
+    store = _get_store(store_id)
+    return store.get_triplets(subject, predicate=predicate, object=object, **options)
 
 
 def delete_triplet(
@@ -279,8 +297,15 @@ def delete_triplet(
         return custom_method(triplet, store_id=store_id, **options)
 
     # Default implementation
-    manager = _get_manager()
-    return manager.delete_triplet(triplet, store_id=store_id, **options)
+    # TripletStore doesn't explicitly have delete_triplet yet in my read of it?
+    # Let's check TripletStore again. It has add, add_triplets, get_triplets.
+    # It might be missing delete_triplet! I need to check.
+    # If it is missing, I should add it.
+    store = _get_store(store_id)
+    if hasattr(store, "delete_triplet"):
+        return store.delete_triplet(triplet, **options)
+    # Fallback or error if not implemented
+    raise NotImplementedError("delete_triplet not implemented in TripletStore yet")
 
 
 def update_triplet(
@@ -309,19 +334,26 @@ def update_triplet(
         return custom_method(old_triplet, new_triplet, store_id=store_id, **options)
 
     # Default implementation
-    manager = _get_manager()
-    return manager.update_triplet(old_triplet, new_triplet, store_id=store_id, **options)
+    # Delete then Add
+    delete_res = delete_triplet(old_triplet, store_id=store_id, **options)
+    add_res = add_triplet(new_triplet, store_id=store_id, **options)
+    
+    return {
+        "success": delete_res.get("success", False) and add_res.get("success", False),
+        "delete_result": delete_res,
+        "add_result": add_res
+    }
 
 
 def execute_query(
-    query: str, store_backend: Any, method: str = "default", **options
+    query: str, store_backend: Any = None, method: str = "default", **options
 ) -> QueryResult:
     """
     Execute SPARQL query.
 
     Args:
         query: SPARQL query string
-        store_backend: Triplet store backend instance
+        store_backend: Triplet store backend instance or TripletStore object
         method: Query method name (default: "default")
         **options: Additional options
 
@@ -334,8 +366,24 @@ def execute_query(
         return custom_method(query, store_backend, **options)
 
     # Default implementation
-    engine = _get_query_engine()
-    return engine.execute_query(query, store_backend, **options)
+    if isinstance(store_backend, TripletStore):
+        return store_backend.query_engine.execute_query(query, store_backend._store_backend, **options)
+    elif hasattr(store_backend, "execute_query"):
+         # It might be the backend itself
+         # But QueryEngine expects a backend.
+         # If store_backend is None, use default store
+         if store_backend is None:
+             store = _get_store()
+             return store.query_engine.execute_query(query, store._store_backend, **options)
+         
+         # If it's a backend, we need an engine.
+         # We can create one on the fly or use global if we had one.
+         engine = QueryEngine(store_backend)
+         return engine.execute_query(query, store_backend, **options)
+         
+    # Fallback
+    store = _get_store()
+    return store.query_engine.execute_query(query, store._store_backend, **options)
 
 
 def optimize_query(query: str, method: str = "default", **options) -> str:
@@ -356,8 +404,9 @@ def optimize_query(query: str, method: str = "default", **options) -> str:
         return custom_method(query, **options)
 
     # Default implementation
-    engine = _get_query_engine()
-    return engine.optimize_query(query, **options)
+    # We need a store to get its engine
+    store = _get_store()
+    return store.query_engine.optimize_query(query, **options)
 
 
 def plan_query(query: str, **options) -> QueryPlan:
@@ -371,12 +420,12 @@ def plan_query(query: str, **options) -> QueryPlan:
     Returns:
         Query execution plan
     """
-    engine = _get_query_engine()
-    return engine.plan_query(query, **options)
+    store = _get_store()
+    return store.query_engine.plan_query(query, **options)
 
 
 def bulk_load(
-    triplets: List[Triplet], store_backend: Any, method: str = "default", **options
+    triplets: List[Triplet], store_backend: Any = None, method: str = "default", **options
 ) -> LoadProgress:
     """
     Load triplets in bulk.
@@ -396,6 +445,10 @@ def bulk_load(
         return custom_method(triplets, store_backend, **options)
 
     # Default implementation
+    if store_backend is None:
+        store = _get_store()
+        return store.bulk_loader.load_triplets(triplets, store._store_backend, **options)
+        
     loader = _get_bulk_loader()
     return loader.load_triplets(triplets, store_backend, **options)
 

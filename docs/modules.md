@@ -580,7 +580,7 @@ results = store.execute_query("MATCH (p:Person) RETURN p.name")
 
 **Key Features:**
 
-- Multi-backend support (Blazegraph, Jena, RDF4J, Virtuoso)
+- Multi-backend support (Blazegraph, Jena, RDF4J)
 - CRUD operations for RDF triplets
 - SPARQL query execution and optimization
 - Bulk data loading with progress tracking
@@ -590,13 +590,12 @@ results = store.execute_query("MATCH (p:Person) RETURN p.name")
 
 **Components:**
 
-- `TripletManager` — Main triplet store management coordinator
+- `TripletStore` — Main triplet store interface
 - `QueryEngine` — SPARQL query execution and optimization
 - `BulkLoader` — High-volume data loading with progress tracking
 - `BlazegraphStore` — Blazegraph integration
 - `JenaStore` — Apache Jena integration
 - `RDF4JStore` — Eclipse RDF4J integration
-- `VirtuosoStore` — Virtuoso RDF store integration
 - `QueryPlan` — Query execution plan dataclass
 - `LoadProgress` — Bulk loading progress tracking
 
@@ -611,20 +610,19 @@ results = store.execute_query("MATCH (p:Person) RETURN p.name")
 **Quick Example:**
 
 ```python
-from semantica.triplet_store import TripletManager, execute_query
+from semantica.triplet_store import TripletStore
 
-manager = TripletManager()
-store = manager.register_store("main", "blazegraph", "http://localhost:9999/blazegraph")
+store = TripletStore(backend="blazegraph", endpoint="http://localhost:9999/blazegraph")
 
 # Add triplet
-result = manager.add_triplet({
+result = store.add_triplet({
     "subject": "http://example.org/Alice",
     "predicate": "http://example.org/knows",
     "object": "http://example.org/Bob"
-}, store_id="main")
+})
 
 # Execute SPARQL
-query_result = execute_query("SELECT ?s ?p ?o WHERE { ?s ?p ?o } LIMIT 10", store)
+query_result = store.execute_query("SELECT ?s ?p ?o WHERE { ?s ?p ?o } LIMIT 10")
 ```
 
 **API Reference**: [Triplet Store Module](reference/triplet_store.md)
@@ -1119,7 +1117,7 @@ new_facts = inference_engine.forward_chain(kg, rule_manager)
 | **Embeddings** | `semantica.embeddings` | `EmbeddingGenerator` | Vector generation |
 | **Vector Store** | `semantica.vector_store` | `VectorStore` | Vector storage |
 | **Graph Store** | `semantica.graph_store` | `GraphStore` | Graph database |
-| **Triplet Store** | `semantica.triplet_store` | `TripletManager` | RDF storage |
+| **Triplet Store** | `semantica.triplet_store` | `TripletStore` | RDF storage |
 | **Deduplication** | `semantica.deduplication` | `DuplicateDetector` | Duplicate removal |
 | **Conflicts** | `semantica.conflicts` | `ConflictDetector` | Conflict resolution |
 | **Context** | `semantica.context` | `AgentMemory` | Agent context |

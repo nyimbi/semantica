@@ -3,152 +3,62 @@ Triplet Store Module
 
 This module provides comprehensive triplet store integration and management
 for RDF data storage and querying, supporting multiple triplet store backends
-with unified interfaces.
-
-Algorithms Used:
-
-Triplet Store Management:
-    - Store Registration: Store type detection, store factory pattern, configuration management, default store selection
-    - Backend Pattern: Unified interface for multiple backends (Blazegraph, Jena, RDF4J, Virtuoso), store instantiation, backend-specific operation delegation
-    - Store Selection: Default store resolution, store ID lookup, store validation
-
-CRUD Operations:
-    - Triplet Addition: Single triplet insertion, batch triplet insertion, triplet validation (subject/predicate/object checking, confidence validation), store delegation
-    - Triplet Retrieval: Pattern matching (subject/predicate/object filtering), SPARQL query construction, result binding extraction, triplet reconstruction
-    - Triplet Deletion: Triplet matching, deletion operation delegation, result verification
-    - Triplet Update: Delete-then-add pattern, atomic update operations, conflict detection
-
-Bulk Loading:
-    - Batch Processing: Chunking algorithm (fixed-size batch creation), batch size optimization, memory management for large datasets
-    - Progress Tracking: Load progress calculation (loaded/total percentage), elapsed time tracking, estimated remaining time calculation (linear projection), throughput calculation (triplets/second)
-    - Retry Mechanism: Exponential backoff retry (delay = retry_delay * (attempt + 1)), max retry limit, error recovery, stop-on-error option
-    - Stream Processing: Iterator-based stream processing, incremental batch collection, memory-efficient loading
-    - Validation: Pre-load validation (empty component checking, URI validation, confidence checking), error/warning collection
-
-SPARQL Query Execution:
-    - Query Validation: Syntax validation (keyword checking, structure validation), query type detection (SELECT, ASK, CONSTRUCT, DESCRIBE, INSERT, DELETE)
-    - Query Optimization: Whitespace normalization, LIMIT addition for SELECT queries, query rewriting, cost estimation
-    - Query Planning: Execution step identification (SELECT projection, pattern matching, filtering, sorting, pagination), cost estimation (heuristic-based: COUNT multiplier, join count multiplier, DISTINCT multiplier)
-    - Query Caching: Cache key generation (MD5 hash of normalized query), LRU-style cache eviction (oldest entry removal when cache full), cache hit/miss tracking, cache invalidation
-    - Result Processing: Binding extraction, variable extraction, result formatting, metadata attachment
-
-Query Optimization:
-    - Cost Estimation: Heuristic-based cost calculation (base cost * complexity multipliers), COUNT query detection (2x multiplier), join count estimation (1 + join_count * 0.1 multiplier), DISTINCT detection (1.5x multiplier)
-    - Execution Step Identification: Query parsing for step detection, step sequence construction, optimization opportunity detection
-    - Query Rewriting: Whitespace normalization, LIMIT injection, query simplification
-
-Store Backends:
-    - Blazegraph Store: HTTP-based SPARQL endpoint communication, namespace management, graph management, bulk load via INSERT DATA, authentication handling
-    - Jena Store: rdflib integration, SPARQLStore for remote endpoints, in-memory graph support, model/dataset management, RDF serialization (Turtle, RDF/XML, N3), inference support
-    - RDF4J Store: RDF4J repository connection, SPARQL endpoint communication, transaction support, bulk operations
-    - Virtuoso Store: Virtuoso SPARQL endpoint communication, SQL/SPARQL hybrid queries, bulk loading, transaction support
-
-Data Validation:
-    - Triplet Validation: Required field checking (subject, predicate, object), confidence range validation (0-1), URI format validation
-    - Pre-load Validation: Empty component detection, URI format checking, confidence threshold checking, error/warning categorization
-    
-Performance Optimization:
-    - Batch Size Optimization: Configurable batch size, memory-aware batching, throughput-based optimization
-    - Connection Pooling: Store-level connection management, connection reuse, connection lifecycle management
-    - Query Caching: Result caching for repeated queries, cache size management, cache hit optimization
-    - Parallel Processing: Batch-level parallelization (when supported by store), concurrent batch processing
+(Blazegraph, Jena, RDF4J) with unified interfaces.
 
 Key Features:
-    - Multi-backend support (Blazegraph, Jena, RDF4J, Virtuoso)
+    - Unified triplet store interface
+    - Multi-backend support (Blazegraph, Jena, RDF4J)
     - CRUD operations for RDF triplets
     - SPARQL query execution and optimization
     - Bulk data loading with progress tracking
-    - Query caching and optimization
-    - Transaction support
-    - Store backend pattern
-    - Method registry for extensibility
-    - Configuration management with environment variables and config files
+    - Configuration management
 
 Main Classes:
-    - TripletManager: Main triplet store management coordinator
-    - QueryEngine: SPARQL query execution and optimization
+    - TripletStore: Main triplet store interface
     - BulkLoader: High-volume data loading
+    - QueryEngine: SPARQL query execution and optimization
     - BlazegraphStore: Blazegraph integration store
     - JenaStore: Apache Jena integration store
     - RDF4JStore: Eclipse RDF4J integration store
-    - VirtuosoStore: Virtuoso RDF store integration store
-    - TripletStore: Triplet store configuration dataclass
-    - QueryResult: Query result representation dataclass
-    - QueryPlan: Query execution plan dataclass
-    - LoadProgress: Bulk loading progress dataclass
-
-Convenience Functions:
-    - register_store: Register triplet store wrapper
-    - add_triplet: Add single triplet wrapper
-    - add_triplets: Add multiple triplets wrapper
-    - get_triplets: Get triplets matching pattern wrapper
-    - delete_triplet: Delete triplet wrapper
-    - execute_query: Execute SPARQL query wrapper
-    - optimize_query: Optimize SPARQL query wrapper
-    - bulk_load: Bulk load triplets wrapper
-    - get_triplet_store_method: Get triplet store method by task and name
-    - list_available_methods: List registered triplet store methods
 
 Example Usage:
-    >>> from semantica.triplet_store import TripletManager, register_store, add_triplet, execute_query
-    >>> # Using convenience functions
-    >>> store = register_store("main", "blazegraph", "http://localhost:9999/blazegraph")
-    >>> result = add_triplet(triplet, store_id="main")
-    >>> query_result = execute_query(sparql_query, store)
-    >>> # Using classes directly
-    >>> manager = TripletManager()
-    >>> store = manager.register_store("main", "blazegraph", "http://localhost:9999/blazegraph")
-    >>> result = manager.add_triplet(triplet, store_id="main")
-    >>> from semantica.triplet_store import QueryEngine
-    >>> engine = QueryEngine()
-    >>> query_result = engine.execute_query(sparql_query, store)
-
-Author: Semantica Contributors
-License: MIT
+    >>> from semantica.triplet_store import TripletStore
+    >>> store = TripletStore(backend="blazegraph", endpoint="http://localhost:9999/blazegraph")
+    >>> store.add_triplet(triplet)
+    >>> results = store.execute_query("SELECT * WHERE { ?s ?p ?o } LIMIT 10")
 """
 
-from .blazegraph_store import BlazegraphStore
-from .bulk_loader import BulkLoader, LoadProgress
+from .bulk_loader import BulkLoader
 from .config import TripletStoreConfig, triplet_store_config
+from .query_engine import QueryEngine
+from .triplet_store import TripletStore
+from .blazegraph_store import BlazegraphStore
 from .jena_store import JenaStore
+from .rdf4j_store import RDF4JStore
 from .methods import (
+    register_store,
     add_triplet,
     add_triplets,
-    bulk_load,
-    delete_triplet,
-    execute_query,
-    get_triplet_store_method,
     get_triplets,
-    list_available_methods,
+    delete_triplet,
+    update_triplet,
+    execute_query,
     optimize_query,
     plan_query,
-    register_store,
-    update_triplet,
+    bulk_load,
     validate_triplets,
+    list_available_methods
 )
-from .query_engine import QueryEngine, QueryPlan, QueryResult
-from .rdf4j_store import RDF4JStore
-from .registry import MethodRegistry, method_registry
-from .triplet_manager import TripletManager, TripletStore
-from .virtuoso_store import VirtuosoStore
 
 __all__ = [
-    # Triplet management
-    "TripletManager",
     "TripletStore",
-    # Store backends
+    "BulkLoader",
+    "QueryEngine",
+    "TripletStoreConfig",
+    "triplet_store_config",
     "BlazegraphStore",
     "JenaStore",
     "RDF4JStore",
-    "VirtuosoStore",
-    # Query engine
-    "QueryEngine",
-    "QueryResult",
-    "QueryPlan",
-    # Bulk loading
-    "BulkLoader",
-    "LoadProgress",
-    # Convenience functions
     "register_store",
     "add_triplet",
     "add_triplets",
@@ -160,11 +70,5 @@ __all__ = [
     "plan_query",
     "bulk_load",
     "validate_triplets",
-    "get_triplet_store_method",
     "list_available_methods",
-    # Configuration and registry
-    "TripletStoreConfig",
-    "triplet_store_config",
-    "MethodRegistry",
-    "method_registry",
 ]
