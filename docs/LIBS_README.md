@@ -554,7 +554,7 @@ events = event_detector.detect_events(text)
 for event in events:
     print(f"Event: {event.text}")
     print(f"Type: {event.event_type}")
-    print(f"Time: {event.temporal_info}")
+    print(f"Time: {event.time}")
     print(f"Participants: {event.participants}")
     print()
 ```
