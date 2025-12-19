@@ -207,7 +207,8 @@ class GraphValidator:
                     message=f"Source entity ID not found: {src}",
                     severity=ValidationSeverity.ERROR,
                     element_id=f"{src}->{tgt}",
-                    element_type="relationship"
+                    element_type="relationship",
+                    details={"source_id": src}
                 ))
             if tgt not in entity_ids:
                 issues.append(ValidationIssue(
@@ -215,7 +216,8 @@ class GraphValidator:
                     message=f"Target entity ID not found: {tgt}",
                     severity=ValidationSeverity.ERROR,
                     element_id=f"{src}->{tgt}",
-                    element_type="relationship"
+                    element_type="relationship",
+                    details={"target_id": tgt}
                 ))
 
             # Check Self-Loops (Warning)
