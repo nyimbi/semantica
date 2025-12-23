@@ -135,6 +135,93 @@ class VectorStore:
             )
             raise
 
+<<<<<<< Updated upstream
+=======
+    def save(self, path: str) -> None:
+        """
+        Save vector store to disk.
+        
+        Args:
+            path: Directory path to save to
+        """
+        import os
+        import pickle
+        
+        os.makedirs(path, exist_ok=True)
+        
+        # Save metadata and vectors (generic fallback)
+        # Ideally, backends like FAISS have their own save methods
+        if hasattr(self.indexer, "save_index"):
+             self.indexer.save_index(os.path.join(path, "index.bin"))
+        
+        # Save Python-level data
+        data = {
+            "vectors": self.vectors,
+            "metadata": self.metadata,
+            "config": self.config,
+            "backend": self.backend,
+            "dimension": self.dimension
+        }
+        
+        with open(os.path.join(path, "store_data.pkl"), "wb") as f:
+            pickle.dump(data, f)
+            
+        self.logger.info(f"Saved vector store to {path}")
+
+    def load(self, path: str) -> None:
+        """
+        Load vector store from disk.
+        
+        Args:
+            path: Directory path to load from
+        """
+        import os
+        import pickle
+        
+        data_path = os.path.join(path, "store_data.pkl")
+        if not os.path.exists(data_path):
+            self.logger.warning(f"Store data not found: {data_path}")
+            return
+            
+        with open(data_path, "rb") as f:
+            data = pickle.load(f)
+            
+        self.vectors = data.get("vectors", {})
+        self.metadata = data.get("metadata", {})
+        self.config = data.get("config", {})
+        self.backend = data.get("backend", "faiss")
+        self.dimension = data.get("dimension", 768)
+        
+        # Restore backend-specific index
+        if hasattr(self.indexer, "load_index"):
+            index_path = os.path.join(path, "index.bin")
+            if os.path.exists(index_path):
+                self.indexer.load_index(index_path)
+            else:
+                # Rebuild if index file missing but vectors present
+                self.indexer.create_index(list(self.vectors.values()), list(self.vectors.keys()))
+        
+        self.logger.info(f"Loaded vector store from {path}")
+
+    def search(self, query: str, limit: int = 10, **options) -> List[Dict[str, Any]]:
+        """
+        Search for similar vectors by query string.
+
+        Args:
+            query: Query string
+            limit: Number of results
+            **options: Additional options
+
+        Returns:
+            List of results with scores
+        """
+        # Generate embedding for query
+        query_vector = self.embed(query)
+
+        # Search by vector
+        return self.search_vectors(query_vector=query_vector, k=limit, **options)
+
+>>>>>>> Stashed changes
     def search_vectors(
         self, query_vector: np.ndarray, k: int = 10, **options
     ) -> List[Dict[str, Any]]:
@@ -318,11 +405,14 @@ class VectorRetriever:
         if isinstance(query_vector, list):
             query_vector = np.array(query_vector)
 
-        # Calculate cosine similarity
+        # Calculate cosine similarity with epsilon to avoid division by zero
+        epsilon = 1e-10
         query_norm = np.linalg.norm(query_vector)
         vector_norms = np.linalg.norm(vectors, axis=1)
 
-        similarities = np.dot(vectors, query_vector) / (vector_norms * query_norm)
+        similarities = np.dot(vectors, query_vector) / (
+            (vector_norms * query_norm) + epsilon
+        )
 
         # Get top k
         top_indices = np.argsort(similarities)[::-1][:k]

@@ -224,6 +224,25 @@ results = store.execute_query("MATCH (n)-[r]->(m) WHERE n.name CONTAINS 'AI' RET
 store.close()
 ```
 
+<<<<<<< Updated upstream
+=======
+### Example 10: GraphRAG (Knowledge-Powered Retrieval)
+
+**Difficulty**: Advanced
+
+Build a production-ready GraphRAG system with hybrid retrieval.
+
+[**View Complete GraphRAG Tutorial**](https://github.com/Hawksight-AI/semantica/blob/main/cookbook/use_cases/advanced_rag/01_GraphRAG_Complete.ipynb)
+
+### Example 11: RAG vs. GraphRAG Comparison
+
+**Difficulty**: Intermediate
+
+Benchmark standard Vector RAG against Graph-enhanced retrieval.
+
+[**View RAG vs. GraphRAG Comparison**](https://github.com/Hawksight-AI/semantica/blob/main/cookbook/use_cases/advanced_rag/02_RAG_vs_GraphRAG_Comparison.ipynb)
+
+>>>>>>> Stashed changes
 ---
 
 ## Production Patterns

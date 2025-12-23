@@ -227,6 +227,33 @@ python -c "import semantica; print(semantica.__version__)"
 
 **Current Version:** [![PyPI version](https://badge.fury.io/py/semantica.svg)](https://pypi.org/project/semantica/0.0.1/) • [View on PyPI](https://pypi.org/project/semantica/0.0.1/)
 
+<<<<<<< Updated upstream
+=======
+## 🍳 Semantica Cookbook
+
+> **Interactive Jupyter Notebooks** designed to take you from beginner to expert.
+
+[**View Full Cookbook**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook)
+
+### Featured Recipes
+
+| **Recipe** | **Description** | **Link** |
+|:-----------|:----------------|:---------|
+| **GraphRAG Complete** | Build a production-ready **Graph Retrieval Augmented Generation** system. Features **Graph Validation**, **Hybrid Retrieval**, and **Logical Inference**. | [Open Notebook](cookbook/use_cases/advanced_rag/01_GraphRAG_Complete.ipynb) |
+| **RAG vs. GraphRAG** | Side-by-side comparison. Demonstrates the **Reasoning Gap** and how GraphRAG solves it. | [Open Notebook](cookbook/use_cases/advanced_rag/02_RAG_vs_GraphRAG_Comparison.ipynb) |
+| **First Knowledge Graph** | Go from raw text to a queryable knowledge graph in 20 minutes. | [Open Notebook](cookbook/introduction/08_Your_First_Knowledge_Graph.ipynb) |
+| **Real-Time Anomalies** | Detect anomalies in streaming data using dynamic graphs. | [Open Notebook](cookbook/use_cases/cybersecurity/01_Anomaly_Detection_Real_Time.ipynb) |
+
+### Core Tutorials
+
+- [**Welcome to Semantica**](cookbook/introduction/01_Welcome_to_Semantica.ipynb) - Framework Overview
+- [**Data Ingestion**](cookbook/introduction/02_Data_Ingestion.ipynb) - Universal Ingestion
+- [**Entity Extraction**](cookbook/introduction/05_Entity_Extraction.ipynb) - NER & Relationships
+- [**Building Knowledge Graphs**](cookbook/introduction/07_Building_Knowledge_Graphs.ipynb) - Graph Construction
+
+> **Note:** Once published to PyPI, you'll be able to install with `pip install semantica`
+
+>>>>>>> Stashed changes
 ### Install from Source (Development)
 
 ```bash
