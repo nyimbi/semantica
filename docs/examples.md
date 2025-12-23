@@ -248,25 +248,17 @@ results = store.execute_query("MATCH (n)-[r]->(m) WHERE n.name CONTAINS 'AI' RET
 store.close()
 ```
 
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-=======
-=======
->>>>>>> main
 ### Example 10: GraphRAG (Knowledge-Powered Retrieval)
 
 **Difficulty**: Advanced
 
-<<<<<<< HEAD
-Build a production-ready GraphRAG system with hybrid retrieval.
-=======
 Build a production-ready GraphRAG system with logical inference and hybrid retrieval.
 
 ```python
 from semantica.context import AgentContext
-from semantica.reasoning import InferenceEngine
+from semantica.reasoning import Reasoner
 
-# Initialize context with Hybrid Retrieval
+# 1. Initialize context with GraphRAG (Hybrid Retrieval)
 context = AgentContext(
     vector_store=vs, 
     knowledge_graph=kg,
@@ -274,14 +266,23 @@ context = AgentContext(
     hybrid_alpha=0.7
 )
 
-# Add logical reasoning rules
-engine = InferenceEngine(strategy="forward")
-engine.add_rule("IF ?x :type 'Library' AND ?y :type 'Language' THEN ?x :builtWith ?y")
+# 2. Enrich Knowledge Graph using Logical Reasoning
+reasoner = Reasoner()
 
-# Retrieve context for a query
+# Add a rule to categorize technology stack items
+reasoner.add_rule("IF Library(?x) AND Language(?y) THEN TechStackItem(?x)")
+
+# Infer new facts from the existing graph
+all_facts = kg.get_all_triplets()
+inferred = reasoner.infer_facts(all_facts)
+
+# Add inferred knowledge back to the graph
+for fact_str in inferred:
+    kg.add_fact_from_string(fact_str)
+
+# 3. Retrieve context for a query (now with enriched knowledge)
 results = context.retrieve("What technologies are used in this project?")
 ```
->>>>>>> main
 
 [**View Complete GraphRAG Tutorial**](https://github.com/Hawksight-AI/semantica/blob/main/cookbook/use_cases/advanced_rag/01_GraphRAG_Complete.ipynb)
 
@@ -293,10 +294,6 @@ Benchmark standard Vector RAG against Graph-enhanced retrieval.
 
 [**View RAG vs. GraphRAG Comparison**](https://github.com/Hawksight-AI/semantica/blob/main/cookbook/use_cases/advanced_rag/02_RAG_vs_GraphRAG_Comparison.ipynb)
 
-<<<<<<< HEAD
->>>>>>> Stashed changes
-=======
->>>>>>> main
 ---
 
 ## Production Patterns

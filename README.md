@@ -229,11 +229,6 @@ python -c "import semantica; print(semantica.__version__)"
 
 **Current Version:** [![PyPI version](https://badge.fury.io/py/semantica.svg)](https://pypi.org/project/semantica/0.0.1/) • [View on PyPI](https://pypi.org/project/semantica/0.0.1/)
 
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-=======
-=======
->>>>>>> main
 ## 🍳 Semantica Cookbook
 
 > **Interactive Jupyter Notebooks** designed to take you from beginner to expert.
@@ -245,11 +240,7 @@ python -c "import semantica; print(semantica.__version__)"
 | **Recipe** | **Description** | **Link** |
 |:-----------|:----------------|:---------|
 | **GraphRAG Complete** | Build a production-ready **Graph Retrieval Augmented Generation** system. Features **Graph Validation**, **Hybrid Retrieval**, and **Logical Inference**. | [Open Notebook](cookbook/use_cases/advanced_rag/01_GraphRAG_Complete.ipynb) |
-<<<<<<< HEAD
-| **RAG vs. GraphRAG** | Side-by-side comparison. Demonstrates the **Reasoning Gap** and how GraphRAG solves it. | [Open Notebook](cookbook/use_cases/advanced_rag/02_RAG_vs_GraphRAG_Comparison.ipynb) |
-=======
 | **RAG vs. GraphRAG** | Side-by-side comparison. Demonstrates the **Reasoning Gap** and how GraphRAG solves it with **Inference Engines**. | [Open Notebook](cookbook/use_cases/advanced_rag/02_RAG_vs_GraphRAG_Comparison.ipynb) |
->>>>>>> main
 | **First Knowledge Graph** | Go from raw text to a queryable knowledge graph in 20 minutes. | [Open Notebook](cookbook/introduction/08_Your_First_Knowledge_Graph.ipynb) |
 | **Real-Time Anomalies** | Detect anomalies in streaming data using dynamic graphs. | [Open Notebook](cookbook/use_cases/cybersecurity/01_Anomaly_Detection_Real_Time.ipynb) |
 
@@ -262,10 +253,6 @@ python -c "import semantica; print(semantica.__version__)"
 
 > **Note:** Once published to PyPI, you'll be able to install with `pip install semantica`
 
-<<<<<<< HEAD
->>>>>>> Stashed changes
-=======
->>>>>>> main
 ### Install from Source (Development)
 
 ```bash
@@ -450,6 +437,32 @@ print(f"Answer: {result.answer} (Confidence: {result.confidence:.2f})")
 
 [**Cookbook: GraphRAG**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/use_cases/advanced_rag/01_GraphRAG_Complete.ipynb)
 
+### Reasoning & Inference Engine
+
+> **Rule-based Inference** • **Forward/Backward Chaining** • **Rete Algorithm** • **Explanation Generation**
+
+```python
+from semantica.reasoning import Reasoner
+
+# Initialize Reasoner
+reasoner = Reasoner()
+
+# Define rules and facts
+rules = ["IF Parent(?a, ?b) AND Parent(?b, ?c) THEN Grandparent(?a, ?c)"]
+facts = ["Parent(Alice, Bob)", "Parent(Bob, Charlie)"]
+
+# Infer new facts (Forward Chaining)
+inferred = reasoner.infer_facts(facts, rules)
+print(f"Inferred: {inferred}") # ['Grandparent(Alice, Charlie)']
+
+# Explain reasoning
+from semantica.reasoning import ExplanationGenerator
+explainer = ExplanationGenerator()
+# ... generate explanation for inferred facts
+```
+
+[**Cookbook: Reasoning**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/advanced/08_Reasoning_and_Inference.ipynb) • [**Rete Engine**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/advanced/09_Rete_Engine.ipynb)
+
 ### Pipeline Orchestration & Parallel Processing
 
 > **Orchestrator-Worker Pattern** • Parallel Execution • Scalable Processing
@@ -544,7 +557,7 @@ print(f"Answer: {result.answer} | Nodes: {kg.node_count}, Edges: {kg.edge_count}
 
 **Custom Ontology Import** — Import and extend Schema.org and custom ontologies.
 
-**Advanced Reasoning** — Deductive, inductive, abductive reasoning with HermiT/Pellet.
+**Advanced Reasoning** — Forward/backward chaining, Rete-based pattern matching, and automated explanation generation.
 
 **Graph Analytics** — Centrality, community detection, path finding, temporal analysis.
 
@@ -560,10 +573,10 @@ print(f"Answer: {result.answer} | Nodes: {kg.node_count}, Edges: {kg.edge_count}
 - [x] Core framework (v1.0)
 - [x] GraphRAG engine
 - [x] 6-stage ontology pipeline
+- [x] Advanced reasoning v2 (Rete, Forward/Backward Chaining)
 - [ ] Quality assurance features and Quality Assurance module
 - [ ] Enhanced multi-language support
 - [ ] Real-time streaming improvements
-- [ ] Advanced reasoning v2
 
 ### Q2 2026
 - [ ] Multi-modal processing

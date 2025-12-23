@@ -1,6 +1,6 @@
 # Reasoning
 
-> **Advanced reasoning module supporting SPARQL, Abductive, and Deductive strategies.**
+> **Simplified reasoning module supporting rule-based inference, SPARQL, and high-performance pattern matching.**
 
 ---
 
@@ -8,29 +8,17 @@
 
 <div class="grid cards" markdown>
 
+-   :material-brain:{ .lg .middle } **Rule-based Inference**
+
+    ---
+
+    Forward-chaining inference engine with variable substitution
+
 -   :material-database-search:{ .lg .middle } **SPARQL Reasoning**
 
     ---
 
-    Query expansion and property chain inference
-
--   :material-lightbulb-question:{ .lg .middle } **Abductive Reasoning**
-
-    ---
-
-    Generate hypotheses to explain observations (Sherlock Holmes style)
-
--   :material-check-decagram:{ .lg .middle } **Deductive Reasoning**
-
-    ---
-
-    Logical proof generation and theorem proving
-
--   :material-text-box-search:{ .lg .middle } **Explanation**
-
-    ---
-
-    Generate natural language explanations for inferred facts
+    Query expansion and property chain inference for RDF graphs
 
 -   :material-flash:{ .lg .middle } **Rete Algorithm**
 
@@ -38,37 +26,52 @@
 
     High-performance pattern matching for large rule sets
 
+-   :material-text-box-search:{ .lg .middle } **Explanation**
+
+    ---
+
+    Generate natural language explanations for inferred facts
+
 </div>
 
 !!! tip "When to Use"
     - **Inference**: Deriving new facts from existing data (e.g., `Parent(A,B) & Parent(B,C) -> Grandparent(A,C)`)
     - **Query Expansion**: Finding results that aren't explicitly stored but implied
-    - **Hypothesis Generation**: Finding potential causes for an observed event
+    - **Explanation**: Understanding the reasoning path for any derived fact
     - **Validation**: Checking logical consistency of the knowledge graph
 
 ---
 
 ## ⚙️ Algorithms Used
 
+### Forward Chaining
+- **Variable Substitution**: Supports patterns like `Person(?x)` to match facts and bind variables.
+- **Recursive Inference**: Continues deriving facts until no new information can be found.
+- **Priority-based Execution**: Rules can be prioritized to control the inference flow.
+
 ### Rete Algorithm
 - **Alpha Nodes**: Filter facts by single attributes (e.g., `type=Person`).
 - **Beta Nodes**: Join results from Alpha nodes (e.g., `Person.id == Parent.child_id`).
 - **Memory**: Stores partial matches to avoid re-computation.
-- **Conflict Resolution**: Priority-based selection when multiple rules match.
-
-### SPARQL Reasoning
-- **Query Rewriting**: Modifying queries to include inferred patterns.
-- **Property Paths**: Handling transitive relationships (`foaf:knows+`).
-- **Materialization**: Pre-computing inferred triplets for fast read performance.
-
-### Abductive Reasoning
-- **Hypothesis Generation**: Finding rules where the conclusion matches the observation.
-- **Ranking**: Scoring hypotheses by Simplicity, Plausibility, and Coverage.
-- **Consistency Check**: Ensuring hypotheses don't contradict known facts.
+- **Efficiency**: Optimal for scenarios with many rules and frequent fact updates.
 
 ---
 
 ## Main Classes
+
+### Reasoner (Facade)
+
+The high-level interface for the reasoning module.
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `infer_facts(facts, rules)` | Derive new facts from initial state |
+| `backward_chain(goal)` | Prove a goal using backward chaining |
+| `add_rule(rule)` | Add a new inference rule |
+| `add_fact(fact)` | Add a fact to working memory |
+| `clear()` | Reset the reasoner state |
 
 ### ReteEngine
 
@@ -78,41 +81,9 @@ High-performance pattern matching engine.
 
 | Method | Description |
 |--------|-------------|
-| `build_network(rules)` | Compile rule into network |
-| `add_fact(fact)` | Propagate fact through network |
+| `build_network(rules)` | Compile rules into a Rete network |
+| `add_fact(fact)` | Propagate fact through the network |
 | `match_patterns()` | Get triggered rules |
-
-### SPARQLReasoner
-
-SPARQL-based reasoner for RDF graphs.
-
-**Methods:**
-
-| Method | Description |
-|--------|-------------|
-| `expand_query(query)` | Rewrite query with inference |
-| `infer_results(result)` | Add inferred triplets to result |
-
-### AbductiveReasoner
-
-Generates explanations for observations.
-
-**Methods:**
-
-| Method | Description |
-|--------|-------------|
-| `generate_hypotheses(observations)` | Generate hypotheses |
-| `rank_hypotheses(hyps)` | Score and sort |
-
-**Example:**
-
-```python
-from semantica.reasoning import AbductiveReasoner
-
-reasoner = AbductiveReasoner(rules)
-hypotheses = reasoner.generate_hypotheses(["Pavement is wet"])
-# Result: ["It rained", "Sprinkler was on"]
-```
 
 ### ExplanationGenerator
 
@@ -122,95 +93,71 @@ Explains *why* a fact was inferred.
 
 | Method | Description |
 |--------|-------------|
-| `generate_explanation(fact)` | Generate reasoning trace |
-| `show_reasoning_path(trace)` | Graph visualization |
+| `generate_explanation(result)` | Generate reasoning trace for an InferenceResult |
 
 ---
 
-## Convenience Functions
+## Usage Examples
+
+### Simple Rule-based Inference
 
 ```python
-from semantica.reasoning import ExplanationGenerator
+from semantica.reasoning import Reasoner
 
-# Explain result
-explainer = ExplanationGenerator()
-explanation = explainer.generate_explanation(conclusion)
-print(explanation.natural_language)
+reasoner = Reasoner()
+
+# Define rules
+rules = [
+    "IF Person(?x) THEN Human(?x)",
+    "IF Human(?x) AND Parent(?x, ?y) THEN Human(?y)"
+]
+
+# Initial facts
+facts = ["Person(John)", "Parent(John, Jane)"]
+
+# Run inference
+new_facts = reasoner.infer_facts(facts, rules)
+# Result: ["Human(John)", "Human(Jane)"]
 ```
 
----
+### Goal-driven Reasoning (Backward Chaining)
 
-## Configuration
+```python
+from semantica.reasoning import Reasoner
 
-### Environment Variables
+reasoner = Reasoner()
+reasoner.add_rule("IF Parent(?a, ?b) AND Parent(?b, ?c) THEN Grandparent(?a, ?c)")
+reasoner.add_fact("Parent(Alice, Bob)")
+reasoner.add_fact("Parent(Bob, Charlie)")
 
-```bash
-export REASONING_MAX_ITERATIONS=100
-export REASONING_STRATEGY=rete
-export REASONING_TIMEOUT=30
+# Prove a goal
+proof = reasoner.backward_chain("Grandparent(Alice, Charlie)")
+
+if proof:
+    print(f"Proven: {proof.conclusion}")
+    print(f"Steps: {proof.premises}")
 ```
-
-### YAML Configuration
-
-```yaml
-reasoning:
-  default_strategy: rete
-  max_depth: 10
-  
-  rete:
-    node_sharing: true
-    
-  abductive:
-    max_hypotheses: 5
-```
-
----
-
-## Integration Examples
 
 ### Knowledge Graph Enrichment
 
 ```python
-from semantica.reasoning import Rule, ReteEngine, DeductiveReasoner
+from semantica.reasoning import Reasoner, Rule
 from semantica.kg import KnowledgeGraph
 
-# 1. Define Ontology Rules
+# 1. Define Rules
 rules = [
-    Rule("SymmetricSibling", "Sibling(x, y) -> Sibling(y, x)"),
-    Rule("TransitiveAncestor", "Ancestor(x, y) & Ancestor(y, z) -> Ancestor(x, z)")
+    "IF Sibling(?x, ?y) THEN Sibling(?y, ?x)",
+    "IF Ancestor(?x, ?y) AND Ancestor(?y, ?z) THEN Ancestor(?x, ?z)"
 ]
 
-# 2. Load Graph
+# 2. Load Graph and Run Inference
 kg = KnowledgeGraph()
-facts = kg.get_all_triplets()
+reasoner = Reasoner()
+inferred = reasoner.infer_facts(kg.get_all_triplets(), rules)
 
-<<<<<<< Updated upstream
-# 3. Run Inference
-engine = InferenceEngine()
-inferred_triplets = engine.infer(facts, rules)
-
-# 4. Update Graph
-<<<<<<< HEAD
-kg.add_triples(inferred_triples)
-=======
-# 3. Run Inference 
-# For example, using a ReteEngine:
-rete_engine = ReteEngine()
-# rete_engine.add_facts(facts)
-# matches = rete_engine.match_patterns()
-
-# Or using a DeductiveReasoner:
-# deductive = DeductiveReasoner()
-# inferred = deductive.apply_logic(premises)
-
-inferred = [] # Placeholder for actual inference logic
-
-# 4. Update Graph
-# kg.add_triplets(inferred)
->>>>>>> Stashed changes
-=======
-kg.add_triplets(inferred_triplets)
->>>>>>> main
+# 3. Update Graph
+for fact_str in inferred:
+    kg.add_fact_from_string(fact_str)
 ```
 
 ---

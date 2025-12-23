@@ -1372,42 +1372,51 @@ flowchart TD
         print(f"  ID: {result['id']}, Score: {result['score']:.3f}")
     ```
 
+=== "Inference-Enhanced Retrieval"
+    Apply logical rules to expand retrieval results:
+    
+    ```python
+    from semantica.reasoning import Reasoner, Rule
+    from semantica.semantic_extract import ExplanationGenerator
+    
+    # Initialize Reasoner
+    reasoner = Reasoner()
+    
+    # Add reasoning rules
+    reasoner.add_rule(Rule(
+        name="employment_transitivity",
+        conditions=["?person CEO_OF ?company"],
         conclusions=["?person WORKS_FOR ?company"],
         priority=1
     ))
     
-    rule_manager.add_rule(Rule(
-        name="transitivity",
+    reasoner.add_rule(Rule(
+        name="part_of_transitivity",
         conditions=["?a PART_OF ?b", "?b PART_OF ?c"],
         conclusions=["?a PART_OF ?c"],
         priority=2
     ))
     
-    # Define facts
+    # Define facts from knowledge graph
     facts = [
         {"subject": "Tim Cook", "predicate": "CEO_OF", "object": "Apple"},
         {"subject": "iPhone", "predicate": "PART_OF", "object": "Apple"},
         {"subject": "A15 Chip", "predicate": "PART_OF", "object": "iPhone"}
     ]
     
-    # Run inference
-    inferred = engine.infer(
-        facts=facts,
-        rules=rule_manager.get_rules(),
-        strategy="forward"
-    )
+    # Run inference to discover hidden relationships
+    results = reasoner.infer_facts(facts)
     
     print(f"Original facts: {len(facts)}")
-    print(f"After inference: {len(inferred.facts)}")
+    print(f"Inferred {len(results)} new facts")
     
-    # Generate explanations
+    for fact in results:
+        print(f"  New fact: {fact}")
+    
+    # Generate explanations for why these facts were inferred
     explainer = ExplanationGenerator()
-    for new_fact in inferred.new_facts:
-        explanation = explainer.generate_explanation(
-            conclusion=new_fact,
-            reasoning_path=inferred.reasoning_path
-        )
-        print(f"  {new_fact}: {explanation.summary}")
+    # (Assuming we have the full inference results with paths)
+    # The Reasoner.forward_chain() provides detailed paths if needed
     ```
 
 === "LLM-Enhanced Retrieval"
@@ -1783,8 +1792,94 @@ classDiagram
 
 ---
 
+### 8. Reasoning & Inference
 
+!!! abstract "Definition"
+    **Reasoning** is the process of deriving new knowledge (conclusions) from existing facts (premises) using logical rules. It allows Semantica to "think" beyond what is explicitly stated in the data.
 
+**Reasoning Types**:
+
+- **Forward Chaining**: Starting from known facts and applying rules to see what new facts can be derived. (Data-driven)
+- **Backward Chaining**: Starting from a hypothesis (goal) and working backward to see if the available facts support it. (Goal-driven)
+- **Abductive Reasoning**: Finding the most likely explanation for a set of observations.
+- **Deductive Reasoning**: Applying general rules to specific cases to reach certain conclusions.
+
+**Practical Examples**:
+
+=== "Reasoner Facade"
+    The `Reasoner` provides a unified interface for all reasoning tasks:
+    
+    ```python
+    from semantica.reasoning import Reasoner, Rule
+    
+    # Initialize the reasoner
+    reasoner = Reasoner()
+    
+    # Define a logical rule: If A is a parent of B, and B is a parent of C, then A is a grandparent of C
+    reasoner.add_rule(Rule(
+        name="grandparent_rule",
+        conditions=["?a PARENT_OF ?b", "?b PARENT_OF ?c"],
+        conclusions=["?a GRANDPARENT_OF ?c"]
+    ))
+    
+    # Add initial facts
+    facts = [
+        "John PARENT_OF Mary",
+        "Mary PARENT_OF Alice"
+    ]
+    
+    # Infer new facts
+    new_facts = reasoner.infer_facts(facts)
+    
+    print(f"Inferred: {new_facts}")
+    # Output: ['John GRANDPARENT_OF Alice']
+    ```
+
+=== "SPARQL Reasoning"
+    Expand SPARQL queries with inferred patterns:
+    
+    ```python
+    from semantica.reasoning import SPARQLReasoner
+    
+    # Initialize SPARQL reasoner with a triplet store
+    sparql_reasoner = SPARQLReasoner(triplet_store=my_store)
+    
+    # Define a rule
+    sparql_reasoner.reasoner.add_rule("(?x works_at ?y) -> (?x employee_of ?y)")
+    
+    # Original query
+    query = "SELECT ?x WHERE { ?x employee_of <https://apple.com> }"
+    
+    # Expand query to include 'works_at' patterns
+    expanded_query = sparql_reasoner.expand_query(query)
+    
+    print(f"Expanded Query:\n{expanded_query}")
+    ```
+
+=== "Abductive Reasoning"
+    Generate hypotheses for observed facts:
+    
+    ```python
+    from semantica.reasoning import AbductiveReasoner
+    
+    reasoner = AbductiveReasoner()
+    
+    # Rule: Fire causes smoke
+    reasoner.reasoner.add_rule("Fire(?x) -> Smoke(?x)")
+    
+    # Observation: There is smoke in the kitchen
+    observations = ["Smoke(Kitchen)"]
+    
+    # What could have caused this?
+    hypotheses = reasoner.generate_hypotheses(observations)
+    
+    for h in hypotheses:
+        print(f"Possible cause: {h.conclusion} (Likelihood: {h.score})")
+    ```
+
+**Related Modules**:
+- [`reasoning` Module](reference/reasoning.md) - Core reasoning engines
+- [`ontology` Module](reference/ontology.md) - Domain rules and axioms
 
 ---
 

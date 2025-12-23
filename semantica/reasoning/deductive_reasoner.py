@@ -37,7 +37,7 @@ import re
 from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
-from .rule_manager import Rule, RuleManager
+from .reasoner import Rule, Reasoner
 
 
 @dataclass
@@ -112,7 +112,7 @@ class DeductiveReasoner:
         # Initialize progress tracker
         self.progress_tracker = get_progress_tracker()
 
-        self.rule_manager = RuleManager(**self.config)
+        self.reasoner = Reasoner(**self.config)
         self.known_facts: Set[Any] = set()
 
     def apply_logic(self, premises: List[Premise], **options) -> List[Conclusion]:
@@ -146,7 +146,7 @@ class DeductiveReasoner:
             self.progress_tracker.update_tracking(
                 tracking_id, message="Applying inference rules..."
             )
-            rules = self.rule_manager.get_all_rules()
+            rules = self.reasoner.rules
 
             for rule in rules:
                 # Find all matches (bindings) for the rule
@@ -387,7 +387,7 @@ class DeductiveReasoner:
                         )
 
         # Find rules that can prove goal
-        rules = self.rule_manager.get_all_rules()
+        rules = self.reasoner.rules
         
         # Use unified matching for finding applicable rules
         applicable_rules_and_bindings = []

@@ -223,12 +223,6 @@ class VectorStore:
                 tracking_id, status="failed", message=str(e)
             )
             raise
-
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-=======
-=======
->>>>>>> main
     def save(self, path: str) -> None:
         """
         Save vector store to disk.
@@ -308,19 +302,11 @@ class VectorStore:
             List of results with scores
         """
         # Generate embedding for query
-<<<<<<< HEAD
         query_vector = self.embed(query)
-=======
-        query_vector = self.embed([query])[0]
->>>>>>> main
 
         # Search by vector
         return self.search_vectors(query_vector=query_vector, k=limit, **options)
 
-<<<<<<< HEAD
->>>>>>> Stashed changes
-=======
->>>>>>> main
     def search_vectors(
         self, query_vector: np.ndarray, k: int = 10, **options
     ) -> List[Dict[str, Any]]:

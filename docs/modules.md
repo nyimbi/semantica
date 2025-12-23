@@ -377,41 +377,40 @@ print(f"Generated {len(owl_content)} lines of OWL")
 ### Reasoning Module
 
 !!! abstract "Purpose"
-    Infers new facts and validates existing knowledge using logical rules. Supports forward/backward chaining and explanation generation.
+    Infers new facts and validates existing knowledge using logical rules. Supports forward-chaining, high-performance pattern matching, and explanation generation.
 
 **Key Features:**
 
-- Forward and backward chaining
-- Rule-based inference
-- Deductive and abductive reasoning
-- Explanation generation
-- RETE algorithm support
-- Custom rule definition
+- Forward-chaining inference engine
+- IF-THEN rule support with variable substitution
+- High-performance Rete algorithm for large-scale rule matching
+- Natural language explanation generation for inferred facts
+- SPARQL query expansion for RDF graphs
 - Conflict detection in inferences
-- Temporal reasoning
+- Priority-based rule execution
 
 **Components:**
 
-- `RuleManager` — Manage inference rules
-- `DeductiveReasoner` — Deductive reasoning
-- `AbductiveReasoner` — Abductive reasoning
-- `ExplanationGenerator` — Generate explanations for inferences
-- `ReteEngine` — Rete algorithm for rule matching
+- `Reasoner` — High-level facade for all reasoning tasks
+- `ReteEngine` — High-performance pattern matching (Rete algorithm)
+- `ExplanationGenerator` — Generate justifications for inferred facts
+- `SPARQLReasoner` — Query expansion for triplet stores
 
 **Quick Example:**
 
 ```python
-from semantica.reasoning import DeductiveReasoner, Rule, Premise
+from semantica.reasoning import Reasoner
 
-reasoner = DeductiveReasoner()
+reasoner = Reasoner()
 
-# Define rules and premises
-rules = [Rule(id="r1", head="livesIn(?p, ?c)", body=["worksFor(?p, ?co)", "locatedIn(?co, ?c)"])]
-premises = [Premise(id="p1", statement="worksFor(Alice, Google)"), Premise(id="p2", statement="locatedIn(Google, London)")]
+# Add rules and facts
+reasoner.add_rule("IF Person(?x) AND Parent(?x, ?y) THEN ParentOfPerson(?x, ?y)")
+reasoner.add_fact("Person(Alice)")
+reasoner.add_fact("Parent(Alice, Bob)")
 
-conclusions = reasoner.apply_logic(premises, rules=rules)
-for c in conclusions:
-    print(f"Inferred: {c.statement}")
+# Perform inference
+inferred = reasoner.infer_facts(["Person(Alice)", "Parent(Alice, Bob)"])
+# Inferred: ["ParentOfPerson(Alice, Bob)"]
 ```
 
 **API Reference**: [Reasoning Module](reference/reasoning.md)
@@ -1083,18 +1082,17 @@ results = hybrid_search.search(
 
 ```python
 from semantica.kg import GraphBuilder
-from semantica.reasoning import InferenceEngine, RuleManager
+from semantica.reasoning import Reasoner
 
 # Build temporal graph
 builder = GraphBuilder(temporal=True)
 kg = builder.build(entities, relationships)
 
 # Add reasoning
-inference_engine = InferenceEngine()
-rule_manager = RuleManager()
-rule_manager.add_rules(["IF A THEN B"])
+reasoner = Reasoner()
+reasoner.add_rule("IF A THEN B")
 
-new_facts = inference_engine.forward_chain(kg, rule_manager)
+new_facts = reasoner.infer_facts(kg)
 ```
 
 ---
@@ -1110,7 +1108,7 @@ new_facts = inference_engine.forward_chain(kg, rule_manager)
 | **Semantic Extract** | `semantica.semantic_extract` | `NERExtractor` | Entity extraction |
 | **KG** | `semantica.kg` | `GraphBuilder` | Graph construction |
 | **Ontology** | `semantica.ontology` | `OntologyGenerator` | Ontology generation |
-| **Reasoning** | `semantica.reasoning` | `InferenceEngine` | Logical inference |
+| **Reasoning** | `semantica.reasoning` | `Reasoner` | Logical inference |
 | **Embeddings** | `semantica.embeddings` | `EmbeddingGenerator` | Vector generation |
 | **Vector Store** | `semantica.vector_store` | `VectorStore` | Vector storage |
 | **Graph Store** | `semantica.graph_store` | `GraphStore` | Graph database |
