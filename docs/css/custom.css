@@ -502,3 +502,86 @@ html {
 .md-nav__item .md-nav__item--active > .md-nav__link {
     border-left: 2px solid var(--md-accent-fg-color);
 }
+
+/* 
+   ==========================================================================
+   Home Page Content Alignment - Left Align
+   ========================================================================== 
+*/
+
+/* Reduce spacing between sidebars and content for all pages */
+.md-content__inner {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  margin-left: 0;
+}
+
+.md-content {
+  margin-left: 0;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+/* Reduce spacing before left sidebar for all pages */
+.md-sidebar {
+  padding-left: 0.25rem;
+  margin-left: 0;
+}
+
+.md-sidebar--primary {
+  padding-right: 0.5rem;
+  padding-left: 0.25rem;
+  margin-left: 0;
+}
+
+/* Reduce spacing after right sidebar (table of contents) and shift it right slightly */
+.md-sidebar--secondary {
+  padding-left: 1.25rem;
+  padding-right: 0;
+  margin-right: 0;
+  margin-left: 3.5rem;
+}
+
+/* Reduce right edge spacing - similar to left */
+.md-container {
+  padding-right: 0;
+  margin-right: 0;
+}
+
+.md-main {
+  margin-right: 0;
+  padding-right: 0;
+}
+
+/* Reduce margins of the main container */
+.md-main__inner {
+  margin-left: 0;
+  margin-right: 0;
+  padding-right: 0;
+}
+
+/* Reduce right edge spacing on body/html */
+body {
+  margin-right: 0;
+  padding-right: 0;
+}
+
+html {
+  margin-right: 0;
+  padding-right: 0;
+}
+
+.md-grid {
+  margin-left: 0;
+  padding-left: 0.5rem;
+}
+
+/* Ensure text content is left-aligned by default */
+.md-typeset {
+  text-align: left;
+}
+
+/* Keep hero section centered */
+.md-typeset > div[align="center"] {
+  text-align: center;
+}

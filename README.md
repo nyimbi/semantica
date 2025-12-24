@@ -81,7 +81,7 @@ Organizations have **unstructured data** (PDFs, emails, logs), **messy data** (i
 
 Semantica operates through three integrated layers that transform raw data into AI-ready knowledge:
 
-**Input Layer** — Universal ingestion from 50+ data formats (PDFs, DOCX, HTML, JSON, CSV, databases, live feeds, APIs, streams, archives, multi-modal content) into a unified pipeline.
+**Input Layer** — Universal ingestion from multiple data formats (PDFs, DOCX, HTML, JSON, CSV, databases, live feeds, APIs, streams, archives, multi-modal content) into a unified pipeline.
 
 **Semantic Layer** — Core intelligence engine performing entity extraction, relationship mapping, ontology generation, context engineering, and quality assurance. Includes **advanced entity deduplication** (Jaro-Winkler, disjoint property handling) to ensure a clean single source of truth.
 
@@ -96,7 +96,7 @@ Semantica operates through three integrated layers that transform raw data into 
 
 ```mermaid
 flowchart TD
-    A[Raw Data Sources<br/>PDFs, Emails, Logs, Databases<br/>50+ Formats] --> B[Input Layer<br/>Universal Data Ingestion]
+    A[Raw Data Sources<br/>PDFs, Emails, Logs, Databases<br/>Multiple Formats] --> B[Input Layer<br/>Universal Data Ingestion]
     B --> C[Format Detection<br/>& Parsing]
     C --> D[Normalization<br/>& Preprocessing]
     D --> E[Semantic Layer<br/>Core Intelligence]
@@ -155,7 +155,7 @@ flowchart TD
 
 **Efficient Embeddings** — Uses **FastEmbed** by default for high-performance, lightweight local embedding generation (faster than sentence-transformers).
 
-**Universal Data Ingestion** — Handles 50+ formats (PDF, DOCX, HTML, JSON, CSV, databases, APIs, streams) with unified pipeline, no custom parsers needed.
+**Universal Data Ingestion** — Handles multiple formats (PDF, DOCX, HTML, JSON, CSV, databases, APIs, streams) with unified pipeline, no custom parsers needed.
 
 **Automated Semantic Extraction** — NER, relationship extraction, and triplet generation with LLM enhancement discovers entities and relationships automatically.
 
@@ -175,7 +175,7 @@ flowchart TD
 
 | **Feature Category** | **Capabilities** | **Key Benefits** |
 |:---------------------|:-----------------|:------------------|
-| **Data Ingestion** | 50+ formats (PDF, DOCX, HTML, JSON, CSV, databases, APIs, streams, archives) | Universal ingestion, no custom parsers needed |
+| **Data Ingestion** | Multiple formats (PDF, DOCX, HTML, JSON, CSV, databases, APIs, streams, archives) | Universal ingestion, no custom parsers needed |
 | **Semantic Extraction** | NER, relationship extraction, triplet generation, LLM enhancement | Automated discovery of entities and relationships |
 | **Knowledge Graphs** | Entity resolution, temporal support, graph analytics, query interface | Production-ready, queryable knowledge structures |
 | **Ontology Generation** | 6-stage LLM pipeline, OWL generation, HermiT/Pellet validation | Automated ontology creation from documents |
@@ -312,7 +312,7 @@ pip install -e ".[dev]"
 
 > **New to Semantica?** Check out the [**Cookbook**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook) for hands-on examples!
 
-- [**Cookbook**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook) - 50+ interactive notebooks
+- [**Cookbook**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook) - Interactive notebooks
   - [Introduction](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/introduction) - Getting started tutorials
   - [Advanced](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/advanced) - Advanced techniques
   - [Use Cases](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/use_cases) - Real-world applications
@@ -321,7 +321,7 @@ pip install -e ".[dev]"
 
 | **Data Ingestion** | **Semantic Extract** | **Knowledge Graphs** | **Ontology** |
 |:--------------------:|:----------------------:|:----------------------:|:--------------:|
-| [50+ Formats](#universal-data-ingestion) | [Entity & Relations](#semantic-intelligence-engine) | [Graph Analytics](#knowledge-graph-construction) | [Auto Generation](#ontology-generation--management) |
+| [Multiple Formats](#universal-data-ingestion) | [Entity & Relations](#semantic-intelligence-engine) | [Graph Analytics](#knowledge-graph-construction) | [Auto Generation](#ontology-generation--management) |
 | **Context** | **GraphRAG** | **Pipeline** | **QA** |
 | [Agent Memory](#context-engineering-for-ai-agents) | [Hybrid RAG](#knowledge-graph-powered-rag-graphrag) | [Parallel Workers](#pipeline-orchestration--parallel-processing) | [Conflict Resolution](#production-ready-quality-assurance) |
 
@@ -329,7 +329,7 @@ pip install -e ".[dev]"
 
 ### Universal Data Ingestion
 
-> **50+ file formats** • PDF, DOCX, HTML, JSON, CSV, databases, feeds, archives
+> **Multiple file formats** • PDF, DOCX, HTML, JSON, CSV, databases, feeds, archives
 
 ```python
 from semantica.ingest import FileIngestor, WebIngestor, DBIngestor
@@ -554,7 +554,7 @@ exporter.export("graph.ttl", format="turtle")
 
 ## 🚀 Quick Start
 
-> **For comprehensive examples, see the [**Cookbook**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook) with 50+ interactive notebooks!**
+> **For comprehensive examples, see the [**Cookbook**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook) with interactive notebooks!**
 
 ```python
 from semantica.core import Semantica
@@ -577,7 +577,7 @@ print(f"Answer: {result.answer} | Nodes: {kg.node_count}, Edges: {kg.edge_count}
 
 **AI Agents & Autonomous Systems** — Build agents with persistent memory and semantic understanding.
 
-**Multi-Format Document Processing** — Process 50+ formats through a unified pipeline.
+**Multi-Format Document Processing** — Process multiple formats through a unified pipeline.
 
 **Data Pipeline Processing** — Build scalable pipelines with parallel execution.
 
@@ -593,7 +593,7 @@ print(f"Answer: {result.answer} | Nodes: {kg.node_count}, Edges: {kg.edge_count}
 
 **Incremental Updates** — Real-time stream processing with Kafka, RabbitMQ, Kinesis for live updates.
 
-**Multi-Language Support** — Process 50+ languages with automatic detection.
+**Multi-Language Support** — Process multiple languages with automatic detection.
 
 **Custom Ontology Import** — Import and extend Schema.org and custom ontologies.
 

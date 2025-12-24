@@ -35,7 +35,7 @@ These modules handle data ingestion, parsing, chunking, and preparation.
 
 **Key Features:**
 
-- 50+ file format support (PDF, DOCX, HTML, JSON, CSV, etc.)
+- Multiple file format support (PDF, DOCX, HTML, JSON, CSV, etc.)
 - Web scraping with JavaScript rendering
 - Database integration (SQL, NoSQL)
 - Real-time streaming support
@@ -79,7 +79,7 @@ web_docs = web_ingestor.ingest("https://example.com")
 
 **Key Features:**
 
-- 50+ file format support
+- Multiple file format support
 - OCR for images and scanned documents
 - Table extraction from PDFs and spreadsheets
 - Metadata preservation

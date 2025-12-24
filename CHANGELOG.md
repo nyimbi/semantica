@@ -49,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Core framework architecture
-- Universal data ingestion (50+ file formats)
+- Universal data ingestion (multiple file formats)
 - Semantic intelligence engine (NER, relation extraction, event detection)
 - Knowledge graph construction with entity resolution
 - 6-stage ontology generation pipeline
