@@ -300,7 +300,7 @@ class TemporalGraphQuery:
         relationship: Optional[str] = None,
         start_time: Optional[Any] = None,
         end_time: Optional[Any] = None,
-        metrics: List[str] = None,
+        metrics: Optional[List[str]] = None,
         **options,
     ) -> Dict[str, Any]:
         """
@@ -332,6 +332,10 @@ class TemporalGraphQuery:
                 - stability: Stability measure (if "stability" in metrics)
         """
         self.logger.info("Analyzing graph evolution")
+
+        # Set default metrics if None
+        if metrics is None:
+            metrics = ["count", "diversity", "stability"]
 
         # Filter relationships
         relationships = graph.get("relationships", [])
