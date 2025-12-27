@@ -24,6 +24,7 @@ License: MIT
 
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
+import time
 
 
 class GraphBuilder:
@@ -266,6 +267,7 @@ class GraphBuilder:
             sources = [sources]
 
         # Track graph building
+        build_start_time = time.time()
         tracking_id = self.progress_tracker.start_tracking(
             module="kg",
             submodule="GraphBuilder",
@@ -288,35 +290,54 @@ class GraphBuilder:
                 relationships_list = source_dict.get("relationships", [])
                 
                 if entities_list or relationships_list:
-                    print(f"Processing {len(entities_list)} entities, {len(relationships_list)} relationships...")
+                    total_items = len(entities_list) + len(relationships_list)
+                    print(f"Processing {len(entities_list)} entities, {len(relationships_list)} relationships ({total_items} total)...")
                 
-                # Process entities with progress
+                # Process entities with progress and ETA
                 if entities_list:
-                    batch_size = max(500, len(entities_list) // 10)  # Show ~10 progress updates
+                    entity_start_time = time.time()
+                    batch_size = max(100, len(entities_list) // 20)  # Show ~20 progress updates for better granularity
                     for i in range(0, len(entities_list), batch_size):
+                        batch_start = time.time()
                         batch = entities_list[i:i + batch_size]
                         for item in batch:
                             self._process_item(item, all_entities, all_relationships, **options)
                         processed = min(i + batch_size, len(entities_list))
                         remaining = len(entities_list) - processed
-                        if remaining > 0:
-                            print(f"  Processed {processed}/{len(entities_list)} entities ({remaining} remaining)")
+                        
+                        # Calculate ETA
+                        elapsed = time.time() - entity_start_time
+                        if processed > 0 and elapsed > 0:
+                            rate = processed / elapsed
+                            eta_seconds = remaining / rate if rate > 0 else 0
+                            eta_str = f"{eta_seconds:.1f}s" if eta_seconds < 60 else f"{eta_seconds/60:.1f}m"
+                            progress_pct = (processed / len(entities_list)) * 100
+                            print(f"  Entities: {processed}/{len(entities_list)} ({progress_pct:.1f}%) | ETA: {eta_str} | Rate: {rate:.1f}/s")
                         else:
-                            print(f"  Processed {processed}/{len(entities_list)} entities (complete)")
+                            print(f"  Entities: {processed}/{len(entities_list)}")
                 
-                # Process relationships with progress
+                # Process relationships with progress and ETA
                 if relationships_list:
-                    batch_size = max(500, len(relationships_list) // 10)  # Show ~10 progress updates
+                    rel_start_time = time.time()
+                    batch_size = max(100, len(relationships_list) // 20)  # Show ~20 progress updates
                     for i in range(0, len(relationships_list), batch_size):
+                        batch_start = time.time()
                         batch = relationships_list[i:i + batch_size]
                         for item in batch:
                             self._process_item(item, all_entities, all_relationships, **options)
                         processed = min(i + batch_size, len(relationships_list))
                         remaining = len(relationships_list) - processed
-                        if remaining > 0:
-                            print(f"  Processed {processed}/{len(relationships_list)} relationships ({remaining} remaining)")
+                        
+                        # Calculate ETA
+                        elapsed = time.time() - rel_start_time
+                        if processed > 0 and elapsed > 0:
+                            rate = processed / elapsed
+                            eta_seconds = remaining / rate if rate > 0 else 0
+                            eta_str = f"{eta_seconds:.1f}s" if eta_seconds < 60 else f"{eta_seconds/60:.1f}m"
+                            progress_pct = (processed / len(relationships_list)) * 100
+                            print(f"  Relationships: {processed}/{len(relationships_list)} ({progress_pct:.1f}%) | ETA: {eta_str} | Rate: {rate:.1f}/s")
                         else:
-                            print(f"  Processed {processed}/{len(relationships_list)} relationships (complete)")
+                            print(f"  Relationships: {processed}/{len(relationships_list)}")
             else:
                 # Process sources (which might be entities)
                 for source in sources:
@@ -355,13 +376,17 @@ class GraphBuilder:
                 self.logger.info(
                     f"Resolving {len(all_entities)} entities using {self.entity_resolution_strategy} strategy"
                 )
+                resolution_start = time.time()
                 resolved_entities = resolver_to_use.resolve_entities(all_entities)
-                print(f"Resolved to {len(resolved_entities)} unique entities")
+                resolution_time = time.time() - resolution_start
+                print(f"✅ Resolved to {len(resolved_entities)} unique entities ({resolution_time:.2f}s)")
                 self.logger.info(
                     f"Entity resolution complete: {len(all_entities)} -> {len(resolved_entities)} unique entities"
                 )
 
             # Build graph structure
+            print("Building graph structure...")
+            structure_start = time.time()
             graph = {
                 "entities": resolved_entities,
                 "relationships": all_relationships,
@@ -373,18 +398,25 @@ class GraphBuilder:
                     "entity_resolution_applied": resolver_to_use is not None,
                 },
             }
+            structure_time = time.time() - structure_start
+            print(f"✅ Graph structure built ({structure_time:.2f}s)")
 
             # Persist to GraphStore if available
             if self.graph_store:
+                print("Persisting knowledge graph to GraphStore...")
                 self.logger.info("Persisting knowledge graph to GraphStore")
                 self.progress_tracker.update_tracking(
                     tracking_id, message="Persisting to GraphStore..."
                 )
                 
+                store_start = time.time()
                 # Add nodes
                 node_count = self.graph_store.add_nodes(resolved_entities)
+                node_time = time.time() - store_start
+                print(f"  Added {node_count} nodes ({node_time:.2f}s)")
                 
                 # Prepare edges for add_edges (expects source_id, target_id, type)
+                edge_prep_start = time.time()
                 formatted_edges = []
                 for rel in all_relationships:
                     formatted_edges.append({
@@ -393,8 +425,14 @@ class GraphBuilder:
                         "type": rel.get("type", "RELATED_TO"),
                         "properties": rel.get("metadata", {})
                     })
+                edge_prep_time = time.time() - edge_prep_start
                 
+                edge_start = time.time()
                 edge_count = self.graph_store.add_edges(formatted_edges)
+                edge_time = time.time() - edge_start
+                total_store_time = time.time() - store_start
+                print(f"  Added {edge_count} edges ({edge_time:.2f}s)")
+                print(f"✅ GraphStore persistence complete ({total_store_time:.2f}s total)")
                 self.logger.info(f"Persisted {node_count} nodes and {edge_count} edges")
 
             # Detect and resolve conflicts if conflict detector is available
@@ -423,10 +461,19 @@ class GraphBuilder:
                         self.logger.warning("No conflicts were automatically resolved")
 
             # Log final graph statistics
+            total_build_time = time.time() - build_start_time
             self.logger.info(
                 f"Knowledge graph built successfully: "
                 f"{len(resolved_entities)} entities, {len(all_relationships)} relationships"
             )
+            
+            # Print final summary with timing
+            print(f"\n{'='*60}")
+            print(f"✅ Knowledge Graph Build Complete")
+            print(f"   Entities: {len(resolved_entities)}")
+            print(f"   Relationships: {len(all_relationships)}")
+            print(f"   Total time: {total_build_time:.2f}s")
+            print(f"{'='*60}")
 
             self.progress_tracker.stop_tracking(
                 tracking_id,
