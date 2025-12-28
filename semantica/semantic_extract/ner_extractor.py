@@ -155,20 +155,53 @@ class NERExtractor:
             Union[List[Entity], List[List[Entity]]]: Extracted entities
         """
         if isinstance(text, list):
-            # Handle batch extraction
-            results = []
-            for item in text:
-                if isinstance(item, dict) and "content" in item:
-                    results.append(self.extract_entities(item["content"], **kwargs))
-                elif isinstance(item, str):
-                    results.append(self.extract_entities(item, **kwargs))
-                else:
-                    # Try converting to string
+            # Handle batch extraction with progress tracking
+            tracking_id = self.progress_tracker.start_tracking(
+                module="semantic_extract",
+                submodule="NERExtractor",
+                message=f"Batch extracting entities from {len(text)} documents",
+            )
+            
+            try:
+                results = []
+                total_items = len(text)
+                update_interval = max(1, total_items // 20)  # Update every 5%
+                
+                for idx, item in enumerate(text, 1):
                     try:
-                        results.append(self.extract_entities(str(item), **kwargs))
+                        if isinstance(item, dict) and "content" in item:
+                            results.append(self.extract_entities(item["content"], **kwargs))
+                        elif isinstance(item, str):
+                            results.append(self.extract_entities(item, **kwargs))
+                        else:
+                            # Try converting to string
+                            try:
+                                results.append(self.extract_entities(str(item), **kwargs))
+                            except Exception:
+                                results.append([])
                     except Exception:
                         results.append([])
-            return results
+                    
+                    # Update progress periodically
+                    if idx % update_interval == 0 or idx == total_items:
+                        self.progress_tracker.update_progress(
+                            tracking_id,
+                            processed=idx,
+                            total=total_items,
+                            message=f"Processing documents... {idx}/{total_items}"
+                        )
+                
+                self.progress_tracker.stop_tracking(
+                    tracking_id,
+                    status="completed",
+                    message=f"Extracted entities from {len(results)} documents",
+                )
+                return results
+            except Exception as e:
+                self.progress_tracker.stop_tracking(
+                    tracking_id, status="failed", message=str(e)
+                )
+                raise
         else:
             return self.extract_entities(text, **kwargs)
 

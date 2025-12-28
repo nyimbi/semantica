@@ -180,28 +180,57 @@ class RelationExtractor:
             Union[List[Relation], List[List[Relation]]]: Extracted relations
         """
         if isinstance(text, list) and isinstance(entities, list):
-            # Handle batch extraction
-            results = []
-            # Ensure lists are same length
-            min_len = min(len(text), len(entities))
-            for i in range(min_len):
-                doc_item = text[i]
-                ent_item = entities[i]
+            # Handle batch extraction with progress tracking
+            tracking_id = self.progress_tracker.start_tracking(
+                module="semantic_extract",
+                submodule="RelationExtractor",
+                message=f"Batch extracting relations from {len(text)} documents",
+            )
+            
+            try:
+                results = []
+                # Ensure lists are same length
+                min_len = min(len(text), len(entities))
+                update_interval = max(1, min_len // 20)  # Update every 5%
                 
-                doc_text = ""
-                if isinstance(doc_item, dict) and "content" in doc_item:
-                    doc_text = doc_item["content"]
-                elif isinstance(doc_item, str):
-                    doc_text = doc_item
-                else:
-                    doc_text = str(doc_item)
+                for i in range(min_len):
+                    doc_item = text[i]
+                    ent_item = entities[i]
+                    
+                    doc_text = ""
+                    if isinstance(doc_item, dict) and "content" in doc_item:
+                        doc_text = doc_item["content"]
+                    elif isinstance(doc_item, str):
+                        doc_text = doc_item
+                    else:
+                        doc_text = str(doc_item)
+                    
+                    # Ensure ent_item is a list of entities
+                    if not isinstance(ent_item, list):
+                        ent_item = [] # Should not happen if entities is List[List[Entity]]
+                    
+                    results.append(self.extract_relations(doc_text, ent_item, **kwargs))
+                    
+                    # Update progress periodically
+                    if (i + 1) % update_interval == 0 or (i + 1) == min_len:
+                        self.progress_tracker.update_progress(
+                            tracking_id,
+                            processed=i + 1,
+                            total=min_len,
+                            message=f"Processing documents... {i + 1}/{min_len}"
+                        )
                 
-                # Ensure ent_item is a list of entities
-                if not isinstance(ent_item, list):
-                    ent_item = [] # Should not happen if entities is List[List[Entity]]
-                
-                results.append(self.extract_relations(doc_text, ent_item, **kwargs))
-            return results
+                self.progress_tracker.stop_tracking(
+                    tracking_id,
+                    status="completed",
+                    message=f"Extracted relations from {len(results)} documents",
+                )
+                return results
+            except Exception as e:
+                self.progress_tracker.stop_tracking(
+                    tracking_id, status="failed", message=str(e)
+                )
+                raise
         elif isinstance(text, str) and isinstance(entities, list):
              # Single text, single list of entities (standard case)
             return self.extract_relations(text, entities, **kwargs)

@@ -614,7 +614,7 @@ class ConflictDetector:
             file=None,
             module="conflicts",
             submodule="ConflictDetector",
-            message="Detecting type conflicts",
+            message=f"Detecting type conflicts in {len(entities)} entities",
         )
 
         try:
@@ -622,8 +622,10 @@ class ConflictDetector:
 
             # Group entities by ID
             entity_groups: Dict[str, List[Dict[str, Any]]] = {}
+            total_entities = len(entities)
+            update_interval = max(1, total_entities // 20)  # Update every 5%
 
-            for entity in entities:
+            for i, entity in enumerate(entities):
                 entity_id = entity.get("id") or entity.get("entity_id")
                 if not entity_id:
                     continue
@@ -631,9 +633,21 @@ class ConflictDetector:
                 if entity_id not in entity_groups:
                     entity_groups[entity_id] = []
                 entity_groups[entity_id].append(entity)
+                
+                # Update progress periodically
+                if (i + 1) % update_interval == 0 or (i + 1) == total_entities:
+                    self.progress_tracker.update_progress(
+                        tracking_id,
+                        processed=i + 1,
+                        total=total_entities,
+                        message=f"Grouping entities... {i + 1}/{total_entities}"
+                    )
 
             # Check each entity group for type conflicts
-            for entity_id, entity_list in entity_groups.items():
+            total_groups = len(entity_groups)
+            group_update_interval = max(1, total_groups // 20)  # Update every 5%
+            
+            for j, (entity_id, entity_list) in enumerate(entity_groups.items()):
                 if len(entity_list) < 2:
                     continue  # Need at least 2 sources to have conflict
 
@@ -688,6 +702,15 @@ class ConflictDetector:
                         f"Type conflict detected: {entity_id} conflicting types: "
                         f"{unique_types}"
                     )
+                
+                # Update progress periodically for group checking
+                if (j + 1) % group_update_interval == 0 or (j + 1) == total_groups:
+                    self.progress_tracker.update_progress(
+                        tracking_id,
+                        processed=j + 1,
+                        total=total_groups,
+                        message=f"Checking entity groups for type conflicts... {j + 1}/{total_groups}"
+                    )
 
             self.progress_tracker.stop_tracking(
                 tracking_id,
@@ -718,7 +741,7 @@ class ConflictDetector:
             file=None,
             module="conflicts",
             submodule="ConflictDetector",
-            message="Detecting temporal conflicts",
+            message=f"Detecting temporal conflicts in {len(entities)} entities",
         )
 
         try:
@@ -738,8 +761,10 @@ class ConflictDetector:
 
             # Group entities by ID
             entity_groups: Dict[str, List[Dict[str, Any]]] = {}
+            total_entities = len(entities)
+            update_interval = max(1, total_entities // 20)  # Update every 5%
 
-            for entity in entities:
+            for i, entity in enumerate(entities):
                 entity_id = entity.get("id") or entity.get("entity_id")
                 if not entity_id:
                     continue
@@ -747,9 +772,21 @@ class ConflictDetector:
                 if entity_id not in entity_groups:
                     entity_groups[entity_id] = []
                 entity_groups[entity_id].append(entity)
+                
+                # Update progress periodically
+                if (i + 1) % update_interval == 0 or (i + 1) == total_entities:
+                    self.progress_tracker.update_progress(
+                        tracking_id,
+                        processed=i + 1,
+                        total=total_entities,
+                        message=f"Grouping entities... {i + 1}/{total_entities}"
+                    )
 
             # Check each entity group for temporal conflicts
-            for entity_id, entity_list in entity_groups.items():
+            total_groups = len(entity_groups)
+            group_update_interval = max(1, total_groups // 20)  # Update every 5%
+            
+            for j, (entity_id, entity_list) in enumerate(entity_groups.items()):
                 if len(entity_list) < 2:
                     continue
 
@@ -834,6 +871,15 @@ class ConflictDetector:
                                 f"Temporal conflict detected: {entity_id}.{prop_name} "
                                 f"has conflicting values: {unique_values}"
                             )
+                
+                # Update progress periodically for group checking
+                if (j + 1) % group_update_interval == 0 or (j + 1) == total_groups:
+                    self.progress_tracker.update_progress(
+                        tracking_id,
+                        processed=j + 1,
+                        total=total_groups,
+                        message=f"Checking entity groups for temporal conflicts... {j + 1}/{total_groups}"
+                    )
 
             self.progress_tracker.stop_tracking(
                 tracking_id,
@@ -864,7 +910,7 @@ class ConflictDetector:
             file=None,
             module="conflicts",
             submodule="ConflictDetector",
-            message="Detecting logical conflicts",
+            message=f"Detecting logical conflicts in {len(entities)} entities",
         )
 
         try:
@@ -880,8 +926,10 @@ class ConflictDetector:
 
             # Group entities by ID
             entity_groups: Dict[str, List[Dict[str, Any]]] = {}
+            total_entities = len(entities)
+            update_interval = max(1, total_entities // 20)  # Update every 5%
 
-            for entity in entities:
+            for i, entity in enumerate(entities):
                 entity_id = entity.get("id") or entity.get("entity_id")
                 if not entity_id:
                     continue
@@ -889,9 +937,21 @@ class ConflictDetector:
                 if entity_id not in entity_groups:
                     entity_groups[entity_id] = []
                 entity_groups[entity_id].append(entity)
+                
+                # Update progress periodically
+                if (i + 1) % update_interval == 0 or (i + 1) == total_entities:
+                    self.progress_tracker.update_progress(
+                        tracking_id,
+                        processed=i + 1,
+                        total=total_entities,
+                        message=f"Grouping entities... {i + 1}/{total_entities}"
+                    )
 
             # Check each entity group for logical conflicts
-            for entity_id, entity_list in entity_groups.items():
+            total_groups = len(entity_groups)
+            group_update_interval = max(1, total_groups // 20)  # Update every 5%
+            
+            for j, (entity_id, entity_list) in enumerate(entity_groups.items()):
                 if len(entity_list) < 2:
                     continue
 
@@ -953,6 +1013,15 @@ class ConflictDetector:
                                         f"{type1_str} and {type2_str}"
                                     )
                                     break
+                
+                # Update progress periodically for group checking
+                if (j + 1) % group_update_interval == 0 or (j + 1) == total_groups:
+                    self.progress_tracker.update_progress(
+                        tracking_id,
+                        processed=j + 1,
+                        total=total_groups,
+                        message=f"Checking entity groups for logical conflicts... {j + 1}/{total_groups}"
+                    )
 
             self.progress_tracker.stop_tracking(
                 tracking_id,
@@ -997,7 +1066,7 @@ class ConflictDetector:
             file=None,
             module="conflicts",
             submodule="ConflictDetector",
-            message="Detecting all conflicts",
+            message=f"Detecting all conflicts in {len(entities)} entities",
         )
 
         try:
@@ -1012,31 +1081,55 @@ class ConflictDetector:
                     if (e.get("type") or e.get("entity_type")) == entity_type
                 ]
 
+            # Track overall progress across multiple detection methods
+            detection_steps = []
+            
             # Detect value conflicts (for common properties)
             if self.conflict_fields:
                 for entity_type_key, fields in self.conflict_fields.items():
                     if not entity_type or entity_type_key == entity_type:
                         for field_name in fields:
-                            conflicts = self.detect_value_conflicts(
-                                filtered_entities, field_name, entity_type
-                            )
-                            all_conflicts.extend(conflicts)
+                            detection_steps.append(("value", field_name))
             else:
-                # Detect entity-wide conflicts
-                conflicts = self.detect_entity_conflicts(filtered_entities, entity_type)
-                all_conflicts.extend(conflicts)
+                detection_steps.append(("entity_wide", None))
 
-            # Detect type conflicts
-            type_conflicts = self.detect_type_conflicts(filtered_entities)
-            all_conflicts.extend(type_conflicts)
+            # Add other detection steps
+            detection_steps.extend([
+                ("type", None),
+                ("temporal", None),
+                ("logical", None)
+            ])
 
-            # Detect temporal conflicts
-            temporal_conflicts = self.detect_temporal_conflicts(filtered_entities)
-            all_conflicts.extend(temporal_conflicts)
+            total_steps = len(detection_steps)
+            update_interval = max(1, total_steps // 10)  # Update every 10%
 
-            # Detect logical conflicts
-            logical_conflicts = self.detect_logical_conflicts(filtered_entities)
-            all_conflicts.extend(logical_conflicts)
+            for step_idx, (step_type, step_param) in enumerate(detection_steps):
+                if step_type == "value":
+                    conflicts = self.detect_value_conflicts(
+                        filtered_entities, step_param, entity_type
+                    )
+                    all_conflicts.extend(conflicts)
+                elif step_type == "entity_wide":
+                    conflicts = self.detect_entity_conflicts(filtered_entities, entity_type)
+                    all_conflicts.extend(conflicts)
+                elif step_type == "type":
+                    conflicts = self.detect_type_conflicts(filtered_entities)
+                    all_conflicts.extend(conflicts)
+                elif step_type == "temporal":
+                    conflicts = self.detect_temporal_conflicts(filtered_entities)
+                    all_conflicts.extend(conflicts)
+                elif step_type == "logical":
+                    conflicts = self.detect_logical_conflicts(filtered_entities)
+                    all_conflicts.extend(conflicts)
+                
+                # Update progress periodically
+                if (step_idx + 1) % update_interval == 0 or (step_idx + 1) == total_steps:
+                    self.progress_tracker.update_progress(
+                        tracking_id,
+                        processed=step_idx + 1,
+                        total=total_steps,
+                        message=f"Detecting conflicts... {step_idx + 1}/{total_steps} steps completed"
+                    )
 
             self.progress_tracker.stop_tracking(
                 tracking_id,
