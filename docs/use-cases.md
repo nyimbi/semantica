@@ -129,14 +129,6 @@ ontology = ontology_gen.generate_from_graph(kg)
     
     [:material-arrow-right: View Cookbook](https://github.com/Hawksight-AI/semantica/blob/main/cookbook/use_cases/finance/01_Financial_Data_Integration_MCP.ipynb)
 
--   :material-chart-line: **Algorithmic Trading Signals**
-    ---
-    Generate alpha by connecting disparate data points.
-    
-    **Goal**: Build a graph of companies, supply chains, and global events to identify non-obvious trading signals.
-    
-    [:material-arrow-right: View Cookbook](https://github.com/Hawksight-AI/semantica/blob/main/cookbook/use_cases/trading/01_Risk_Assessment.ipynb)
-
 -   :material-bitcoin: **Blockchain Analytics**
     ---
     Trace funds and identify illicit activity.

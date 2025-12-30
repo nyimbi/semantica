@@ -463,32 +463,6 @@ Real-world examples and end-to-end applications across various industries.
 
 </div>
 
-### Trading
-
-<div class="grid cards" markdown>
-
--   :material-shield-check: **Risk Assessment**
-    ---
-    Assessing trading risks using knowledge graphs, GraphRAG, entity-aware chunking, and portfolio risk modeling with Yahoo Finance API and RSS feeds.
-    
-    **Topics**: Risk Management, Portfolio Analysis, GraphRAG, Dependency Analysis
-    
-    **Difficulty**: Advanced
-    
-    [Open Notebook](https://github.com/Hawksight-AI/semantica/blob/main/cookbook/use_cases/trading/01_Risk_Assessment.ipynb)
-
--   :material-newspaper-variant: **News Sentiment Analysis**
-    ---
-    Analyzing news sentiment for trading signals and market predictions using financial RSS feeds, semantic transformer chunking, enhanced GraphRAG, and sentiment extraction.
-    
-    **Topics**: Sentiment Analysis, Trading Signals, GraphRAG, Correlation Analysis
-    
-    **Difficulty**: Intermediate
-    
-    [Open Notebook](https://github.com/Hawksight-AI/semantica/blob/main/cookbook/use_cases/trading/02_News_Sentiment_Analysis.ipynb)
-
-</div>
-
 ### Renewable Energy
 
 <div class="grid cards" markdown>
@@ -518,16 +492,6 @@ Real-world examples and end-to-end applications across various industries.
     **Difficulty**: Advanced
     
     [Open Notebook](https://github.com/Hawksight-AI/semantica/blob/main/cookbook/use_cases/supply_chain/01_Supply_Chain_Data_Integration.ipynb)
-
--   :material-alert-octagon: **Supply Chain Risk Management**
-    ---
-    Managing and mitigating supply chain risks using knowledge graphs with supply chain RSS feeds, conflict detection, and dependency analysis.
-    
-    **Topics**: Risk Management, Supply Chain Resilience, Conflict Resolution, Dependency Analysis
-    
-    **Difficulty**: Advanced
-    
-    [Open Notebook](https://github.com/Hawksight-AI/semantica/blob/main/cookbook/use_cases/supply_chain/02_Supply_Chain_Risk_Management.ipynb)
 
 </div>
 

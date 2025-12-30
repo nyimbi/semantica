@@ -16,9 +16,6 @@
 | **Blockchain** |
 | `01_DeFi_Protocol_Intelligence` | `DuplicateDetector` (group) | `keep_last` | `relationship` | `voting` |
 | `02_Transaction_Network_Analysis` | `ClusterBuilder` (hierarchical) | `keep_most_complete` | `temporal` | `most_recent` |
-| **Trading** |
-| `01_Risk_Assessment` | `ClusterBuilder` (graph_based) | `merge_all` | `logical` | `highest_confidence` |
-| `02_News_Sentiment_Analysis` | `DuplicateDetector` (batch) | `keep_most_complete` | `type` | `voting` |
 | **Intelligence** |
 | `01_Criminal_Network_Analysis` | `EntityResolver` (fuzzy) | - | `value` | `credibility_weighted` |
 | `02_Intelligence_Analysis_Orchestrator_Worker` | `DuplicateDetector` (batch) | `merge_all` | `entity` | `voting` |
@@ -46,10 +43,6 @@
 ### Blockchain
 - **DeFi Protocols**: Group method for related protocols; keep_last for latest protocol info
 - **Transaction Networks**: Hierarchical clustering for nested groups; temporal for time-sensitive data
-
-### Trading
-- **Risk Assessment**: Graph-based clustering for interconnected risks; logical conflict detection for risk rules
-- **News Sentiment**: Batch for large news datasets; voting for sentiment classification conflicts
 
 ### Intelligence
 - **Criminal Networks**: Fuzzy matching for intelligence data; credibility weighting for intelligence sources

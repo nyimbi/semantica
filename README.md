@@ -252,7 +252,7 @@ python -c "import semantica; print(semantica.__version__)"
 - [**Entity Extraction**](cookbook/introduction/05_Entity_Extraction.ipynb) - NER & Relationships
 - [**Building Knowledge Graphs**](cookbook/introduction/07_Building_Knowledge_Graphs.ipynb) - Graph Construction
 
-### Industry Use Cases (15 Cookbooks)
+### Industry Use Cases (14 Cookbooks)
 
 **Domain-Specific Cookbooks** showcasing real-world applications with real data sources, advanced chunking strategies, temporal KGs, GraphRAG, and comprehensive Semantica module integration:
 
@@ -276,16 +276,11 @@ python -c "import semantica; print(semantica.__version__)"
 - [**Criminal Network Analysis**](cookbook/use_cases/intelligence/01_Criminal_Network_Analysis.ipynb) - OSINT RSS, deduplication, network centrality, graph analytics
 - [**Intelligence Analysis Orchestrator Worker**](cookbook/use_cases/intelligence/02_Intelligence_Analysis_Orchestrator_Worker.ipynb) - Pipeline orchestrator, multi-source integration, conflict detection
 
-#### Trading
-- [**Risk Assessment**](cookbook/use_cases/trading/01_Risk_Assessment.ipynb) - Yahoo Finance API, GraphRAG, entity-aware chunking, portfolio risk modeling
-- [**News Sentiment Analysis**](cookbook/use_cases/trading/02_News_Sentiment_Analysis.ipynb) - Financial RSS, semantic transformer chunking, enhanced GraphRAG, sentiment extraction
-
 #### Renewable Energy
 - [**Energy Market Analysis**](cookbook/use_cases/renewable_energy/01_Energy_Market_Analysis.ipynb) - Energy RSS, EIA API, temporal KGs, TemporalPatternDetector, trend prediction
 
 #### Supply Chain
 - [**Supply Chain Data Integration**](cookbook/use_cases/supply_chain/01_Supply_Chain_Data_Integration.ipynb) - Logistics RSS, deduplication, relationship mapping
-- [**Supply Chain Risk Management**](cookbook/use_cases/supply_chain/02_Supply_Chain_Risk_Management.ipynb) - Supply chain RSS, conflict detection, dependency analysis
 
 > **Note:** Once published to PyPI, you'll be able to install with `pip install semantica`
 
@@ -683,7 +678,7 @@ print(f"Answer: {result.answer} | Nodes: {kg.node_count}, Edges: {kg.edge_count}
 
 **Biomedical** — Drug discovery, medical literature analysis.
 
-[**Explore Use Case Examples**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/use_cases) — See real-world implementations in finance, biomedical, cybersecurity, trading, and more. **15 comprehensive domain-specific cookbooks** with real data sources, advanced chunking strategies, temporal KGs, GraphRAG, and full Semantica module integration.
+[**Explore Use Case Examples**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/use_cases) — See real-world implementations in finance, biomedical, cybersecurity, and more. **14 comprehensive domain-specific cookbooks** with real data sources, advanced chunking strategies, temporal KGs, GraphRAG, and full Semantica module integration.
 
 ## 🔬 Advanced Features
 
