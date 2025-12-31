@@ -10,8 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2025-12-31
 
 ### Added
-- Initial preparation for PyPI release
-- Updated versioning across the framework to 0.1.0
+- New command-line interface (`semantica` CLI) with support for knowledge base building and info commands.
+- Integrated FastAPI-based REST API server for remote access to framework functionality.
+- Dedicated background worker component for scalable task processing and pipeline execution.
+- Framework-level versioning configuration for PyPI distribution.
+- Automated release workflow with Trusted Publishing support.
+
+### Changed
+- Updated versioning across the framework to 0.1.0.
+- Refined entry point configurations in `pyproject.toml`.
+- Improved lazy module loading for core framework components.
 
 ## [0.0.5] - 2025-11-26
 
