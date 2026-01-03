@@ -58,6 +58,7 @@ dependencies = [
     "lxml>=4.9.0",
     "pypdf2>=2.10.0",
     "python-docx>=0.8.11",
+    "docling>=1.0.0",
     "openpyxl>=3.0.10",
     "pillow>=9.2.0",
     "librosa>=0.9.0",
@@ -204,8 +205,11 @@ graph-falkordb = [
 graph-all = [
     "semantica[graph-neo4j,graph-falkordb]"
 ]
+parse-docling = [
+    "docling>=1.0.0"
+]
 all = [
-    "semantica[dev,viz,gpu,cloud,monitoring,llm-all,models-huggingface,split-all,graph-all]"
+    "semantica[dev,viz,gpu,cloud,monitoring,llm-all,models-huggingface,split-all,graph-all,parse-docling]"
 ]
 
 [project.scripts]

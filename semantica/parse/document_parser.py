@@ -38,6 +38,14 @@ from .docx_parser import DOCXParser
 from .html_parser import HTMLParser
 from .pdf_parser import PDFParser
 
+# Try to import DoclingParser (optional dependency)
+try:
+    from .docling_parser import DoclingParser
+    DOCLING_AVAILABLE = True
+except ImportError:
+    DOCLING_AVAILABLE = False
+    DoclingParser = None
+
 
 class DocumentParser:
     """
@@ -82,6 +90,14 @@ class DocumentParser:
         self.pdf_parser = PDFParser(**self.config.get("pdf", {}))
         self.docx_parser = DOCXParser(**self.config.get("docx", {}))
         self.html_parser = HTMLParser(**self.config.get("html", {}))
+        
+        # Initialize Docling parser if available (optional)
+        self.docling_parser = None
+        if DOCLING_AVAILABLE:
+            try:
+                self.docling_parser = DoclingParser(**self.config.get("docling", {}))
+            except Exception as e:
+                self.logger.warning(f"Could not initialize DoclingParser: {e}")
 
         # Supported formats
         self.supported_formats = {
@@ -177,9 +193,16 @@ class DocumentParser:
                 tracking_id, message=f"Parsing {file_type} document"
             )
 
+            # Check if docling method is requested
+            method = options.get("method", "default")
+            use_docling = method == "docling" and self.docling_parser is not None
+            
             # Route to appropriate parser
             try:
-                if file_type == "pdf":
+                if use_docling:
+                    # Use Docling for parsing (supports multiple formats)
+                    result = self.docling_parser.parse(file_path, **options)
+                elif file_type == "pdf":
                     result = self.pdf_parser.parse(file_path, **options)
                 elif file_type == "docx":
                     result = self.docx_parser.parse(file_path, **options)
