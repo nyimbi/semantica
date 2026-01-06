@@ -9,7 +9,7 @@
   <a href="https://pypi.org/project/semantica/"><img src="https://img.shields.io/pypi/dm/semantica" alt="Monthly Downloads"></a>
   <a href="https://pepy.tech/project/semantica"><img src="https://static.pepy.tech/badge/semantica" alt="Total Downloads"></a>
   <a href="https://semantica.readthedocs.io/"><img src="https://img.shields.io/badge/docs-latest-brightgreen.svg" alt="Documentation"></a>
-  <a href="https://discord.gg/pMHguUzG"><img src="https://img.shields.io/discord/semantica?color=7289da&label=discord" alt="Discord"></a>
+  <a href="https://discord.gg/pMHguUzG"><img src="https://img.shields.io/badge/Discord-Join%20Us-7289da?style=flat&logo=discord&logoColor=white" alt="Discord"></a>
   
   <p><strong>Open Source Framework for Semantic Layer & Knowledge Engineering</strong></p>
   

@@ -9,7 +9,7 @@
 [![PyPI version](https://badge.fury.io/py/semantica.svg)](https://pypi.org/project/semantica/)
 [![Monthly Downloads](https://img.shields.io/pypi/dm/semantica)](https://pypi.org/project/semantica/)
 [![Total Downloads](https://static.pepy.tech/badge/semantica)](https://pepy.tech/project/semantica)
-[![Discord](https://img.shields.io/discord/semantica?color=7289da&label=discord)](https://discord.gg/pMHguUzG)
+[![Discord](https://img.shields.io/badge/Discord-Join%20Us-7289da?style=flat&logo=discord&logoColor=white)](https://discord.gg/pMHguUzG)
 [![CI](https://github.com/Hawksight-AI/semantica/workflows/CI/badge.svg)](https://github.com/Hawksight-AI/semantica/actions)
 
 <p align="center">
