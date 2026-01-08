@@ -381,6 +381,19 @@ class ConnectivityAnalyzer:
             source = rel.get("source") or rel.get("subject")
             target = rel.get("target") or rel.get("object")
 
+            # Extract IDs if objects are passed
+            if source and not isinstance(source, (str, int, float)):
+                if isinstance(source, dict):
+                    source = source.get("id") or source.get("entity_id") or source.get("text") or str(source)
+                else:
+                    source = getattr(source, "id", getattr(source, "text", str(source)))
+            
+            if target and not isinstance(target, (str, int, float)):
+                if isinstance(target, dict):
+                    target = target.get("id") or target.get("entity_id") or target.get("text") or str(target)
+                else:
+                    target = getattr(target, "id", getattr(target, "text", str(target)))
+
             if source and target:
                 if target not in adjacency[source]:
                     adjacency[source].append(target)

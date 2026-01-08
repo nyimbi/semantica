@@ -130,12 +130,12 @@ class GraphBuilder:
 
     def _process_item(self, item: Any, all_entities: List[Any], all_relationships: List[Any], **options):
         """Helper to process a single item and add to entities or relationships list."""
-        if hasattr(item, "text") and hasattr(item, "label"):
+        if hasattr(item, "text") and (hasattr(item, "label") or hasattr(item, "type")):
             # It's likely an Entity object
             entity_dict = {
-                "id": getattr(item, "id", item.text),
+                "id": getattr(item, "id", getattr(item, "entity_id", item.text)),
                 "name": item.text,
-                "type": item.label,
+                "type": getattr(item, "label", getattr(item, "type", "UNKNOWN")),
                 "confidence": getattr(item, "confidence", 1.0),
                 "metadata": getattr(item, "metadata", {})
             }
@@ -351,7 +351,7 @@ class GraphBuilder:
                     is_dict_format = isinstance(sample_entity, dict) and (
                         "id" in sample_entity or "entity_id" in sample_entity or 
                         "name" in sample_entity or "text" in sample_entity
-                    )
+                    ) and not hasattr(sample_entity, "__dict__") # Ensure it's not a class instance
                     
                     if is_dict_format:
                         # Fast path: directly append dictionaries after normalizing
@@ -420,16 +420,24 @@ class GraphBuilder:
                     sample_rel = relationships_list[0] if relationships_list else None
                     is_dict_format = isinstance(sample_rel, dict) and (
                         "source" in sample_rel and "target" in sample_rel
-                    )
+                    ) and not hasattr(sample_rel, "__dict__") # Ensure it's not a class instance
                     
                     if is_dict_format:
-                        # Fast path: directly append dictionaries
+                        # Fast path: directly append dictionaries after normalizing source/target
                         batch_size = max(100, len(relationships_list) // 20)
                         for i in range(0, len(relationships_list), batch_size):
                             batch = relationships_list[i:i + batch_size]
                             for item in batch:
                                 if isinstance(item, dict):
-                                    all_relationships.append(item)
+                                    # Normalize source/target if they are objects
+                                    rel_dict = item.copy()
+                                    if "source" in rel_dict and not isinstance(rel_dict["source"], str):
+                                        src = rel_dict["source"]
+                                        rel_dict["source"] = getattr(src, "id", getattr(src, "text", str(src)))
+                                    if "target" in rel_dict and not isinstance(rel_dict["target"], str):
+                                        tgt = rel_dict["target"]
+                                        rel_dict["target"] = getattr(tgt, "id", getattr(tgt, "text", str(tgt)))
+                                    all_relationships.append(rel_dict)
                                 else:
                                     # Fallback to _process_item for non-dict items
                                     self._process_item(item, all_entities, all_relationships, **options)
