@@ -149,6 +149,120 @@ class SemanticNetworkExtractor:
             self.config["ner_method"] = method
             self.config["relation_method"] = method
 
+    def extract(
+        self,
+        text: Union[str, List[str], List[Dict[str, Any]]],
+        entities: Optional[Union[List[Entity], List[List[Entity]]]] = None,
+        relations: Optional[Union[List[Relation], List[List[Relation]]]] = None,
+        pipeline_id: Optional[str] = None,
+        **kwargs
+    ) -> Union[SemanticNetwork, List[SemanticNetwork]]:
+        """
+        Extract semantic network from text or list of documents.
+        Handles batch processing with progress tracking.
+
+        Args:
+            text: Input text or list of documents
+            entities: Optional pre-extracted entities (single list or list of lists)
+            relations: Optional pre-extracted relations (single list or list of lists)
+            pipeline_id: Optional pipeline ID for progress tracking
+            **kwargs: Extraction options
+
+        Returns:
+            Union[SemanticNetwork, List[SemanticNetwork]]: Extracted semantic network(s)
+        """
+        if isinstance(text, list):
+            # Handle batch extraction with progress tracking
+            tracking_id = self.progress_tracker.start_tracking(
+                module="semantic_extract",
+                submodule="SemanticNetworkExtractor",
+                message=f"Batch extracting semantic networks from {len(text)} documents",
+                pipeline_id=pipeline_id,
+            )
+
+            try:
+                results = []
+                total_items = len(text)
+                
+                # Determine update interval
+                if total_items <= 10:
+                    update_interval = 1
+                else:
+                    update_interval = max(1, min(10, total_items // 100))
+                
+                # Initial progress update
+                self.progress_tracker.update_progress(
+                    tracking_id,
+                    processed=0,
+                    total=total_items,
+                    message=f"Starting batch extraction... 0/{total_items} (remaining: {total_items})"
+                )
+
+                for idx, item in enumerate(text):
+                    # Prepare arguments for single item
+                    doc_text = item["content"] if isinstance(item, dict) and "content" in item else str(item)
+                    
+                    doc_entities = None
+                    if entities and isinstance(entities, list) and idx < len(entities):
+                        doc_entities = entities[idx]
+                    
+                    doc_relations = None
+                    if relations and isinstance(relations, list) and idx < len(relations):
+                        doc_relations = relations[idx]
+
+                    # Extract
+                    network = self.extract_network(
+                        doc_text, 
+                        entities=doc_entities, 
+                        relations=doc_relations, 
+                        **kwargs
+                    )
+
+                    # Add provenance metadata to nodes and edges
+                    batch_meta = {"batch_index": idx}
+                    if isinstance(item, dict) and "id" in item:
+                        batch_meta["document_id"] = item["id"]
+                    
+                    # Update network metadata
+                    network.metadata.update(batch_meta)
+                    
+                    # Update nodes metadata
+                    for node in network.nodes:
+                        node.metadata.update(batch_meta)
+                        
+                    # Update edges metadata
+                    for edge in network.edges:
+                        edge.metadata.update(batch_meta)
+
+                    results.append(network)
+
+                    # Update progress
+                    if (idx + 1) % update_interval == 0 or (idx + 1) == total_items:
+                        remaining = total_items - (idx + 1)
+                        self.progress_tracker.update_progress(
+                            tracking_id,
+                            processed=idx + 1,
+                            total=total_items,
+                            message=f"Processing... {idx + 1}/{total_items} (remaining: {remaining})"
+                        )
+
+                self.progress_tracker.stop_tracking(
+                    tracking_id,
+                    status="completed",
+                    message=f"Batch extraction completed. Processed {len(results)} documents.",
+                )
+                return results
+
+            except Exception as e:
+                self.progress_tracker.stop_tracking(
+                    tracking_id, status="failed", message=str(e)
+                )
+                raise
+
+        else:
+            # Single item
+            return self.extract_network(text, entities=entities, relations=relations, **kwargs)
+
     def extract_network(
         self,
         text: str,

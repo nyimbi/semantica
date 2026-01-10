@@ -20,6 +20,12 @@ Algorithms Used:
     - Sequence Classification: Transformer-based relation classification models
     - Large Language Models: GPT, Claude, Gemini for relation extraction
     - Context Window Analysis: Sliding window and context extraction algorithms
+    - Weighted Confidence Scoring:
+        * Formula: Score = (0.5 * Method_Confidence) + (0.5 * Type_Similarity_Score)
+        * Method_Confidence: Confidence score from the extraction algorithm
+        * Type_Similarity_Score: Semantic match with user-provided relation types (Exact=1.0, Synonym=0.95, Embedding=Cosine_Sim)
+    - Hybrid Similarity Matching: Exact -> Synonym -> Substring -> Semantic Embedding (Batch Optimized)
+    - Last Resort Fallback: Adjacency-based heuristic when all other methods fail
 
 Key Features:
     - Multiple extraction methods:
@@ -30,6 +36,7 @@ Key Features:
         * HuggingFace: Custom HuggingFace relation models
         * LLM-based: LLM-powered relation extraction
     - Fallback chain support: Try methods in order until one succeeds
+    - Robust Fallbacks: Prevents empty results via Primary -> Pattern -> Last Resort chain
     - Multiple relation types (founded_by, located_in, works_for, born_in, etc.)
     - Relation classification and grouping
     - Relation validation and consistency checking
@@ -197,6 +204,7 @@ class RelationExtractor:
                 results = []
                 # Ensure lists are same length
                 min_len = min(len(text), len(entities))
+                total_relations_count = 0
                 # Update more frequently: every 1% or at least every 10 items, but always update for small datasets
                 if min_len <= 10:
                     update_interval = 1  # Update every item for small datasets
@@ -228,7 +236,18 @@ class RelationExtractor:
                     if not isinstance(ent_item, list):
                         ent_item = [] # Should not happen if entities is List[List[Entity]]
                     
-                    results.append(self.extract_relations(doc_text, ent_item, **kwargs))
+                    current_relations = self.extract_relations(doc_text, ent_item, **kwargs)
+                    
+                    # Add provenance metadata
+                    for rel in current_relations:
+                        if rel.metadata is None:
+                            rel.metadata = {}
+                        rel.metadata["batch_index"] = i
+                        if isinstance(doc_item, dict) and "id" in doc_item:
+                            rel.metadata["document_id"] = doc_item["id"]
+
+                    results.append(current_relations)
+                    total_relations_count += len(current_relations)
                     
                     remaining = min_len - (i + 1)
                     # Update progress: always update for small datasets, or at intervals for large ones
@@ -243,13 +262,13 @@ class RelationExtractor:
                             tracking_id,
                             processed=i + 1,
                             total=min_len,
-                            message=f"Processing documents... {i + 1}/{min_len} (remaining: {remaining})"
+                            message=f"Processing documents... {i + 1}/{min_len} (remaining: {remaining}) - Extracted {total_relations_count} relations so far"
                         )
                 
                 self.progress_tracker.stop_tracking(
                     tracking_id,
                     status="completed",
-                    message=f"Extracted relations from {len(results)} documents",
+                    message=f"Batch extraction completed. Processed {len(results)} documents, extracted {total_relations_count} relations.",
                 )
                 return results
             except Exception as e:
@@ -322,6 +341,11 @@ class RelationExtractor:
 
                     # Prepare method-specific options
                     method_options = all_options.copy()
+                    
+                    # Pass relation_types to all methods so they can use them (e.g. for similarity matching)
+                    if relation_types:
+                        method_options["relation_types"] = relation_types
+
                     if method_name == "huggingface":
                         method_options["model"] = all_options.get(
                             "huggingface_model", all_options.get("model")
@@ -345,9 +369,6 @@ class RelationExtractor:
                             api_key = os.getenv(env_key)
                             if api_key:
                                 method_options["api_key"] = api_key
-                        # Pass relation_types to LLM method so it can use them in the prompt
-                        if relation_types:
-                            method_options["relation_types"] = relation_types
                     elif method_name == "dependency":
                         method_options["model"] = all_options.get(
                             "model", "en_core_web_sm"
@@ -365,6 +386,20 @@ class RelationExtractor:
                     if verbose_mode and method_name == "llm" and len(relations) > 0:
                         import sys
                         print(f"    [RelationExtractor] Extracted {len(relations)} relations", flush=True, file=sys.stdout)
+
+                    # Apply weighted scoring if relation_types are provided
+                    if relation_types:
+                        try:
+                            from .methods import calculate_weighted_confidence
+                            for r in relations:
+                                r.confidence = calculate_weighted_confidence(
+                                    item_type=r.predicate,
+                                    original_confidence=r.confidence,
+                                    valid_types=relation_types,
+                                    item_text=r.predicate # For relations, the predicate IS the text usually
+                                )
+                        except ImportError:
+                            pass
 
                     # Filter by confidence
                     filtered = [r for r in relations if r.confidence >= min_confidence]
@@ -392,7 +427,12 @@ class RelationExtractor:
             if all_relations:
                 relations = all_relations[0][1]  # Use first successful method
             else:
-                relations = []
+                # Fallback to pattern-based extraction if all models fail
+                relations = self._extract_with_patterns(text, entities)
+                
+                # Last resort: if patterns also fail but we have entities, force some relations
+                if not relations and entities and len(entities) >= 2:
+                     relations = self._extract_last_resort_relations(text, entities)
 
             # Validate if enabled
             if validate:
@@ -410,6 +450,40 @@ class RelationExtractor:
                 tracking_id, status="failed", message=str(e)
             )
             raise
+
+    def _extract_last_resort_relations(self, text: str, entities: List[Entity]) -> List[Relation]:
+        """Last resort relation extraction based on simple adjacency."""
+        print(f"DEBUG: Last Resort Relations - {len(entities)} entities")
+        relations = []
+        # Connect adjacent entities
+        for i in range(len(entities) - 1):
+            e1 = entities[i]
+            e2 = entities[i+1]
+            
+            # Create a weak relation
+            start_idx = min(e1.end_char, e2.start_char)
+            end_idx = max(e1.end_char, e2.start_char)
+            # Ensure context isn't too large or invalid
+            if start_idx < 0: start_idx = 0
+            if end_idx > len(text): end_idx = len(text)
+            
+            # Expand context a bit
+            ctx_start = max(0, start_idx - 20)
+            ctx_end = min(len(text), end_idx + 20)
+            
+            context = text[ctx_start:ctx_end]
+            
+            rel = Relation(
+                subject=e1,
+                predicate="related_to",
+                object=e2,
+                confidence=0.3,
+                context=context,
+                metadata={"extraction_method": "last_resort_adjacency"}
+            )
+            relations.append(rel)
+            print(f"DEBUG: Created relation {rel.subject.text} -> {rel.object.text}")
+        return relations
 
     def _extract_with_patterns(
         self, text: str, entities: List[Entity]

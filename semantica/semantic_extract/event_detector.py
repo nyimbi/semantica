@@ -147,6 +147,97 @@ class EventDetector:
             "meeting": r"met|meeting|conference|summit",
         }
 
+    def extract(
+        self,
+        text: Union[str, List[str], List[Dict[str, Any]]],
+        pipeline_id: Optional[str] = None,
+        **kwargs
+    ) -> Union[List[Event], List[List[Event]]]:
+        """
+        Detect events in text or list of documents.
+        Handles batch processing with progress tracking.
+
+        Args:
+            text: Input text or list of documents
+            pipeline_id: Optional pipeline ID for progress tracking
+            **kwargs: Detection options
+
+        Returns:
+            Union[List[Event], List[List[Event]]]: Detected events
+        """
+        if isinstance(text, list):
+            # Handle batch detection with progress tracking
+            tracking_id = self.progress_tracker.start_tracking(
+                module="semantic_extract",
+                submodule="EventDetector",
+                message=f"Batch detecting events from {len(text)} documents",
+                pipeline_id=pipeline_id,
+            )
+
+            try:
+                results = []
+                total_items = len(text)
+                total_events_count = 0
+                
+                # Determine update interval
+                if total_items <= 10:
+                    update_interval = 1
+                else:
+                    update_interval = max(1, min(10, total_items // 100))
+                
+                # Initial progress update
+                self.progress_tracker.update_progress(
+                    tracking_id,
+                    processed=0,
+                    total=total_items,
+                    message=f"Starting batch detection... 0/{total_items} (remaining: {total_items})"
+                )
+
+                for idx, item in enumerate(text):
+                    # Prepare arguments for single item
+                    doc_text = item["content"] if isinstance(item, dict) and "content" in item else str(item)
+                    
+                    # Detect
+                    events = self.detect_events(doc_text, **kwargs)
+
+                    # Add provenance metadata
+                    for event in events:
+                        if event.metadata is None:
+                            event.metadata = {}
+                        event.metadata["batch_index"] = idx
+                        if isinstance(item, dict) and "id" in item:
+                            event.metadata["document_id"] = item["id"]
+
+                    results.append(events)
+                    total_events_count += len(events)
+
+                    # Update progress
+                    if (idx + 1) % update_interval == 0 or (idx + 1) == total_items:
+                        remaining = total_items - (idx + 1)
+                        self.progress_tracker.update_progress(
+                            tracking_id,
+                            processed=idx + 1,
+                            total=total_items,
+                            message=f"Processing... {idx + 1}/{total_items} (remaining: {remaining}) - Detected {total_events_count} events"
+                        )
+
+                self.progress_tracker.stop_tracking(
+                    tracking_id,
+                    status="completed",
+                    message=f"Batch detection completed. Processed {len(results)} documents, detected {total_events_count} events.",
+                )
+                return results
+
+            except Exception as e:
+                self.progress_tracker.stop_tracking(
+                    tracking_id, status="failed", message=str(e)
+                )
+                raise
+
+        else:
+            # Single item
+            return self.detect_events(text, **kwargs)
+
     def detect_events(self, text: str, **options) -> List[Event]:
         """
         Detect events in text content.

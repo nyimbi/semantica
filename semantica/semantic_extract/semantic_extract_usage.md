@@ -36,6 +36,41 @@ print(f"Relations: {relations}")
 print(f"Extracted {len(entities)} entities and {len(relations)} relations")
 ```
 
+## Batch Processing & Provenance
+
+All extractors support batch processing for high-throughput extraction. You can pass a list of strings or a list of dictionaries (with `content` and `id` keys).
+
+**Features:**
+- **Progress Tracking**: Automatically shows a progress bar for large batches.
+- **Provenance Metadata**: Each extracted item includes `batch_index` and `document_id` in its `metadata`.
+
+```python
+from semantica.semantic_extract import NERExtractor
+
+documents = [
+    {"id": "doc_1", "content": "Apple Inc. was founded by Steve Jobs."},
+    {"id": "doc_2", "content": "Microsoft Corporation was founded by Bill Gates."}
+]
+
+extractor = NERExtractor()
+batch_results = extractor.extract(documents)
+
+for i, doc_entities in enumerate(batch_results):
+    print(f"Document {i} entities:")
+    for entity in doc_entities:
+        print(f"  - {entity.text} ({entity.label})")
+        print(f"    Provenance: Batch Index {entity.metadata['batch_index']}, Doc ID {entity.metadata.get('document_id')}")
+```
+
+## Robust Extraction Fallbacks
+
+The framework implements robust fallback chains to prevent empty results when primary methods fail (e.g., due to model unavailability or obscure text).
+
+- **NER**: `ML/LLM` -> `Pattern` -> `Last Resort` (Capitalized Words)
+- **Relation**: `Primary` -> `Pattern` -> `Last Resort` (Adjacency)
+- **Triplet**: `Primary` -> `Relation-to-Triplet` -> `Pattern`
+
+This ensures that you almost always get *some* structured data, even if it requires falling back to simpler heuristics.
 
 ## Entity Extraction
 

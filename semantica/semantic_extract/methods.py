@@ -106,6 +106,7 @@ License: MIT
 """
 
 import re
+import difflib
 from typing import Any, Dict, List, Optional, Union
 
 from ..utils.exceptions import ProcessingError
@@ -131,6 +132,275 @@ spacy, SPACY_AVAILABLE = safe_import("spacy")
 
 
 # ============================================================================
+# Scoring Helper Functions
+# ============================================================================
+
+# Global cache for spacy model and text embedder to avoid reloading
+_nlp_cache = None
+_embedder_cache = None
+
+def get_text_embedder():
+    """
+    Get or load the TextEmbedder model for high-accuracy semantic similarity.
+    """
+    global _embedder_cache
+    if _embedder_cache:
+        return _embedder_cache
+        
+    try:
+        from ..embeddings.text_embedder import TextEmbedder
+        # Use a lightweight but effective model for speed/accuracy balance
+        # BAAI/bge-small-en-v1.5 is excellent for semantic similarity
+        # Enable caching within the embedder if supported, or use our own
+        _embedder_cache = TextEmbedder(model_name="BAAI/bge-small-en-v1.5", normalize=True)
+        logger.info("Loaded TextEmbedder for high-accuracy similarity")
+        return _embedder_cache
+    except Exception as e:
+        logger.warning(f"Failed to load TextEmbedder: {e}")
+        return None
+
+def get_nlp_model():
+    """
+    Get or load a spaCy model for similarity calculations.
+    Prioritizes larger models for better vectors.
+    """
+    global _nlp_cache
+    if _nlp_cache:
+        return _nlp_cache
+    
+    if not SPACY_AVAILABLE:
+        return None
+        
+    try:
+        # Prefer larger models for vectors
+        # Note: 'en_core_web_lg' has true vectors. 'sm' only has context tensors.
+        for model_name in ["en_core_web_lg", "en_core_web_md", "en_core_web_sm"]:
+            if spacy.util.is_package(model_name):
+                try:
+                    # Disable parser/ner for speed if we only need vectors
+                    _nlp_cache = spacy.load(model_name, disable=["parser", "ner", "lemmatizer"])
+                    logger.info(f"Loaded spaCy model for similarity: {model_name}")
+                    return _nlp_cache
+                except Exception:
+                    continue
+        
+        # Try loading generic if specific ones fail
+        try:
+            _nlp_cache = spacy.load("en_core_web_sm", disable=["parser", "ner", "lemmatizer"])
+            return _nlp_cache
+        except:
+            pass
+            
+    except Exception as e:
+        logger.warning(f"Failed to load spaCy model for similarity: {e}")
+        pass
+    return None
+
+def calculate_similarity(text: str, candidates: List[str]) -> float:
+    """
+    Calculate the maximum similarity between text and a list of candidates.
+    Uses a hybrid approach: Exact -> Substring -> Vectors -> Fuzzy.
+    """
+    if not candidates:
+        return 0.0
+    
+    if not text:
+        return 0.0
+        
+    text_lower = text.lower().strip()
+    if not text_lower:
+        return 0.0
+        
+    best_score = 0.0
+    
+    # 1. Exact Match (Fastest)
+    candidates_lower = [c.lower().strip() for c in candidates if c]
+    if text_lower in candidates_lower:
+        return 1.0
+        
+    # 1b. Common Synonyms (Fast Heuristic)
+    # Map common NER labels and Relations to user-friendly types
+    synonyms = {
+        # Entity Types
+        "person": ["people", "human", "name", "individual", "artist", "actor", "author", "politician"],
+        "org": ["company", "organization", "business", "institution", "agency", "brand", "corporation"],
+        "organization": ["company", "business", "institution", "agency", "brand", "corporation"],
+        "gpe": ["location", "place", "city", "country", "state", "nation", "region"],
+        "loc": ["location", "place", "region", "area"],
+        "date": ["time", "year", "day", "month", "period", "duration"],
+        "money": ["cost", "price", "value", "currency", "amount"],
+        "product": ["item", "object", "commodity", "goods", "device", "tool", "vehicle", "software", "app"],
+        "event": ["incident", "occasion", "activity", "happening", "ceremony"],
+        "drug": ["medication", "medicine", "pharmaceutical", "chemical", "treatment", "therapy"],
+        "chemical": ["drug", "substance", "compound", "element"],
+        "disease": ["condition", "illness", "sickness", "disorder", "syndrome", "ailment"],
+        
+        # Relation Types
+        "founded_by": ["founder", "creator", "established_by", "started_by", "originator"],
+        "acquired": ["bought", "purchased", "acquisition", "takeover", "ownership", "merged_with"],
+        "subsidiary_of": ["owned_by", "parent_company", "part_of", "division_of", "unit_of"],
+        "works_for": ["employee_of", "employed_by", "staff_of", "team_member", "employs", "hired_by"],
+        "located_in": ["based_in", "headquartered_in", "situated_in", "found_in", "operates_in"],
+        "ceo_of": ["leader_of", "head_of", "director_of", "president_of", "chief_executive", "managed_by"],
+        "invested_in": ["funded", "financed", "backed", "shareholder_of", "venture_capital"],
+        "partner_with": ["collaborate_with", "joint_venture", "alliance", "deal_with", "partnership"],
+        "competitor_of": ["rival", "competes_with", "opponent", "nemesis"],
+        "manufacturer_of": ["producer_of", "maker_of", "creator_of", "builder_of"],
+        "treats": ["cures", "heals", "remedy_for", "used_for", "prescribed_for"],
+        "causes": ["leads_to", "results_in", "triggers", "produces", "creates"],
+        "diagnosed_with": ["suffers_from", "has_condition", "patient_of", "victim_of"],
+    }
+    
+    if text_lower in synonyms:
+        for syn in synonyms[text_lower]:
+            if syn in candidates_lower:
+                return 0.95
+            # Also check reverse: if candidate is in synonyms of text
+            
+    # Check if any candidate is a synonym of the text
+    for cand in candidates_lower:
+        if cand in synonyms:
+            if text_lower in synonyms[cand]:
+                return 0.95
+
+    # 2. Substring Match (Fast)
+    # Give a boost if one is contained in the other, but penalize by length difference
+    for cand in candidates_lower:
+        if text_lower == cand:
+            return 1.0
+        if text_lower in cand or cand in text_lower:
+            # Calculate length ratio
+            ratio = min(len(text_lower), len(cand)) / max(len(text_lower), len(cand))
+            # Base score 0.85 for containment, adjusted by ratio
+            # e.g. "Apple" in "Apple Inc" -> 0.85 * (5/9) ~= 0.47 (too low?)
+            # Let's be more generous for containment
+            score = 0.9 * ratio + 0.1 # Boost slightly
+            if score > best_score:
+                best_score = score
+
+    # 3. Text Embeddings (High Accuracy Semantic)
+    # This is the most accurate method for diverse/unknown domains
+    embedder = get_text_embedder()
+    embedding_score = 0.0
+    
+    if embedder:
+        try:
+            # Embed text and candidates
+            # Batch embedding is faster and scalable without caching
+            all_texts = [text] + candidates
+            embeddings = list(embedder.embed_batch(all_texts))
+            
+            if embeddings and len(embeddings) > 1:
+                text_emb = embeddings[0]
+                cand_embs = embeddings[1:]
+                
+                # Calculate cosine similarity manually or via numpy
+                import numpy as np
+                text_norm = np.linalg.norm(text_emb)
+                
+                if text_norm > 0:
+                    for cand_emb in cand_embs:
+                        cand_norm = np.linalg.norm(cand_emb)
+                        if cand_norm > 0:
+                            sim = np.dot(text_emb, cand_emb) / (text_norm * cand_norm)
+                            if sim > embedding_score:
+                                embedding_score = sim
+        except Exception as e:
+            logger.debug(f"Embedding calculation failed: {e}")
+            pass
+            
+    if embedding_score > best_score:
+        best_score = embedding_score
+
+    # 4. Vector Similarity (Legacy/Fallback)
+    # Only use if we haven't found a good match yet and embeddings failed/unavailable
+    if best_score < 0.9:
+        nlp = get_nlp_model()
+    vector_score = 0.0
+    if nlp and nlp.vocab.vectors.shape[0] > 0:
+        try:
+            # Only use vectors if the word is in vocab or we have a good model
+            doc = nlp(text)
+            if doc.vector_norm:
+                for candidate in candidates:
+                    cand_doc = nlp(candidate)
+                    if cand_doc.vector_norm:
+                        score = doc.similarity(cand_doc)
+                        if score > vector_score:
+                            vector_score = score
+        except Exception:
+            pass
+            
+    if vector_score > best_score:
+        best_score = vector_score
+        
+    # 4. Fuzzy Match (Fallback/Refinement)
+    # If vector score is low (e.g. OOV words), fuzzy match might be better
+    # But difflib is slow for many candidates.
+    # Only run if we don't have a very high score yet
+    if best_score < 0.9:
+        for cand in candidates_lower:
+            # Quick check for common characters
+            if not cand: continue
+            
+            # SequenceMatcher
+            score = difflib.SequenceMatcher(None, text_lower, cand).ratio()
+            if score > best_score:
+                best_score = score
+                
+    return float(best_score)
+
+def calculate_weighted_confidence(
+    item_type: str, 
+    original_confidence: float, 
+    valid_types: Optional[List[str]] = None,
+    item_text: Optional[str] = None,
+    weight_method: float = 0.5,
+    weight_similarity: float = 0.5
+) -> float:
+    """
+    Calculate weighted confidence score using both Label and Content similarity.
+    Final Score = (weight_method * original_confidence) + (weight_similarity * max(label_sim, content_sim))
+    
+    Args:
+        item_type: The extracted type/label/predicate (e.g., "PERSON", "founded_by")
+        original_confidence: The confidence score from the extraction method (0.0-1.0)
+        valid_types: List of valid/preferred types provided by user
+        item_text: The actual text content extracted (e.g., "Steve Jobs", "acquired")
+        weight_method: Weight for the original method confidence (default 0.5)
+        weight_similarity: Weight for the similarity score (default 0.5)
+        
+    Returns:
+        float: Weighted confidence score (0.0-1.0)
+    """
+    if not valid_types:
+        return original_confidence
+        
+    # Similarity 1: Label vs Valid Types (e.g., "PERSON" vs "Artist")
+    label_similarity = calculate_similarity(item_type, valid_types)
+    
+    # Similarity 2: Content vs Valid Types (e.g., "Picasso" vs "Artist")
+    content_similarity = 0.0
+    if item_text:
+        content_similarity = calculate_similarity(item_text, valid_types)
+        
+    # Take the best similarity match
+    best_similarity = max(label_similarity, content_similarity)
+    
+    # Normalize weights
+    total_weight = weight_method + weight_similarity
+    if total_weight <= 0:
+        return original_confidence
+        
+    w_m = weight_method / total_weight
+    w_s = weight_similarity / total_weight
+    
+    final_score = (w_m * original_confidence) + (w_s * best_similarity)
+    
+    return max(0.0, min(1.0, final_score))
+
+
+# ============================================================================
 # Entity Extraction Methods
 # ============================================================================
 
@@ -140,8 +410,8 @@ def extract_entities_pattern(text: str, **kwargs) -> List[Entity]:
     entities = []
 
     patterns = {
-        "PERSON": r"\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\b",
-        "ORG": r"\b([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*\s+(?:Inc|Corp|LLC|Ltd|Company))\b",
+        "ORG": r"\b([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*\s+(?:Inc|Corp|LLC|Ltd|Company)(?:\.|\b))",
+        "PERSON": r"\b([A-Z][a-z]+(?:\s+(?!Inc|Corp|LLC|Ltd|Company)[A-Z][a-z]+)+)\b",
         "GPE": r"\b([A-Z][a-z]+\s*(?:City|State|Country|Nation))\b",
         "DATE": r"\b(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{4})\b",
     }
@@ -405,11 +675,30 @@ Use the most appropriate type for each entity, including variations or synonyms 
         raise ImportError("Pydantic schemas not available. Install pydantic/instructor to use LLM extraction.")
 
     try:
-        prompt = f"""Extract named entities from the following text.
+        prompt = f"""Extract named entities from the provided text.
 Return the result as a JSON object with an "entities" key containing the list of entities.
-{entity_types_instruction}
+Each entity should have 'text', 'label', and 'confidence' fields.
 
-Text: {text}"""
+IMPORTANT: 
+- Return a FLAT LIST of entities. 
+- DO NOT group entities by type.
+- The output structure must exactly match: {{ "entities": [ {{ "text": "...", "label": "...", "confidence": ... }}, ... ] }}
+
+Example output (JSON format only):
+{{
+  "entities": [
+    {{"text": "Entity Name", "label": "CATEGORY", "confidence": 0.95}},
+    {{"text": "Another Entity", "label": "OTHER_CATEGORY", "confidence": 0.90}}
+  ]
+}}
+
+Instructions:
+1. Extract entities ONLY from the text provided below.
+2. Do not include any entities from the example above.
+3. {entity_types_instruction}
+
+Text to extract from:
+{text}"""
         
         # Use typed generation with Pydantic schema
         result_obj = llm.generate_typed(prompt, schema=EntitiesResponse)
@@ -525,22 +814,10 @@ def _extract_entities_chunked(
             
         all_entities.extend(chunk_entities)
         
-    return _deduplicate_entities(all_entities)
+    return all_entities
 
 
-def _deduplicate_entities(entities: List[Entity]) -> List[Entity]:
-    """Remove duplicate entities, keeping those with higher confidence or more metadata."""
-    if not entities:
-        return []
-        
-    # Sort by text, start_char, and confidence
-    unique_entities = {}
-    for ent in entities:
-        key = (ent.text.lower(), ent.start_char, ent.end_char, ent.label)
-        if key not in unique_entities or ent.confidence > unique_entities[key].confidence:
-            unique_entities[key] = ent
-            
-    return sorted(list(unique_entities.values()), key=lambda e: e.start_char)
+
 
 
 # ============================================================================
@@ -578,17 +855,17 @@ def extract_relations_pattern(
 
     relation_patterns = {
         "founded_by": [
-            fr"(?P<subject>{subject_pat})\s+(?:was\s+)?founded\s+by\s+(?P<object>{ent_pat})",
-            fr"(?P<object>{ent_pat})\s+founded\s+(?P<subject>{ent_pat})",
-            fr"(?P<subject>{subject_pat})\s+(?:was\s+)?established\s+by\s+(?P<object>{ent_pat})",
-            fr"(?P<object>{ent_pat})\s+established\s+(?P<subject>{ent_pat})",
-            fr"(?P<subject>{subject_pat})\s+(?:was\s+)?created\s+by\s+(?P<object>{ent_pat})",
-            fr"(?P<object>{ent_pat})\s+created\s+(?P<subject>{ent_pat})",
-            fr"(?P<subject>{subject_pat})\s+(?:was\s+)?started\s+by\s+(?P<object>{ent_pat})",
-            fr"(?P<object>{ent_pat})\s+started\s+(?P<subject>{ent_pat})",
-            fr"(?P<subject>{subject_pat})\s+(?:was\s+)?co-founded\s+by\s+(?P<object>{ent_pat})",
-            fr"(?P<object>{ent_pat})\s+co-founded\s+(?P<subject>{ent_pat})",
-            fr"(?P<object>{ent_pat})\s+is\s+(?:the\s+)?founder\s+of\s+(?P<subject>{ent_pat})",
+            fr"(?P<subject>{subject_pat})(?:[.,])?\s+(?:was\s+)?founded\s+by\s+(?P<object>{ent_pat})",
+            fr"(?P<object>{ent_pat})(?:[.,])?\s+founded\s+(?P<subject>{ent_pat})",
+            fr"(?P<subject>{subject_pat})(?:[.,])?\s+(?:was\s+)?established\s+by\s+(?P<object>{ent_pat})",
+            fr"(?P<object>{ent_pat})(?:[.,])?\s+established\s+(?P<subject>{ent_pat})",
+            fr"(?P<subject>{subject_pat})(?:[.,])?\s+(?:was\s+)?created\s+by\s+(?P<object>{ent_pat})",
+            fr"(?P<object>{ent_pat})(?:[.,])?\s+created\s+(?P<subject>{ent_pat})",
+            fr"(?P<subject>{subject_pat})(?:[.,])?\s+(?:was\s+)?started\s+by\s+(?P<object>{ent_pat})",
+            fr"(?P<object>{ent_pat})(?:[.,])?\s+started\s+(?P<subject>{ent_pat})",
+            fr"(?P<subject>{subject_pat})(?:[.,])?\s+(?:was\s+)?co-founded\s+by\s+(?P<object>{ent_pat})",
+            fr"(?P<object>{ent_pat})(?:[.,])?\s+co-founded\s+(?P<subject>{ent_pat})",
+            fr"(?P<object>{ent_pat})(?:[.,])?\s+is\s+(?:the\s+)?founder\s+of\s+(?P<subject>{ent_pat})",
         ],
         "located_in": [
             fr"(?P<subject>{subject_pat})\s+is\s+located\s+in\s+(?P<object>{ent_pat})",
@@ -625,26 +902,16 @@ def extract_relations_pattern(
     }
 
     entity_map = {e.text.lower(): e for e in entities}
-    # DEBUG: Print entities in map
-    print(f"DEBUG: Entity map keys: {list(entity_map.keys())}")
 
     for relation_type, patterns in relation_patterns.items():
         for pattern in patterns:
-            # DEBUG: Print pattern being tried
-            # print(f"DEBUG: Trying pattern: {pattern}")
             for match in re.finditer(pattern, text, re.IGNORECASE):
                 subject_text = match.group("subject").strip()
                 object_text = match.group("object").strip()
                 
-                # DEBUG: Print match details
-                print(f"DEBUG: Match found! Subject='{subject_text}', Object='{object_text}'")
-
                 subject_entity = entity_map.get(subject_text.lower())
                 object_entity = entity_map.get(object_text.lower())
                 
-                # DEBUG: Print lookup results
-                print(f"DEBUG: Subject Entity found: {subject_entity is not None}, Object Entity found: {object_entity is not None}")
-
                 if subject_entity and object_entity:
                     start = max(0, match.start() - 50)
                     end = min(len(text), match.end() + 50)
@@ -737,6 +1004,127 @@ def extract_relations_cooccurrence(
                         metadata={
                             "extraction_method": "co_occurrence",
                             "distance": distance,
+                        },
+                    )
+                )
+
+    return relations
+
+
+def extract_relations_similarity(
+    text: str, entities: List[Entity], relation_types: Optional[List[str]] = None, **kwargs
+) -> List[Relation]:
+    """
+    Similarity-based relation extraction.
+    Uses semantic similarity to match the context between entities to provided relation types.
+    """
+    if not entities:
+        return []
+
+    # If no relation types provided, we can't do similarity matching against types
+    if not relation_types:
+        # Fallback to co-occurrence if no types to match against
+        logger.warning("No relation types provided for similarity matching. Falling back to co-occurrence.")
+        return extract_relations_cooccurrence(text, entities, **kwargs)
+
+    relations = []
+    
+    # Try to load spaCy model with vectors
+    nlp = None
+    if SPACY_AVAILABLE:
+        try:
+            # Prefer larger models for vectors
+            for model_name in ["en_core_web_lg", "en_core_web_md", "en_core_web_sm"]:
+                if spacy.util.is_package(model_name):
+                    nlp = spacy.load(model_name)
+                    break
+            if not nlp:
+                 # Try loading what we have
+                 try:
+                     nlp = spacy.load("en_core_web_sm") 
+                 except:
+                     pass
+        except Exception:
+            pass
+
+    # Pre-compute relation type vectors if possible
+    relation_vectors = {}
+    has_vectors = False
+    if nlp:
+        # Check if model has vectors
+        if nlp.vocab.vectors.shape[0] > 0:
+            has_vectors = True
+            for rt in relation_types:
+                relation_vectors[rt] = nlp(rt)
+    
+    for entity1 in entities:
+        for entity2 in entities:
+            if entity1 == entity2:
+                continue
+                
+            # Check distance
+            distance = abs(entity1.end_char - entity2.start_char)
+            # Only consider entities reasonably close (e.g., within same sentence or clause)
+            if distance > 100: 
+                continue
+
+            # Ensure correct order for extracting text between
+            if entity1.end_char < entity2.start_char:
+                start_pos = entity1.end_char
+                end_pos = entity2.start_char
+            else:
+                start_pos = entity2.end_char
+                end_pos = entity1.start_char
+                
+            between_text = text[start_pos:end_pos].strip()
+            
+            if not between_text:
+                continue
+
+            # Calculate similarity
+            best_type = None
+            best_score = 0.0
+
+            if has_vectors and relation_vectors:
+                # Vector similarity
+                doc = nlp(between_text)
+                if doc.vector_norm:
+                    for rt, vec in relation_vectors.items():
+                        if vec.vector_norm:
+                            sim = doc.similarity(vec)
+                            if sim > best_score:
+                                best_score = sim
+                                best_type = rt
+            else:
+                # String similarity / Keyword matching
+                from difflib import SequenceMatcher
+                for rt in relation_types:
+                    # Check for direct keyword presence (strong signal)
+                    if rt.lower() in between_text.lower():
+                        score = 1.0
+                    else:
+                        # Fuzzy match
+                        score = SequenceMatcher(None, rt.lower(), between_text.lower()).ratio()
+                    
+                    if score > best_score:
+                        best_score = score
+                        best_type = rt
+
+            # Threshold
+            threshold = kwargs.get("similarity_threshold", 0.4 if has_vectors else 0.6)
+            
+            if best_type and best_score >= threshold:
+                relations.append(
+                    Relation(
+                        subject=entity1,
+                        predicate=best_type,
+                        object=entity2,
+                        confidence=float(best_score),
+                        context=text[max(0, min(entity1.start_char, entity2.start_char) - 20) : min(len(text), max(entity1.end_char, entity2.end_char) + 20)],
+                        metadata={
+                            "extraction_method": "similarity",
+                            "similarity_score": float(best_score),
+                            "between_text": between_text
                         },
                     )
                 )
@@ -996,12 +1384,27 @@ Common relation types include: related_to, part_of, located_in, created_by, uses
     if not SCHEMAS_AVAILABLE:
         raise ImportError("Pydantic schemas not available. Install pydantic/instructor to use LLM extraction.")
 
-    prompt = f"""Extract relations between entities from the following text.
+    prompt = f"""Extract relations between entities from the provided text.
 Return the result as a JSON object with a "relations" key containing the list of relations.
 Each relation must have 'subject', 'predicate', and 'object' fields.
 
-Text: {text}
-Entities: {entities_str}{relation_types_instruction}"""
+Example output (JSON format only):
+{{
+  "relations": [
+    {{"subject": "Entity A", "predicate": "related_to", "object": "Entity B", "confidence": 0.95}},
+    {{"subject": "Subject Entity", "predicate": "action_verb", "object": "Object Entity", "confidence": 0.90}}
+  ]
+}}
+
+Instructions:
+1. Extract relations ONLY from the text provided below.
+2. Do not include any relations from the example above.
+3. Use the provided entities list as a reference for subjects and objects.
+4. {relation_types_instruction}
+
+Text to extract from:
+{text}
+Entities found in text: {entities_str}"""
 
     try:
         # Use typed generation with Pydantic schema
@@ -1154,25 +1557,10 @@ def _extract_relations_chunked(
         )
         all_relations.extend(chunk_rels)
         
-    return _deduplicate_relations(all_relations)
+    return all_relations
 
 
-def _deduplicate_relations(relations: List[Relation]) -> List[Relation]:
-    """Remove duplicate relations."""
-    if not relations:
-        return []
-        
-    unique_rels = {}
-    for rel in relations:
-        key = (
-            rel.subject.text.lower(), 
-            rel.predicate.lower(), 
-            rel.object.text.lower()
-        )
-        if key not in unique_rels or rel.confidence > unique_rels[key].confidence:
-            unique_rels[key] = rel
-            
-    return list(unique_rels.values())
+
 
 
 # ============================================================================
@@ -1370,13 +1758,42 @@ def extract_triplets_llm(
             **kwargs
         )
     
+    # Use custom triplet types if provided
+    triplet_types = kwargs.get("triplet_types")
+    if triplet_types:
+        triplet_types_str = ", ".join(triplet_types)
+        triplet_types_instruction = f"""
+Preferred triplet predicates: {triplet_types_str}.
+You may also use related or similar predicates if they better capture the relationship (e.g., variations, synonyms, or domain-specific predicates).
+If a predicate doesn't fit any of the preferred types, use the most appropriate type from the preferred list or a closely related type that accurately describes the relationship."""
+    else:
+        triplet_types_instruction = """
+Extract meaningful triplets (subject-predicate-object). Use appropriate predicates that accurately describe the relationship.
+Common predicates include: is_a, part_of, has_property, related_to, caused_by, etc."""
+
     if not SCHEMAS_AVAILABLE:
         raise ImportError("Pydantic schemas not available. Install pydantic/instructor to use LLM extraction.")
 
-    prompt = f"""Extract RDF triplets (subject-predicate-object) from the following text.
+    prompt = f"""Extract RDF triplets (subject-predicate-object) from the provided text.
 Return the result as a JSON object with a "triplets" key containing the list of triplets.
+Each triplet must have 'subject', 'predicate', and 'object' fields.
 
-Text: {text}"""
+Example output (JSON format only):
+{{
+  "triplets": [
+    {{"subject": "Subject", "predicate": "predicate_relation", "object": "Object", "confidence": 0.99}},
+    {{"subject": "Concept A", "predicate": "is_a", "object": "Concept B", "confidence": 0.95}}
+  ]
+}}
+
+Instructions:
+1. Extract triplets ONLY from the text provided below.
+2. Do not include any triplets from the example above.
+3. Ensure subjects and objects are substrings from the text.
+4. {triplet_types_instruction}
+
+Text to extract from:
+{text}"""
 
     try:
         # Use typed generation with Pydantic schema
@@ -1486,21 +1903,9 @@ def _extract_triplets_chunked(
         )
         all_triplets.extend(chunk_triplets)
         
-    return _deduplicate_triplets(all_triplets)
+    return all_triplets
 
 
-def _deduplicate_triplets(triplets: List[Triplet]) -> List[Triplet]:
-    """Remove duplicate triplets."""
-    if not triplets:
-        return []
-        
-    unique_triplets = {}
-    for t in triplets:
-        key = (t.subject.lower(), t.predicate.lower(), t.object.lower())
-        if key not in unique_triplets or t.confidence > unique_triplets[key].confidence:
-            unique_triplets[key] = t
-            
-    return list(unique_triplets.values())
 
 
 # ============================================================================
@@ -1547,6 +1952,7 @@ def get_relation_method(method_name: str):
         "pattern": extract_relations_pattern,
         "regex": extract_relations_regex,
         "cooccurrence": extract_relations_cooccurrence,
+        "similarity": extract_relations_similarity,
         "dependency": extract_relations_dependency,
         "ml": extract_relations_dependency,  # Alias for dependency
         "spacy": extract_relations_dependency,  # Alias for dependency

@@ -10,6 +10,7 @@ class EntityOut(BaseModel):
     start: int = Field(0, description="Start character index", alias="start_char")
     end: int = Field(0, description="End character index", alias="end_char")
     confidence: float = Field(0.9, description="Confidence score between 0 and 1")
+    metadata: dict = Field(default_factory=dict, description="Additional metadata including provenance")
 
     @field_validator("text", mode="before")
     @classmethod
@@ -53,6 +54,7 @@ class RelationOut(BaseModel):
     object: str = Field(..., description="Target entity text")
     predicate: str = Field(..., description="Relation type or predicate")
     confidence: float = Field(0.9, description="Confidence score between 0 and 1")
+    metadata: dict = Field(default_factory=dict, description="Additional metadata including provenance")
 
     @model_validator(mode="before")
     @classmethod
@@ -98,6 +100,7 @@ class TripletOut(BaseModel):
     predicate: str = Field(..., description="Predicate or relation")
     object: str = Field(..., description="Object of the triplet")
     confidence: float = Field(0.9, description="Confidence score between 0 and 1")
+    metadata: dict = Field(default_factory=dict, description="Additional metadata including provenance")
 
     @field_validator("confidence", mode="before")
     @classmethod

@@ -252,8 +252,22 @@ class BaseProvider:
                         mode=instructor.Mode.GEMINI_JSON
                     )
                 elif provider_name == "GroqProvider" and self.client:
-                    # Groq is OpenAI-compatible but works best with JSON mode
-                    client = instructor.from_openai(self.client, mode=instructor.Mode.JSON)
+                    # Try using from_groq if available (newer instructor versions)
+                    if hasattr(instructor, "from_groq"):
+                        client = instructor.from_groq(self.client, mode=instructor.Mode.JSON)
+                    else:
+                        # Fallback: Create OpenAI client pointing to Groq
+                        # This avoids the "Client should be an instance of openai.OpenAI" warning
+                        try:
+                            from openai import OpenAI
+                            groq_client = OpenAI(
+                                base_url="https://api.groq.com/openai/v1",
+                                api_key=self.client.api_key,
+                            )
+                            client = instructor.from_openai(groq_client, mode=instructor.Mode.JSON)
+                        except Exception:
+                            # Last resort: try passing the groq client directly
+                            client = instructor.from_openai(self.client, mode=instructor.Mode.JSON)
                 elif provider_name == "OllamaProvider":
                     # Create OpenAI-compatible client for Ollama
                     try:
@@ -296,13 +310,19 @@ class BaseProvider:
                     # Map generate arguments to client arguments
                     # Instructor standardizes on chat.completions.create for OpenAI/Groq/Anthropic/Gemini
                     
-                    response = client.chat.completions.create(
-                        model=kwargs.get("model", self.model),
-                        messages=[{"role": "user", "content": prompt}],
-                        response_model=schema,
-                        max_retries=max_retries,
-                        temperature=kwargs.get("temperature", 0.1), # Low temp for structured
-                    )
+                    create_kwargs = {
+                        "model": kwargs.get("model", self.model),
+                        "messages": [{"role": "user", "content": prompt}],
+                        "response_model": schema,
+                        "max_retries": max_retries,
+                        "temperature": kwargs.get("temperature", 0.1), # Low temp for structured
+                    }
+                    
+                    # Add provider-specific params
+                    if provider_name == "GroqProvider":
+                        create_kwargs["response_format"] = {"type": "json_object"}
+                    
+                    response = client.chat.completions.create(**create_kwargs)
                     return response
             except Exception as e:
                 self.logger.warning(f"Instructor generation failed ({e}), falling back to manual repair loop.")
@@ -325,6 +345,55 @@ class BaseProvider:
                 if isinstance(json_result, list) and hasattr(schema, "entities") and "entities" in schema.model_fields:
                      # Auto-wrap for entities
                      json_result = {"entities": json_result}
+
+                # Handle categorized dictionary input (e.g. {"PERSON": ["Name"], "ORG": ["Corp"]})
+                elif isinstance(json_result, dict) and hasattr(schema, "entities") and "entities" in schema.model_fields:
+                     # Check if it's NOT already in the correct format (i.e., missing "entities" key)
+                     if "entities" not in json_result:
+                         # Check if values are lists, suggesting categorized output
+                         is_categorized = any(isinstance(v, list) for v in json_result.values())
+                         if is_categorized:
+                             flat_entities = []
+                             for label, items in json_result.items():
+                                 if isinstance(items, list):
+                                     for item in items:
+                                         if isinstance(item, str):
+                                             flat_entities.append({"text": item, "label": label})
+                                         elif isinstance(item, dict):
+                                             # If it's already a dict but nested under label
+                                             item["label"] = label
+                                             flat_entities.append(item)
+                             json_result = {"entities": flat_entities}
+
+                # Handle categorized dictionary input for relations (e.g. {"founded_by": [{"subject":..., "object":...}]})
+                elif isinstance(json_result, dict) and hasattr(schema, "relations") and "relations" in schema.model_fields:
+                     if "relations" not in json_result:
+                         is_categorized = any(isinstance(v, list) for v in json_result.values())
+                         if is_categorized:
+                             flat_relations = []
+                             for label, items in json_result.items():
+                                 if isinstance(items, list):
+                                     for item in items:
+                                         if isinstance(item, dict):
+                                             # If predicate is missing, use the key as predicate
+                                             if "predicate" not in item:
+                                                 item["predicate"] = label
+                                             flat_relations.append(item)
+                             json_result = {"relations": flat_relations}
+
+                # Handle categorized dictionary input for triplets
+                elif isinstance(json_result, dict) and hasattr(schema, "triplets") and "triplets" in schema.model_fields:
+                     if "triplets" not in json_result:
+                         is_categorized = any(isinstance(v, list) for v in json_result.values())
+                         if is_categorized:
+                             flat_triplets = []
+                             for label, items in json_result.items():
+                                 if isinstance(items, list):
+                                     for item in items:
+                                          if isinstance(item, dict):
+                                              flat_triplets.append(item)
+                             json_result = {"triplets": flat_triplets}
+
                 elif isinstance(json_result, list) and hasattr(schema, "relations") and "relations" in schema.model_fields:
                      json_result = {"relations": json_result}
                 elif isinstance(json_result, list) and hasattr(schema, "triplets") and "triplets" in schema.model_fields:
@@ -564,11 +633,16 @@ class GroqProvider(BaseProvider):
         if not self.client:
             raise ProcessingError("Groq client not initialized.")
 
-        json_prompt = f"{prompt}\n\nReturn the response as valid JSON only."
+        # Groq requires 'json' in the prompt for json_object mode
+        json_prompt = prompt
+        if "json" not in prompt.lower():
+            json_prompt = f"{prompt}\n\nReturn the response as valid JSON only."
+
         response = self.client.chat.completions.create(
             model=kwargs.get("model", self.model),
             messages=[{"role": "user", "content": json_prompt}],
             temperature=kwargs.get("temperature", 0.3),
+            response_format={"type": "json_object"},
         )
         try:
             return self._parse_json(response.choices[0].message.content)

@@ -289,7 +289,14 @@ Return the enhanced relation list in JSON format."""
     ) -> List[Entity]:
         """Parse LLM response for entities."""
         # Simplified parsing - in practice would parse JSON
-        # For now, return original entities
+        # For now, return original entities with updated metadata
+        for entity in original_entities:
+            if entity.metadata is None:
+                entity.metadata = {}
+            entity.metadata.update({
+                "enhanced_by": self.provider_name,
+                "model": self.model
+            })
         return original_entities
 
     def _parse_relation_response(
@@ -297,7 +304,14 @@ Return the enhanced relation list in JSON format."""
     ) -> List[Relation]:
         """Parse LLM response for relations."""
         # Simplified parsing - in practice would parse JSON
-        # For now, return original relations
+        # For now, return original relations with updated metadata
+        for relation in original_relations:
+            if relation.metadata is None:
+                relation.metadata = {}
+            relation.metadata.update({
+                "enhanced_by": self.provider_name,
+                "model": self.model
+            })
         return original_relations
 
 

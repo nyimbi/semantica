@@ -20,7 +20,12 @@ Algorithms Used:
     - Transformer Models: BERT, RoBERTa, DistilBERT for token classification
     - Large Language Models: GPT, Claude, Gemini for zero-shot/few-shot extraction
     - Ensemble Voting: Majority voting and confidence-weighted aggregation
-    - Deduplication: Set-based and similarity-based entity deduplication
+    - Weighted Confidence Scoring:
+        * Formula: Score = (0.5 * Method_Confidence) + (0.5 * Type_Similarity_Score)
+        * Method_Confidence: Confidence score from the extraction algorithm
+        * Type_Similarity_Score: Semantic match with user-provided entity types (Exact=1.0, Synonym=0.95, Embedding=Cosine_Sim)
+    - Hybrid Similarity Matching: Exact -> Synonym -> Substring -> Semantic Embedding (Batch Optimized)
+    - Last Resort Fallback: Capitalized word heuristic when all other methods fail
 
 Key Features:
     - Multiple extraction methods:
@@ -31,8 +36,9 @@ Key Features:
         * HuggingFace: Custom HuggingFace NER models
         * LLM-based: Large language model extraction
     - Fallback chain support: Try methods in order until one succeeds
+    - Robust Fallbacks: Prevents empty results via ML -> Pattern -> Last Resort chain
     - Ensemble voting: Combine results from multiple methods
-    - Post-processing: Entity boundary validation and deduplication
+    - Post-processing: Entity boundary validation
     - Multiple entity type support (PERSON, ORG, GPE, DATE, etc.)
     - Confidence scoring and filtering
     - Batch processing capabilities
@@ -90,7 +96,12 @@ class Entity:
 class NERExtractor:
     """Named Entity Recognition extractor."""
 
-    def __init__(self, method: Union[str, List[str]] = "ml", **config):
+    def __init__(
+        self, 
+        method: Union[str, List[str]] = "ml", 
+        entity_types: Optional[List[str]] = None,
+        **config
+    ):
         """
         Initialize NER extractor.
 
@@ -103,6 +114,8 @@ class NERExtractor:
                 - "huggingface": HuggingFace model
                 - "llm": LLM-based extraction
                 - List of methods for fallback chain
+            entity_types: List of entity types to extract (e.g., ["PERSON", "ORG"]).
+                          If provided, extraction methods will try to limit/focus on these types.
             **config: Configuration options:
                 - model: Model name (for ML/HuggingFace methods)
                 - huggingface_model: HuggingFace model name
@@ -115,6 +128,7 @@ class NERExtractor:
         """
         self.logger = get_logger("ner_extractor")
         self.config = config
+        self.entity_types = entity_types
 
         # Method configuration
         self.method = method if isinstance(method, list) else [method]
@@ -166,6 +180,7 @@ class NERExtractor:
             try:
                 results = []
                 total_items = len(text)
+                total_entities_count = 0
                 # Update more frequently: every 1% or at least every 10 items, but always update for small datasets
                 if total_items <= 10:
                     update_interval = 1  # Update every item for small datasets
@@ -183,16 +198,28 @@ class NERExtractor:
                 
                 for idx, item in enumerate(text, 1):
                     try:
+                        current_entities = []
                         if isinstance(item, dict) and "content" in item:
-                            results.append(self.extract_entities(item["content"], **kwargs))
+                            current_entities = self.extract_entities(item["content"], **kwargs)
                         elif isinstance(item, str):
-                            results.append(self.extract_entities(item, **kwargs))
+                            current_entities = self.extract_entities(item, **kwargs)
                         else:
                             # Try converting to string
                             try:
-                                results.append(self.extract_entities(str(item), **kwargs))
+                                current_entities = self.extract_entities(str(item), **kwargs)
                             except Exception:
-                                results.append([])
+                                current_entities = []
+                        
+                        # Add provenance metadata
+                        for ent in current_entities:
+                            if ent.metadata is None:
+                                ent.metadata = {}
+                            ent.metadata["batch_index"] = idx - 1
+                            if isinstance(item, dict) and "id" in item:
+                                ent.metadata["document_id"] = item["id"]
+                        
+                        results.append(current_entities)
+                        total_entities_count += len(current_entities)
                     except Exception:
                         results.append([])
                     
@@ -209,13 +236,13 @@ class NERExtractor:
                             tracking_id,
                             processed=idx,
                             total=total_items,
-                            message=f"Processing documents... {idx}/{total_items} (remaining: {remaining})"
+                            message=f"Processing documents... {idx}/{total_items} (remaining: {remaining}) - Extracted {total_entities_count} entities so far"
                         )
                 
                 self.progress_tracker.stop_tracking(
                     tracking_id,
                     status="completed",
-                    message=f"Extracted entities from {len(results)} documents",
+                    message=f"Batch extraction completed. Processed {len(results)} documents, extracted {total_entities_count} entities.",
                 )
                 return results
             except Exception as e:
@@ -260,10 +287,12 @@ class NERExtractor:
                 methods = [methods]
 
             min_confidence = options.get("min_confidence", self.min_confidence)
-            entity_types = options.get("entity_types")
+            entity_types = options.get("entity_types", self.entity_types)
 
             # Merge config with options
             all_options = {**self.config, **options}
+            if entity_types:
+                all_options["entity_types"] = entity_types
 
             # Try each method in order (fallback chain)
             all_entities = []
@@ -300,29 +329,36 @@ class NERExtractor:
                             api_key = os.getenv(env_key)
                             if api_key:
                                 method_options["api_key"] = api_key
-                        # Pass entity_types to LLM method so it can use them in the prompt
-                        if entity_types:
-                            method_options["entity_types"] = entity_types
 
                     entities = method_func(text, **method_options)
 
-                    # Filter by confidence and entity types
-                    filtered = [e for e in entities if e.confidence >= min_confidence]
+                    # Apply weighted scoring if entity_types are provided
                     if entity_types:
-                        # Case-insensitive and flexible matching for entity types
-                        entity_types_lower = {et.lower() for et in entity_types}
-                        filtered = [
-                            e for e in filtered 
-                            if e.label.lower() in entity_types_lower 
-                            or any(et.lower() in e.label.lower() or e.label.lower() in et.lower() 
-                                   for et in entity_types)
-                        ]
+                        try:
+                            from .methods import calculate_weighted_confidence
+                            for e in entities:
+                                e.confidence = calculate_weighted_confidence(
+                                    item_type=e.label,
+                                    original_confidence=e.confidence,
+                                    valid_types=entity_types,
+                                    item_text=e.text
+                                )
+                        except ImportError:
+                            pass
 
+                    # Filter by confidence
+                    filtered = [e for e in entities if e.confidence >= min_confidence]
+                    
                     if filtered:
                         all_entities.append((method_name, filtered))
 
                         # If not using ensemble, return first successful result
                         if not self.ensemble_voting:
+                            # Ensure default metadata
+                            for e in filtered:
+                                if e.metadata is None: e.metadata = {}
+                                if "batch_index" not in e.metadata: e.metadata["batch_index"] = 0
+
                             self.progress_tracker.stop_tracking(
                                 tracking_id,
                                 status="completed",
@@ -342,7 +378,8 @@ class NERExtractor:
             elif all_entities:
                 entities = all_entities[0][1]  # Use first successful method
             else:
-                entities = []
+                # Fallback to pattern-based extraction if all models fail
+                entities = self._extract_fallback(text)
 
             # Post-processing if enabled
             if self.post_process and entities:
@@ -390,18 +427,11 @@ class NERExtractor:
     def _post_process_entities(self, entities: List[Entity], text: str) -> List[Entity]:
         """Post-process entities for refinement."""
         processed = []
-        seen = set()
 
         for entity in entities:
             # Check boundaries
             if entity.start_char < 0 or entity.end_char > len(text):
                 continue
-
-            # Check for duplicates
-            key = (entity.text.lower(), entity.label, entity.start_char)
-            if key in seen:
-                continue
-            seen.add(key)
 
             # Validate entity text matches
             actual_text = text[entity.start_char : entity.end_char]
@@ -457,6 +487,7 @@ class NERExtractor:
     def _extract_fallback(self, text: str) -> List[Entity]:
         """Fallback entity extraction using simple patterns."""
         entities = []
+        import re
 
         # Simple patterns for common entity types
         patterns = {
@@ -466,20 +497,49 @@ class NERExtractor:
             "DATE": r"\b(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{4})\b",
         }
 
-        import re
+        # Track covered ranges to avoid overlaps
+        covered_ranges = set()
 
         for label, pattern in patterns.items():
             for match in re.finditer(pattern, text):
-                entities.append(
-                    Entity(
-                        text=match.group(1),
-                        label=label,
-                        start_char=match.start(),
-                        end_char=match.end(),
-                        confidence=0.7,  # Lower confidence for pattern-based
-                        metadata={"extraction_method": "pattern"},
+                start, end = match.start(), match.end()
+                # Check overlap
+                is_overlap = any(r_start < end and r_end > start for r_start, r_end in covered_ranges)
+                if not is_overlap:
+                    # Use group 1 if available, else group 0
+                    text_val = match.group(1) if match.lastindex and match.lastindex >= 1 else match.group(0)
+                    
+                    entities.append(
+                        Entity(
+                            text=text_val,
+                            label=label,
+                            start_char=start,
+                            end_char=end,
+                            confidence=0.7,  # Lower confidence for pattern-based
+                            metadata={"extraction_method": "pattern"},
+                        )
                     )
-                )
+                    covered_ranges.add((start, end))
+
+        # Last Resort: If no entities found, try single capitalized words as generic entities
+        if not entities:
+            # Match any capitalized word of length > 2
+            cap_pattern = r"\b[A-Z][a-z]{2,}\b"
+            for match in re.finditer(cap_pattern, text):
+                start, end = match.start(), match.end()
+                is_overlap = any(r_start < end and r_end > start for r_start, r_end in covered_ranges)
+                if not is_overlap:
+                    entities.append(
+                        Entity(
+                            text=match.group(0),
+                            label="UNKNOWN",
+                            start_char=start,
+                            end_char=end,
+                            confidence=0.5,
+                            metadata={"extraction_method": "last_resort_pattern"},
+                        )
+                    )
+                    covered_ranges.add((start, end))
 
         return entities
 
@@ -494,7 +554,7 @@ class NERExtractor:
         Returns:
             list: List of entity lists for each text
         """
-        return [self.extract_entities(text, **options) for text in texts]
+        return self.extract(texts, **options)
 
     def classify_entities(self, entities: List[Entity]) -> Dict[str, List[Entity]]:
         """
