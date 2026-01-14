@@ -35,6 +35,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Fixed `AttributeError` in provider integration by ensuring consistent parameter passing via `**kwargs`.
 - **Constraint Relaxations**:
     - Removed hardcoded `max_length` constraints from `Entity`, `Relation`, and `Triplet` classes to support long-form semantic extraction (e.g., long descriptions or names).
+- Fixed orchestrator lazy property initialization and configuration normalization logic in `Orchestrator`.
+- Resolved `AssertionError` in orchestrator tests by aligning test mocks with production component usage.
+- Fixed dependency compatibility issues by pinning `protobuf>=5.29.1,<7.0` and `grpcio>=1.71.2`.
+- Added missing dependencies `GitPython` and `chardet` to `pyproject.toml`.
+- Verified and aligned `FileObject.text` property usage in GraphRAG notebooks for consistent content decoding.
 
 ### Changed
 - **Chunking Defaults**:
