@@ -530,25 +530,39 @@ class GeminiProvider(BaseProvider):
         self.api_key = api_key or config.get_api_key("gemini")
         self.model = model
         self.client = None
+        self._use_new_genai = False
         self._init_client()
 
     def _init_client(self):
-        """Initialize Gemini client."""
         try:
-            import google.generativeai as genai
-
+            from google import genai as new_genai
             if self.api_key:
-                genai.configure(api_key=self.api_key)
-                self.client = genai.GenerativeModel(self.model)
-        except (ImportError, OSError):
+                self.client = new_genai.Client(api_key=self.api_key)
+                self._use_new_genai = True
+                return
+        except Exception:
+            pass
+        try:
+            import google.generativeai as old_genai
+            if self.api_key:
+                old_genai.configure(api_key=self.api_key)
+                self.client = old_genai.GenerativeModel(self.model)
+                self._use_new_genai = False
+        except Exception:
             self.client = None
-            self.logger.warning(
-                "google-generativeai library not installed. Install with: pip install semantica[llm-gemini]"
-            )
+            self.logger.warning("Gemini SDK not installed. Install with: pip install semantica[llm-gemini]")
 
     def is_available(self) -> bool:
         """Check if provider is available."""
         return self.client is not None
+
+    def _resp_text(self, resp: Any) -> str:
+        if hasattr(resp, "text"):
+            return getattr(resp, "text")
+        try:
+            return resp.candidates[0].content.parts[0].text
+        except Exception:
+            return str(resp)
 
     def generate(self, prompt: str, **kwargs) -> str:
         """Generate text from prompt."""
@@ -557,32 +571,46 @@ class GeminiProvider(BaseProvider):
                 "Gemini client not initialized. Set GEMINI_API_KEY or pass api_key."
             )
 
-        generation_config = {"temperature": kwargs.get("temperature", 0.3)}
-        if "max_tokens" in kwargs:
-            generation_config["max_output_tokens"] = kwargs["max_tokens"]
-            
-        # Pass through other common parameters
-        for param in ["top_p", "top_k", "stop_sequences", "candidate_count"]:
-            if param in kwargs:
-                generation_config[param] = kwargs[param]
-
-        response = self.client.generate_content(
-            prompt, generation_config=generation_config
-        )
-        return response.text
+        if self._use_new_genai:
+            model = kwargs.get("model", self.model)
+            temperature = kwargs.get("temperature", 0.3)
+            create_kwargs = {"model": model, "contents": prompt, "config": {"temperature": temperature}}
+            if "max_tokens" in kwargs:
+                create_kwargs["config"]["max_output_tokens"] = kwargs["max_tokens"]
+            for p in ["top_p", "top_k", "stop_sequences", "candidate_count"]:
+                if p in kwargs:
+                    create_kwargs["config"][p] = kwargs[p]
+            resp = self.client.models.generate_content(**create_kwargs)
+            return self._resp_text(resp)
+        else:
+            generation_config = {"temperature": kwargs.get("temperature", 0.3)}
+            if "max_tokens" in kwargs:
+                generation_config["max_output_tokens"] = kwargs["max_tokens"]
+            for param in ["top_p", "top_k", "stop_sequences", "candidate_count"]:
+                if param in kwargs:
+                    generation_config[param] = kwargs[param]
+            response = self.client.generate_content(prompt, generation_config=generation_config)
+            return self._resp_text(response)
 
     def generate_structured(self, prompt: str, **kwargs) -> dict:
         """Generate structured output."""
         if not self.client:
             raise ProcessingError("Gemini client not initialized.")
 
-        # Add JSON format instruction to prompt
         json_prompt = f"{prompt}\n\nReturn the response as valid JSON only."
-        response = self.client.generate_content(json_prompt)
-        try:
-            return self._parse_json(response.text)
-        except Exception as e:
-            raise ProcessingError(f"Failed to parse JSON from Gemini response: {e}")
+        if self._use_new_genai:
+            model = kwargs.get("model", self.model)
+            resp = self.client.models.generate_content(model=model, contents=json_prompt)
+            try:
+                return self._parse_json(self._resp_text(resp))
+            except Exception as e:
+                raise ProcessingError(f"Failed to parse JSON from Gemini response: {e}")
+        else:
+            response = self.client.generate_content(json_prompt)
+            try:
+                return self._parse_json(self._resp_text(response))
+            except Exception as e:
+                raise ProcessingError(f"Failed to parse JSON from Gemini response: {e}")
 
 
 class GroqProvider(BaseProvider):
