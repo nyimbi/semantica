@@ -1612,12 +1612,8 @@ def extract_relations_llm(
         )
 
     original_entities = entities
-    max_entities_prompt = kwargs.get("max_entities_prompt", kwargs.get("max_entities", 80))
-    try:
-        max_entities_prompt = int(max_entities_prompt)
-    except Exception:
-        max_entities_prompt = 80
-
+    # Use a fixed internal default for prompt entity cap (do not accept overrides from kwargs)
+    max_entities_prompt = 80
     prompt_entities = original_entities
     if max_entities_prompt > 0 and len(original_entities) > max_entities_prompt:
         prompt_entities = filter_entities_for_text(
@@ -1677,32 +1673,62 @@ Entities found in text: {entities_str}"""
         if verbose_mode:
              import sys
              print(f"    [methods.extract_relations_llm] Calling llm.generate_typed ({provider}/{model})...", flush=True, file=sys.stdout)
-        result_obj = llm.generate_typed(prompt, schema=RelationsResponse, **kwargs)
+        # Only forward minimal, safe parameters to provider calls
+        call_kwargs = {}
+        if "temperature" in kwargs:
+            call_kwargs["temperature"] = kwargs["temperature"]
+        if "verbose" in kwargs:
+            call_kwargs["verbose"] = kwargs["verbose"]
+
+        result_obj = llm.generate_typed(prompt, schema=RelationsResponse, **call_kwargs)
         if verbose_mode:
              import sys
              print(f"    [methods.extract_relations_llm] Received response from {provider}.", flush=True, file=sys.stdout)
         
-        # Convert back to internal Relation format
-        relations = []
-        for r_out in result_obj.relations:
-            # Find matching entities using hybrid similarity
-            subject_entity = match_entity(r_out.subject, original_entities)
-            object_entity = match_entity(r_out.object, original_entities)
-            
-            if subject_entity and object_entity:
-                relations.append(Relation(
-                    subject=subject_entity,
-                    predicate=r_out.predicate,
-                    object=object_entity,
-                    confidence=r_out.confidence,
-                    context=text, # Simplified context
-                    metadata={
-                        "provider": provider, 
-                        "model": model, 
-                        "extraction_method": "llm_typed"
-                    }
-                ))
+        # Convert back to internal Relation format (robust across providers)
+        # Normalize typed result to a plain dict compatible with _parse_relation_result
+        try:
+            if hasattr(result_obj, "model_dump"):
+                parsed = result_obj.model_dump()
+            elif isinstance(result_obj, dict):
+                parsed = result_obj
+            elif hasattr(result_obj, "relations"):
+                # Instructor may return objects for each relation; convert where possible
+                rel_items = []
+                for r in getattr(result_obj, "relations", []):
+                    if hasattr(r, "model_dump"):
+                        rel_items.append(r.model_dump())
+                    elif isinstance(r, dict):
+                        rel_items.append(r)
+                    else:
+                        # Best-effort attribute access
+                        rel_items.append({
+                            "subject": getattr(r, "subject", ""),
+                            "object": getattr(r, "object", ""),
+                            "predicate": getattr(r, "predicate", "related_to"),
+                            "confidence": getattr(r, "confidence", 0.9),
+                        })
+                parsed = {"relations": rel_items}
+            else:
+                parsed = result_obj
+        except Exception:
+            parsed = result_obj
+
+        # Use common parser to build internal Relation objects
+        relations = _parse_relation_result(parsed, original_entities, text, provider, model)
         
+        # If typed path returned no relations, attempt a structured JSON fallback
+        if not relations:
+            try:
+                if verbose_mode:
+                    import sys
+                    print("    [methods.extract_relations_llm] Typed result empty, attempting structured JSON fallback...", flush=True, file=sys.stdout)
+                raw_json = llm.generate_structured(prompt, **call_kwargs)
+                relations = _parse_relation_result(raw_json, original_entities, text, provider, model)
+            except Exception as _e:
+                # Keep relations as empty if fallback fails
+                pass
+
         logger.info(f"Successfully extracted {len(relations)} relations using {provider}/{model} (typed)")
         _result_cache.set("relations", text, relations, **cache_params)
         return relations
@@ -1830,6 +1856,8 @@ def _extract_relations_chunked(
                 
             logger.debug(f"Scheduling relation extraction for chunk {i+1}/{len(chunks)} with {len(chunk_entities)} entities")
             
+            # Only pass minimal kwargs downstream
+            limited_kwargs = {k: kwargs[k] for k in ("relation_types", "temperature", "verbose") if k in kwargs}
             future = executor.submit(
                 extract_relations_llm,
                 chunk.text,
@@ -1839,7 +1867,7 @@ def _extract_relations_chunked(
                 silent_fail=False,
                 max_text_length=len(chunk.text) + 1,
                 structured_output_mode=structured_output_mode,
-                **kwargs
+                **limited_kwargs
             )
             future_to_chunk[future] = i
             
