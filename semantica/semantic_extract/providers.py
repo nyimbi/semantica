@@ -318,6 +318,11 @@ class BaseProvider:
                         "temperature": kwargs.get("temperature", 0.1), # Low temp for structured
                     }
                     
+                    verbose_mode = kwargs.get("verbose", False)
+                    if verbose_mode:
+                        import sys
+                        print(f"    [BaseProvider.generate_typed] Using instructor via {provider_name}. Client: {type(client)}", flush=True, file=sys.stdout)
+
                     # Pass through other common parameters
                     for param in ["max_tokens", "max_completion_tokens", "top_p", "frequency_penalty", "presence_penalty", "seed", "stop", "logit_bias", "user", "top_k"]:
                         if param in kwargs:
@@ -328,6 +333,9 @@ class BaseProvider:
                         create_kwargs["response_format"] = {"type": "json_object"}
                     
                     response = client.chat.completions.create(**create_kwargs)
+                    if verbose_mode:
+                        import sys
+                        print(f"    [BaseProvider.generate_typed] Typed response received via instructor ({provider_name}).", flush=True, file=sys.stdout)
                     return response
             except Exception as e:
                 self.logger.warning(f"Instructor generation failed ({e}), falling back to manual repair loop.")
@@ -706,7 +714,15 @@ class GroqProvider(BaseProvider):
             if param in kwargs:
                 create_kwargs[param] = kwargs[param]
 
+        verbose_mode = kwargs.get("verbose", False)
+        if verbose_mode:
+            import sys
+            print(f"    [GroqProvider.generate] Sending request to Groq API (model: {create_kwargs['model']})...", flush=True, file=sys.stdout)
+
         response = self.client.chat.completions.create(**create_kwargs)
+        if verbose_mode:
+            import sys
+            print(f"    [GroqProvider.generate] Response received from Groq.", flush=True, file=sys.stdout)
         return response.choices[0].message.content
 
     def generate_structured(self, prompt: str, **kwargs) -> dict:
@@ -737,7 +753,15 @@ class GroqProvider(BaseProvider):
             if param in kwargs:
                 create_kwargs[param] = kwargs[param]
 
+        verbose_mode = kwargs.get("verbose", False)
+        if verbose_mode:
+            import sys
+            print(f"    [GroqProvider.generate_structured] Sending structured request to Groq API (model: {create_kwargs['model']})...", flush=True, file=sys.stdout)
+
         response = self.client.chat.completions.create(**create_kwargs)
+        if verbose_mode:
+            import sys
+            print(f"    [GroqProvider.generate_structured] Structured response received from Groq.", flush=True, file=sys.stdout)
         try:
             return self._parse_json(response.choices[0].message.content)
         except Exception as e:

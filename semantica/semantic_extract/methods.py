@@ -1641,6 +1641,11 @@ If a relation doesn't fit any of the preferred types, use the most appropriate t
 Extract meaningful relationships between entities. Use appropriate relation types that accurately describe how entities are connected.
 Common relation types include: related_to, part_of, located_in, created_by, uses, depends_on, interacts_with, and similar variations."""
     
+    verbose_mode = kwargs.get("verbose", False)
+    if verbose_mode:
+        import sys
+        print(f"    [methods.extract_relations_llm] Constructing prompt for {len(prompt_entities)} entities...", flush=True, file=sys.stdout)
+    
     if not SCHEMAS_AVAILABLE:
         raise ImportError("Pydantic schemas not available. Install pydantic/instructor to use LLM extraction.")
 
@@ -1669,7 +1674,13 @@ Entities found in text: {entities_str}"""
     try:
         # Use typed generation with Pydantic schema
         # Pass kwargs to allow max_tokens and other parameters to be used
+        if verbose_mode:
+             import sys
+             print(f"    [methods.extract_relations_llm] Calling llm.generate_typed ({provider}/{model})...", flush=True, file=sys.stdout)
         result_obj = llm.generate_typed(prompt, schema=RelationsResponse, **kwargs)
+        if verbose_mode:
+             import sys
+             print(f"    [methods.extract_relations_llm] Received response from {provider}.", flush=True, file=sys.stdout)
         
         # Convert back to internal Relation format
         relations = []
