@@ -1563,18 +1563,24 @@ def extract_relations_llm(
 
     # Pass api_key if provided in kwargs
     provider_kwargs = kwargs.copy()
-    if "api_key" not in provider_kwargs:
+    
+    # Check if api_key is provided but empty, or not provided at all
+    if "api_key" not in provider_kwargs or not provider_kwargs["api_key"]:
         import os
         env_key = f"{provider.upper()}_API_KEY"
         api_key = os.getenv(env_key)
         if api_key:
             provider_kwargs["api_key"] = api_key
+            
+    # Remove None/empty API key if still present to avoid provider errors
+    if "api_key" in provider_kwargs and not provider_kwargs["api_key"]:
+        del provider_kwargs["api_key"]
 
     # 2. PROVIDER VALIDATION
     try:
         llm = create_provider(provider, model=model, **provider_kwargs)
         if not llm.is_available():
-            error_msg = f"{provider} provider not available for relation extraction."
+            error_msg = f"{provider} provider not available for relation extraction (key missing?)."
             logger.error(error_msg)
             if not silent_fail:
                 raise ProcessingError(error_msg)
@@ -2009,12 +2015,18 @@ def extract_triplets_llm(
 
     # Pass api_key if provided in kwargs
     provider_kwargs = kwargs.copy()
-    if "api_key" not in provider_kwargs:
+    
+    # Check if api_key is provided but empty, or not provided at all
+    if "api_key" not in provider_kwargs or not provider_kwargs["api_key"]:
         import os
         env_key = f"{provider.upper()}_API_KEY"
         api_key = os.getenv(env_key)
         if api_key:
             provider_kwargs["api_key"] = api_key
+            
+    # Remove None/empty API key if still present to avoid provider errors
+    if "api_key" in provider_kwargs and not provider_kwargs["api_key"]:
+        del provider_kwargs["api_key"]
 
     # 2. PROVIDER VALIDATION
     try:

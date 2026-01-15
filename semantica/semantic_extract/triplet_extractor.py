@@ -463,8 +463,10 @@ class TripletExtractor:
                         )
                         # Pass api_key if provided (needed for all providers)
                         if "api_key" in all_options:
-                            method_options["api_key"] = all_options["api_key"]
-                        elif "api_key" not in method_options:
+                            # Only pass if truthy to allow fallback
+                            if all_options["api_key"]:
+                                method_options["api_key"] = all_options["api_key"]
+                        if "api_key" not in method_options:
                             # Try to get from environment as fallback
                             import os
                             provider = method_options.get("provider", "openai")

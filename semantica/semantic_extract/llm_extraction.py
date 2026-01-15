@@ -108,7 +108,12 @@ class LLMExtraction:
 
         # Initialize provider using new system
         try:
-            self.provider = create_provider(provider, **config)
+            # Sanitize config: remove api_key if it's None/empty to allow fallback
+            provider_config = config.copy()
+            if "api_key" in provider_config and not provider_config["api_key"]:
+                del provider_config["api_key"]
+                
+            self.provider = create_provider(provider, **provider_config)
         except Exception as e:
             self.logger.warning(f"Failed to initialize {provider} provider: {e}")
             self.provider = None
