@@ -32,12 +32,14 @@ License: MIT
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union, TYPE_CHECKING
 
 from ..utils.exceptions import ProcessingError, ValidationError
 from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
-from .pipeline_validator import PipelineValidator
+
+if TYPE_CHECKING:
+    from .pipeline_validator import PipelineValidator
 
 
 class StepStatus(Enum):
@@ -103,6 +105,8 @@ class PipelineBuilder:
         # Ensure progress tracker is enabled
         if not self.progress_tracker.enabled:
             self.progress_tracker.enabled = True
+
+        from .pipeline_validator import PipelineValidator
 
         self.validator = PipelineValidator(**self.config)
         self.steps: List[PipelineStep] = []

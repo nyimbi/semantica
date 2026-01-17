@@ -17,12 +17,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **API Parameter Handling**:
     - Limited kwargs forwarded in chunked extraction helper to prevent parameter leakage
     - Ensured minimal, safe parameters are passed to provider calls
+- **Pipeline Circular Import (Issues #192, #193)**:
+    - Fixed circular import between `pipeline_builder` and `pipeline_validator` triggered during `semantica.pipeline` import
+    - Lazy-loaded `PipelineValidator` inside `PipelineBuilder.__init__` and guarded type hints with `TYPE_CHECKING`
+    - Ensured `from semantica.deduplication import DuplicateDetector` no longer fails even when pipeline module is imported
 
 ### Added
 - **Comprehensive Test Suite**:
     - Added unit tests (`tests/test_relations_llm.py`) with mocked LLM provider covering both typed and structured response paths
     - Added integration tests (`tests/integration/test_relations_groq.py`) for real Groq API calls with environment variable API key
     - Tests validate relation extraction completion and result parsing across different response formats
+- **Amazon Neptune Dev Environment**:
+    - Added CloudFormation template (`cookbook/introduction/neptune-setup.yaml`) to provision a dev Neptune cluster with public endpoint and IAM auth enabled
+    - Documented deployment, cost estimates, and IAM User vs IAM Role best practices in `cookbook/introduction/21_Amazon_Neptune_Store.ipynb`
+    - Added `cfn-lint` to `.pre-commit-config.yaml` for validating CloudFormation templates while excluding `neptune-setup.yaml` from generic YAML linters
 
 ### Changed
 - **Relation Extraction API**:
