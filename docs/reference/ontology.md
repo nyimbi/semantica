@@ -63,6 +63,29 @@ The module uses several inference algorithms:
 
 ---
 
+## Ontology Ingestion
+
+Ingest existing ontology files directly into usable data structures using `OntologyIngestor`.
+
+**Function:** `ingest_ontology(source, method="file")`
+
+| Argument | Description |
+|----------|-------------|
+| `source` | File path, directory path, or list of paths |
+| `method` | Ingestion method (default: "file") |
+
+**Example:**
+
+```python
+from semantica.ontology import ingest_ontology
+
+# Ingest file
+data = ingest_ontology("ontology.ttl")
+
+# Ingest directory
+dataset = ingest_ontology("ontologies/")
+```
+
 ## Main Classes
 
 ### OntologyEngine
@@ -169,6 +192,17 @@ Manages external dependencies.
 |--------|-------------|
 | `import_external_ontology(uri, ontology)` | Load and merge external ontology |
 | `evaluate_alignment(uri, ontology)` | Assess alignment and compatibility |
+
+### OntologyIngestor
+
+Handles ingestion of existing ontologies from files and directories.
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `ingest_ontology(file_path)` | Ingest a single ontology file |
+| `ingest_directory(directory_path)` | Recursively ingest ontology files from a directory |
 
 ---
 

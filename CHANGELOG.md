@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Ontology Ingestion Module**:
+    - Implemented `OntologyIngestor` in `semantica.ingest` for parsing RDF/OWL files (Turtle, RDF/XML, JSON-LD, N3) into standardized `OntologyData` objects.
+    - Added `ingest_ontology` convenience function and integrated it into the unified `ingest(source_type="ontology")` interface.
+    - Added recursive directory scanning support for batch ontology ingestion.
+    - Exposed ingestion tools in `semantica.ontology` for better discoverability.
+    - Added `OntologyData` dataclass for consistent metadata handling (source path, format, timestamps).
+- **Documentation**:
+    - **Ontology Usage Guide**: Updated `ontology_usage.md` with comprehensive examples for single-file and directory ingestion.
+    - **API Reference**: Updated `ontology.md` with `OntologyIngestor` class documentation and method details.
+- **Tests**:
+    - **Comprehensive Test Suite**: Added `tests/ingest/test_ontology_ingestor.py` covering all supported formats, error handling, and unified interface integration.
+    - **Demo Script**: Added `examples/demo_ontology_ingest.py` for end-to-end usage demonstration.
+
 ## [0.2.3] - 2026-01-20
 
 ### Fixed
