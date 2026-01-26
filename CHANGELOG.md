@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Pinecone Vector Store Support**:
+    - Implemented native Pinecone support (`PineconeStore`) with full CRUD capabilities.
+    - Added support for serverless and pod-based indexes, namespaces, and metadata filtering.
+    - Integrated with `VectorStore` unified interface and registry.
+    - (Closes #219, Resolves #220)
 - **Configurable LLM Retry Logic**:
     - Exposed `max_retries` parameter in `NERExtractor`, `RelationExtractor`, `TripletExtractor` and low-level extraction methods (`extract_entities_llm`, `extract_relations_llm`, `extract_triplets_llm`).
     - Defaults to 3 retries to prevent infinite loops during JSON validation failures or API timeouts.
