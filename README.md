@@ -15,156 +15,238 @@
 
 ### ⭐ Give us a Star • 🍴 Fork us • 💬 Join our Discord
 
-> **Transform Choas into Intelligence. Build AI systems that are explainable, traceable, and trustworthy — not black boxes.**
+> **Transform Choas into Intelligence. Build AI systems that are explainable and trustworthy — not black boxes.**
 
 </div>
 
 ---
 
-## 🔍 What is Semantica?
+## 🚀 Why Semantica?
 
-**Semantica** is an **open-source semantic intelligence framework** that transforms raw, unstructured data into **validated, explainable, and auditable knowledge** for modern AI systems.
+<div align="center">
 
-**A framework for building semantic layers and enriching knowledge** — Semantica provides the tools and infrastructure to construct robust semantic layers that add meaning, context, and structure to your data, transforming it into actionable, trustworthy knowledge.
+### Transform Black-Box AI into Trustworthy, Explainable Systems
 
-It provides the **semantic foundation** for:
-- **GraphRAG systems**
-- **AI Agents & Multi-Agent Systems**
-- **Reasoning and decision-support models**
-- **High-stakes enterprise AI platforms**
+**Semantica** bridges the **semantic gap** between text similarity and true meaning. It's the **semantic intelligence layer** that makes your AI agents auditable, explainable, and compliant.
 
-Semantica is built for environments where **every answer must be explainable, traceable, and governed**.
+Perfect for **high-stakes domains** where mistakes have real consequences.
 
-### 🎯 Not Just Another Agentic Framework
+</div>
 
-**Semantica is not an agentic framework** — it's a **semantic intelligence layer** that **complements** existing agent frameworks to make them more:
+---
 
-- **🔍 Auditable** — Complete provenance tracking from source documents to final decisions, enabling full audit trails for compliance and governance
-- **💡 Explainable** — Transparent reasoning paths showing how answers were derived, with explicit entity relationships and ontology rules
-- **📊 Provenance-Aware** — End-to-end traceability linking every AI response back to source documents, extraction timestamps, and confidence scores
-- **✅ Validated** — Built-in conflict detection, deduplication, and quality assurance to ensure reliable, consistent knowledge
-- **🛡️ Governed** — Rule-based validation, ontology enforcement, and semantic consistency checks for high-stakes environments
+### ⚡ Get Started in 30 Seconds
 
-Whether you're using LangChain, LlamaIndex, AutoGen, CrewAI, Google ADK (Agent Development Kit), Agno, or any other agent framework, **Semantica enhances your agents** by providing the semantic intelligence layer that transforms them from black-box systems into **trustworthy, accountable AI systems**.
+```bash
+pip install semantica
+```
 
-**Critical for high-stakes use cases** where decisions impact lives, finances, security, or legal outcomes — from healthcare diagnostics and financial fraud detection to legal research and cybersecurity threat analysis.
+```python
+from semantica.semantic_extract import NERExtractor
+from semantica.kg import GraphBuilder
+
+# Extract entities and build knowledge graph
+ner = NERExtractor(method="ml", model="en_core_web_sm")
+entities = ner.extract("Apple Inc. was founded by Steve Jobs in 1976.")
+kg = GraphBuilder().build({"entities": entities, "relationships": []})
+
+print(f"Built KG with {len(kg.get('entities', []))} entities")
+```
+
+<div align="center">
+
+**[📖 Full Quick Start](#-quick-start)** • **[🍳 Cookbook Examples](#-semantica-cookbook)** • **[💬 Join Discord](https://discord.gg/RgaGTj9J)** • **[⭐ Star Us](https://github.com/Hawksight-AI/semantica)**
+
+</div>
+
+---
+
+## Core Value Proposition
+
+<div align="center">
+
+| **Trustworthy** | **Explainable** | **Auditable** |
+|:------------------:|:------------------:|:-----------------:|
+| Conflict detection & validation | Transparent reasoning paths | Complete provenance tracking |
+| Rule-based governance | Entity relationships & ontologies | Source-level provenance |
+| Production-grade QA | Multi-hop graph reasoning | Audit-ready compliance |
+
+</div>
+
+---
+
+## Key Features & Benefits
+
+### Not Just Another Agentic Framework
+
+**Semantica complements** LangChain, LlamaIndex, AutoGen, CrewAI, Google ADK, Agno, and other frameworks to enhance your agents with:
+
+<div align="center">
+
+| Feature | Benefit |
+|:--------|:--------|
+| **Auditable** | Complete provenance tracking with full audit trails |
+| **Explainable** | Transparent reasoning paths with entity relationships |
+| **Provenance-Aware** | Source-level provenance from documents to responses |
+| **Validated** | Built-in conflict detection, deduplication, QA |
+| **Governed** | Rule-based validation and semantic consistency |
+
+</div>
+
+### Perfect For High-Stakes Use Cases
+
+<div align="center">
+
+| 🏥 **Healthcare** | 💰 **Finance** | ⚖️ **Legal** |
+|:-----------------:|:--------------:|:------------:|
+| Clinical decisions | Fraud detection | Evidence-backed research |
+| Drug interactions | Regulatory compliance | Contract analysis |
+| Patient safety | Risk assessment | Case law reasoning |
+
+| 🔒 **Cybersecurity** | 🏛️ **Government** | 🏭 **Infrastructure** | 🚗 **Autonomous** |
+|:-------------------:|:----------------:|:-------------------:|:-----------------:|
+| Threat attribution | Policy decisions | Power grids | Decision logs |
+| Incident response | Classified info | Transportation | Safety validation |
+
+</div>
+
+### Powers Your AI Stack
+
+- **GraphRAG Systems** — Enhanced retrieval with graph reasoning (30% accuracy improvement)
+- **AI Agents** — Trustworthy, accountable multi-agent systems
+- **Reasoning Models** — Explainable AI decisions with reasoning paths
+- **Enterprise AI** — Governed, auditable platforms for compliance
+
+> **Built for environments where every answer must be explainable and governed.**
 
 
 ---
 
-## 🚨 The Core Problem: The Semantic & Trust Gap
+## 🚨 The Problem: The Semantic Gap
 
-Most AI systems fail in high-stakes domains because they operate on **text similarity**, not **meaning**.
+<div align="center">
 
-### What Organizations Have
-- PDFs, DOCX, emails, logs
-- APIs, databases, streams
-- Conflicting facts and duplicates
-- Siloed systems with no lineage
+### Most AI systems fail in high-stakes domains because they operate on **text similarity**, not **meaning**.
 
-### What High-Stakes AI Requires
-- Formal domain rules (ontologies)
-- Structured and validated entities
-- Explicit semantic relationships
-- **Explainable reasoning paths**
-- **End-to-end traceability**
-- **Audit-ready provenance**
+</div>
 
-Without semantics:
-- ❌ Decisions cannot be explained
-- ❌ Errors cannot be traced
-- ❌ Conflicts go undetected
-- ❌ Compliance becomes impossible
+### Understanding the Semantic Gap
+
+The **semantic gap** is the fundamental disconnect between what AI systems can process (text patterns, vector similarities) and what high-stakes applications require (semantic understanding, meaning, context, and relationships).
+
+**Traditional AI approaches:**
+- Rely on statistical patterns and text similarity
+- Cannot understand relationships between entities
+- Cannot reason about domain-specific rules
+- Cannot explain why decisions were made
+- Cannot trace back to original sources with confidence
+
+**High-stakes AI requires:**
+- Semantic understanding of entities and their relationships
+- Domain knowledge encoded as formal rules (ontologies)
+- Explainable reasoning paths
+- Source-level provenance
+- Conflict detection and resolution
+
+**Semantica bridges this gap** by providing a semantic intelligence layer that transforms unstructured data into validated, explainable, and auditable knowledge.
+
+### What Organizations Have vs What They Need
+
+<div align="center">
+
+| **Current State** | **Required for High-Stakes AI** |
+|:---------------------|:-----------------------------------|
+| PDFs, DOCX, emails, logs | Formal domain rules (ontologies) |
+| APIs, databases, streams | Structured and validated entities |
+| Conflicting facts and duplicates | Explicit semantic relationships |
+| Siloed systems with no lineage | **Explainable reasoning paths** |
+| | **Source-level provenance** |
+| | **Audit-ready compliance** |
+
+</div>
+
+### The Cost of Missing Semantics
+
+- **Decisions cannot be explained** — No transparency in AI reasoning
+- **Errors cannot be traced** — No way to debug or improve
+- **Conflicts go undetected** — Contradictory information causes failures
+- **Compliance becomes impossible** — No audit trails for regulations
+
+<div align="center">
 
 **Trustworthy AI requires semantic accountability.**
+
+</div>
 
 ---
 
 ## 🆚 Semantica vs Traditional RAG
 
-| Traditional RAG | Semantica |
-|-----------------|-----------|
-| Black-box answers | Explainable reasoning |
-| No provenance | Source-level traceability |
-| Vector similarity only | Semantic + graph reasoning |
-| No conflict handling | Explicit contradiction detection |
-| Unsafe for high-stakes use | Designed for governed environments |
+<div align="center">
+
+| Feature | Traditional RAG | Semantica |
+|:--------|:----------------|:----------|
+| **Reasoning** | ❌ Black-box answers | ✅ Explainable reasoning paths |
+| **Provenance** | ❌ No provenance | ✅ Source-level provenance |
+| **Search** | ⚠️ Vector similarity only | ✅ Semantic + graph reasoning |
+| **Quality** | ❌ No conflict handling | ✅ Explicit contradiction detection |
+| **Safety** | ⚠️ Unsafe for high-stakes | ✅ Designed for governed environments |
+| **Compliance** | ❌ No audit trails | ✅ Audit-ready provenance |
+
+</div>
 
 ---
 
 ## 🧩 Semantica Architecture
 
 ### 1️⃣ Input Layer — Governed Ingestion
-- PDFs, DOCX, HTML  
-- JSON, CSV, databases  
-- APIs, streams, archives  
-- Multi-modal content  
-
-All data enters through a **single ingestion pipeline** with metadata and source tracking.
-
----
+- 📄 **Multiple Formats** — PDFs, DOCX, HTML, JSON, CSV
+- 💾 **Data Sources** — Databases, APIs, streams, archives
+- 🎨 **Multi-Modal** — Text, images, structured data
+- 📊 **Single Pipeline** — Unified ingestion with metadata and source tracking
 
 ### 2️⃣ Semantic Layer — Trust & Reasoning Engine
-
-This layer enforces **governance by design**:
-
-- Entity extraction & normalization  
-- Relationship discovery & triplet generation  
-- Automated ontology induction  
-- **Entity deduplication** (Jaro-Winkler, disjoint properties)  
-- **Conflict detection and resolution**  
-- **Provenance tracking (source, time, confidence)**  
-- **Reasoning trace generation**  
-- Context engineering for grounded LLM outputs  
-
----
+- 🔍 **Entity Extraction** — NER, normalization, classification
+- 🔗 **Relationship Discovery** — Triplet generation, semantic links
+- 📐 **Ontology Induction** — Automated domain rule generation
+- 🔄 **Deduplication** — Jaro-Winkler similarity, conflict resolution
+- ✅ **Quality Assurance** — Conflict detection, validation
+- 📊 **Provenance Tracking** — Source, time, confidence metadata
+- 🧠 **Reasoning Traces** — Explainable inference paths
 
 ### 3️⃣ Output Layer — Auditable Knowledge Assets
-- **Knowledge Graphs** (queryable, temporal, explainable)  
-- **OWL Ontologies** (HermiT / Pellet validated)  
-- **Vector Embeddings** (FastEmbed by default)  
-
-Every AI response can be traced back to:
-- Source documents
-- Extracted entities & relations
-- Ontology rules applied
-- Reasoning steps used
-
----
-
-## ⚙️ Core Capabilities (High-Stakes Ready)
-
-- **Explainable GraphRAG** — Graph-based reasoning with inspectable paths  
-- **Automated Ontology Generation** — Domain rules encoded explicitly  
-- **Traceable Knowledge Graphs** — Full lineage and versioning  
-- **Agent Memory with Guardrails** — Rule-validated agent actions  
-- **Production-Grade QA** — Deduplication, conflict detection, validation  
-- **LLM-Agnostic Design** — Works across providers with structured outputs  
-- **Scalable Pipelines** — Parallel, modular, production-friendly  
+- 📊 **Knowledge Graphs** — Queryable, temporal, explainable
+- 📐 **OWL Ontologies** — HermiT/Pellet validated
+- 🔢 **Vector Embeddings** — FastEmbed by default
+- 🔍 **Provenance** — Every AI response links back to:
+  - 📄 Source documents
+  - 🏷️ Extracted entities & relations
+  - 📐 Ontology rules applied
+  - 🧠 Reasoning steps used
 
 ---
 
 ## 🏥 Built for High-Stakes Domains
 
-Semantica is designed for domains where **mistakes have real consequences** and **every decision must be accountable**:
+Designed for domains where **mistakes have real consequences** and **every decision must be accountable**:
 
-- **🏥 Healthcare & Life Sciences** — Clinical decision support with full audit trails, drug interaction analysis, medical literature reasoning, patient safety compliance
-- **💰 Finance & Risk** — Fraud detection with explainable reasoning paths, regulatory compliance (SOX, GDPR, MiFID II), credit risk assessment, algorithmic trading validation
-- **⚖️ Legal & Compliance** — Evidence-backed legal research, contract analysis with provenance tracking, regulatory change management, case law reasoning
-- **🔒 Cybersecurity & Intelligence** — Threat attribution with full provenance, incident response with traceable reasoning, security audit trails, intelligence analysis
-- **🏛️ Government & Defense** — Governed AI systems for policy decisions, classified information handling, public service automation with accountability, defense intelligence systems
-- **🏭 Critical Infrastructure** — Power grid management, transportation safety systems, water treatment monitoring, emergency response coordination
-- **🚗 Autonomous Systems** — Self-driving vehicle decision logs, drone navigation reasoning, robotics safety validation, industrial automation compliance  
+- **🏥 Healthcare & Life Sciences** — Clinical decision support, drug interaction analysis, medical literature reasoning, patient safety compliance
+- **💰 Finance & Risk** — Fraud detection, regulatory compliance (SOX, GDPR, MiFID II), credit risk assessment, algorithmic trading validation
+- **⚖️ Legal & Compliance** — Evidence-backed legal research, contract analysis, regulatory change management, case law reasoning
+- **🔒 Cybersecurity & Intelligence** — Threat attribution, incident response, security audit trails, intelligence analysis
+- **🏛️ Government & Defense** — Governed AI systems, policy decisions, classified information handling, defense intelligence
+- **🏭 Critical Infrastructure** — Power grid management, transportation safety, water treatment, emergency response
+- **🚗 Autonomous Systems** — Self-driving vehicles, drone navigation, robotics safety, industrial automation  
 
 ---
 
 ## 👥 Who Uses Semantica?
 
-- **AI / ML Engineers** — Explainable GraphRAG & agents  
-- **Data Engineers** — Governed semantic pipelines  
-- **Knowledge Engineers** — Ontologies & KGs at scale  
-- **Enterprise Teams** — Trustworthy AI infrastructure  
-- **Risk & Compliance Teams** — Audit-ready systems  
+- **🤖 AI / ML Engineers** — Building explainable GraphRAG & agents
+- **⚙️ Data Engineers** — Creating governed semantic pipelines
+- **📊 Knowledge Engineers** — Managing ontologies & KGs at scale
+- **🏢 Enterprise Teams** — Requiring trustworthy AI infrastructure
+- **🛡️ Risk & Compliance Teams** — Needing audit-ready systems  
 
 ---
 
