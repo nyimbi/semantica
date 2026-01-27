@@ -913,4 +913,5 @@ Semantica is licensed under the **MIT License** - see the [LICENSE](https://gith
 
 **Built by the Semantica Community**
 
-[GitHub](https://github.com/Hawksight-AI/semantica) • [Discord](https://discord.gg/pMHguUzG)
+
+[GitHub](https://github.com/Hawksight-AI/semantica) • [Discord](https://discord.gg/RgaGTj9J)
