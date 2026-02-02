@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="semantica_logo.png" alt="Semantica Logo" width="460"/>
+<img src="Semantica Updated Logo.png" alt="Semantica Logo" width="460"/>
 
 # 🧠 Semantica
 ### Open-Source Semantic Layer & Knowledge Engineering Framework

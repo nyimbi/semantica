@@ -46,7 +46,7 @@ semantica/
 │   │   └── custom.css   # Custom styling
 │   └── assets/
 │       └── img/
-│           └── semantica_logo.png
+│           └── Semantica Updated Logo.png
 └── site/                # Generated site (created by mkdocs build)
 ```
 
