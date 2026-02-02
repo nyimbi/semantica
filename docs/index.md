@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/img/semantica_logo.png" alt="Semantica Logo" width="450" height="auto">
+  <img src="assets/img/Semantica Updated Logo.png" alt="Semantica Logo" width="450" height="auto">
   
   <h1>🧠 Semantica</h1>
   
