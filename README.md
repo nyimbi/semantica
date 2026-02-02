@@ -14,7 +14,7 @@
 
 ### ⭐ Give us a Star • 🍴 Fork us • 💬 Join our Discord
 
-> **Transform Choas into Intelligence. Build AI systems that are explainable, traceable, and trustworthy — not black boxes.**
+> **Transform Chaos into Intelligence. Build AI systems that are explainable, traceable, and trustworthy — not black boxes.**
 
 </div>
 
