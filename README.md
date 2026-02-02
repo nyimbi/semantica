@@ -943,20 +943,6 @@ print(f"Found {len(results)} results")
 
 [**See Advanced Examples**](https://github.com/Hawksight-AI/semantica/tree/main/cookbook/advanced) — Advanced extraction, graph analytics, reasoning, and more.
 
-## 🗺️ Roadmap
-
-### Q1 2026
-- [x] Core framework (v1.0)
-- [x] GraphRAG engine
-- [x] 6-stage ontology pipeline
-- [x] Advanced reasoning v2 (Rete, Forward/Backward Chaining)
-- [ ] Quality assurance features and Quality Assurance module
-- [ ] Enhanced multi-language support
-- [ ] Evals
-- [ ] Real-time streaming improvements
-
-### Q2 2026
-- [ ] Multi-modal processing
 
 ---
 
