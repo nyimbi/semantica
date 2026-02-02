@@ -158,7 +158,7 @@ class TestRealLLMProvenanceTracking:
         for call_id, source, model in providers:
             lineage = manager.get_lineage(call_id)
             assert lineage is not None
-            assert lineage["source"] == source
+            assert source in lineage["source_documents"]
             assert lineage["metadata"]["model"] == model
     
     def test_llm_token_usage_tracking(self):
