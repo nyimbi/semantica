@@ -99,6 +99,13 @@ llm-all = [
 # ---- Document Parsing ----
 parse-docling = ["docling>=1.0.0"]
 
+# ---- Database Connectors ----
+db-snowflake = ["snowflake-connector-python>=3.0.0", "cryptography>=3.4.0"]
+
+db-all = [
+  "semantica[db-snowflake]"
+]
+
 # ---- Embedding / Models ----
 models-huggingface = [
   "transformers>=4.20.0",
