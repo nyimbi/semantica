@@ -7,7 +7,7 @@ Check the [docs folder](https://github.com/Hawksight-AI/semantica/tree/main/docs
 
 ### 💬 Community Support
 - **GitHub Discussions**: [Ask questions](https://github.com/Hawksight-AI/semantica/discussions)
-- **Discord**: Join our [Discord server](https://discord.gg/semantica) for real-time chat
+- **Discord**: Join our [Discord server](https://discord.gg/ggb7vWeP) for real-time chat
 
 ### 💭 Discussions
 Join the conversation on [GitHub Discussions](https://github.com/Hawksight-AI/semantica/discussions):
