@@ -18,6 +18,8 @@ HEAVY_LIBS = {
     "openpyxl",
     "pandas",
     "PIL",
+    "PIL.Image",
+    "PIL.ImageDraw",
     "lxml",
     "pytesseract",
     "networkx",
@@ -35,6 +37,18 @@ HEAVY_LIBS = {
     "matplotlib",
     "umap",
     "pynndescent",
+    "fireworks",
+    "fireworks.client",
+    "docling",
+    "docling.document_converter",
+    "docling.backend",
+    "docling_core",
+    "docling_core.types",
+    "instructor",
+    "instructor.processing",
+    "instructor.core",
+    "instructor.providers",
+    "instructor.providers.fireworks",
 }
 
 
@@ -76,9 +90,14 @@ class RobustMock:
         if name.startswith("__") and name.endswith("__"):
             raise AttributeError(name)
         full_name = f"{self.__name__}.{name}"
+        
+        # Special handling for common PIL patterns
+        if self.__name__.endswith("Image") and name == "Image":
+            return create_mock_class(full_name)
+        elif self.__name__.endswith("ImageDraw") and name == "ImageDraw":
+            return create_mock_class(full_name)
         # Capital names are classes
-
-        if name and name[0].isupper():
+        elif name and name[0].isupper():
             return create_mock_class(full_name)
         return RobustMock(full_name)
 
@@ -118,9 +137,31 @@ class MockLoader(importlib.abc.Loader):
 
 class MockFinder(importlib.abc.MetaPathFinder):
     def find_spec(self, fullname, path, target=None):
-        top_level = fullname.split(".")[0]
-        if top_level in HEAVY_LIBS:
+        # Check for exact matches first
+        if fullname in HEAVY_LIBS:
             return importlib.machinery.ModuleSpec(fullname, MockLoader())
+        
+        # Check for prefix matches (e.g., PIL.Image, PIL.ImageDraw)
+        for lib in HEAVY_LIBS:
+            if fullname.startswith(lib + "."):
+                return importlib.machinery.ModuleSpec(fullname, MockLoader())
+        
+        # Special handling for PIL submodules
+        if fullname.startswith("PIL."):
+            return importlib.machinery.ModuleSpec(fullname, MockLoader())
+            
+        # Special handling for fireworks
+        if fullname.startswith("fireworks."):
+            return importlib.machinery.ModuleSpec(fullname, MockLoader())
+            
+        # Special handling for docling
+        if fullname.startswith("docling"):
+            return importlib.machinery.ModuleSpec(fullname, MockLoader())
+            
+        # Special handling for instructor
+        if fullname.startswith("instructor"):
+            return importlib.machinery.ModuleSpec(fullname, MockLoader())
+            
         return None
 
 
