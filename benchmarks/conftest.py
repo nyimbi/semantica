@@ -182,6 +182,28 @@ if os.getenv("BENCHMARK_REAL_LIBS") != "1":
     # Special handling for 'pa' alias that's commonly used for pyarrow
     if "pa" not in sys.modules:
         sys.modules["pa"] = RobustMock("pa")
+    
+    # Mock missing modules that might be imported in the main codebase
+    if "semantica.export.arrow_exporter" not in sys.modules:
+        # Import the mock from benchmarks/export directory
+        try:
+            from benchmarks.export.arrow_exporter import ArrowExporter, ENTITY_SCHEMA, RELATIONSHIP_SCHEMA, METADATA_SCHEMA
+            # Create a mock module with the actual mock classes
+            import types
+            mock_arrow_module = types.ModuleType('semantica.export.arrow_exporter')
+            mock_arrow_module.ArrowExporter = ArrowExporter
+            mock_arrow_module.ENTITY_SCHEMA = ENTITY_SCHEMA
+            mock_arrow_module.RELATIONSHIP_SCHEMA = RELATIONSHIP_SCHEMA
+            mock_arrow_module.METADATA_SCHEMA = METADATA_SCHEMA
+            sys.modules["semantica.export.arrow_exporter"] = mock_arrow_module
+        except ImportError:
+            # Fallback to RobustMock if import fails
+            mock_arrow_module = RobustMock("semantica.export.arrow_exporter")
+            mock_arrow_module.ArrowExporter = create_mock_class("semantica.export.arrow_exporter.ArrowExporter")
+            mock_arrow_module.ENTITY_SCHEMA = RobustMock("semantica.export.arrow_exporter.ENTITY_SCHEMA")
+            mock_arrow_module.RELATIONSHIP_SCHEMA = RobustMock("semantica.export.arrow_exporter.RELATIONSHIP_SCHEMA")
+            mock_arrow_module.METADATA_SCHEMA = RobustMock("semantica.export.arrow_exporter.METADATA_SCHEMA")
+            sys.modules["semantica.export.arrow_exporter"] = mock_arrow_module
 
 # Infrastructure and Data Fixtures
 
@@ -223,18 +245,32 @@ def kill_io_overhead():
     with patch("semantica.utils.logging.get_logger"), patch(
         "semantica.utils.progress_tracker.get_progress_tracker", return_value=tracker
     ):
-        patches = []
-        for mod_name, module in list(sys.modules.items()):
-            if mod_name.startswith("semantica.") and hasattr(
-                module, "get_progress_tracker"
-            ):
-                p = patch.object(module, "get_progress_tracker", return_value=tracker)
-                patches.append(p)
-        for p in patches:
-            p.start()
-        yield
-        for p in patches:
-            p.stop()
+        # Patch the export module to handle missing ArrowExporter
+        try:
+            from benchmarks.export.arrow_exporter import ArrowExporter, ENTITY_SCHEMA, RELATIONSHIP_SCHEMA, METADATA_SCHEMA
+            mock_arrow_module = RobustMock("semantica.export.arrow_exporter")
+            mock_arrow_module.ArrowExporter = ArrowExporter
+            mock_arrow_module.ENTITY_SCHEMA = ENTITY_SCHEMA
+            mock_arrow_module.RELATIONSHIP_SCHEMA = RELATIONSHIP_SCHEMA
+            mock_arrow_module.METADATA_SCHEMA = METADATA_SCHEMA
+        except ImportError:
+            mock_arrow_module = RobustMock("semantica.export.arrow_exporter")
+        
+        with patch.dict('sys.modules', {
+            'semantica.export.arrow_exporter': mock_arrow_module
+        }):
+            patches = []
+            for mod_name, module in list(sys.modules.items()):
+                if mod_name.startswith("semantica.") and hasattr(
+                    module, "get_progress_tracker"
+                ):
+                    p = patch.object(module, "get_progress_tracker", return_value=tracker)
+                    patches.append(p)
+            for p in patches:
+                p.start()
+            yield
+            for p in patches:
+                p.stop()
 
 
 class MockVectorStore:
