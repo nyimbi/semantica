@@ -32,7 +32,7 @@ jobs:
           pip install -e .
           pip install -r benchmarks/requirements.txt
           python -m spacy download en_core_web_sm
-          pip install rdflib neo4j faiss-cpu torch pyarrow pdfplumber python-pptx  # Add all parsing dependencies
+          pip install rdflib neo4j faiss-cpu torch pyarrow pdfplumber python-pptx openpyxl lxml python-docx beautifulsoup4 chardet langdetect
 
       - name: Execute Benchmarks (Real Mode)
         env:
