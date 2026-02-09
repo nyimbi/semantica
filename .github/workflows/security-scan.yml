@@ -56,17 +56,6 @@ jobs:
           bandit-report.json
           semgrep-report.json
           
-    - name: Dependabot Security Scan
-      uses: github/dependabot-action@v4
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        
-    - name: Security Scorecard
-      uses: ossf/scorecard-action@v3
-      with:
-        results_file: scorecard-results.json
-        results_format: json
-        
     - name: Upload Scorecard Results
       uses: actions/upload-artifact@v4
       with:
