@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **Enhanced Security Configuration with Dependabot**:
+  - Configured bi-weekly security updates with manual review by @KaifAhmad1
+  - Implemented automated security scans (Monday & Thursday at 7 AM IST) with Bandit, Safety, Semgrep
+  - Added security-critical package grouping (cryptography, requests, urllib3, certifi, pyopenssl)
+  - Enterprise-grade security with audit trail, compliance features, and zero auto-merge
+  - Optimized IST timezone scheduling (Security scans: 7 AM IST, PRs: 9 AM IST)
+  - Aligned with new Dependabot features: open-source proxy support, smart dependency grouping for Snowflake/Arrow/benchmark features, private registry support, semantic commit prefixes, and latest GitHub security best practices
+
 ## [0.2.7] - 2026-02-09
 
 ### Added / Changed
@@ -30,9 +40,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Comprehensive documentation suite (benchmarks.md, architecture guides, usage examples)
   - Zero breaking changes, production-ready with ultra-fast text processing (>10,000 ops/s)
   - Added benchmark runner CLI: `python benchmarks/benchmark_runner.py`
-
-## [Unreleased]
-    
 
 ## [0.2.6] - 2026-02-03
 
