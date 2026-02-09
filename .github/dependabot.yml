@@ -1,17 +1,11 @@
 version: 2
-registries:
-  # Configure private registries if needed
-  # npm-registry:
-  #   type: npm-registry
-  #   url: https://registry.npmjs.org
-  #   token: ${{secrets.NPM_TOKEN}}
 
 updates:
   # Core Python dependencies
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
-      interval: "bi-weekly"  # Bi-weekly for security
+      interval: "weekly"  # Weekly for security
       day: "monday"
       time: "03:30"  # 3:30 AM UTC (9:00 AM IST)
     open-pull-requests-limit: 10  # Higher limit for security updates
@@ -26,12 +20,6 @@ updates:
       - "dependencies"
       - "python"
       - "security"
-    allow:
-      - dependency-type: "production"
-      - dependency-type: "development"
-    # Prioritize security updates
-    priority: "security"
-    # Allow all security-related updates
     allow:
       - dependency-type: "production"
       - dependency-type: "development"
@@ -50,7 +38,7 @@ updates:
           - "urllib3"
           - "certifi"
           - "pyopenssl"
-        dependency-type: "direct"
+        dependency-type: "production"
       snowflake-features:
         patterns:
           - "snowflake-connector-python"
@@ -87,7 +75,7 @@ updates:
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
-      interval: "bi-weekly"
+      interval: "weekly"
       day: "friday"
       time: "09:00"
     target-branch: "main"
@@ -105,7 +93,6 @@ updates:
       - "optional"
     allow:
       - dependency-type: "production"
-    update-types: ["version-update:semver-patch", "version-update:semver-minor"]
 
   # Docker dependencies (if you use Docker)
   - package-ecosystem: "docker"
@@ -131,8 +118,6 @@ updates:
     directory: "docs"
     schedule:
       interval: "monthly"
-      day: "1"
-      time: "09:00"
     open-pull-requests-limit: 2
     reviewers:
       - "KaifAhmad1"
@@ -142,12 +127,4 @@ updates:
     labels:
       - "dependencies"
       - "documentation"
-
-# Configure Dependabot proxy for private registries (if needed)
-# This uses the new open source Dependabot Proxy
-# proxy:
-#   github-token: ${{secrets.DEPENDABOT_PROXY_TOKEN}}
-#   registries:
-#     - npm-registry
-#     - private-pypi
 
