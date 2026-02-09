@@ -55,12 +55,6 @@ jobs:
           safety-report.json
           bandit-report.json
           semgrep-report.json
-          
-    - name: Upload Scorecard Results
-      uses: actions/upload-artifact@v4
-      with:
-        name: scorecard-results
-        path: scorecard-results.json
         
     - name: Comment PR with Security Results
       if: github.event_name == 'pull_request'
@@ -74,15 +68,15 @@ jobs:
           try {
             const safetyData = JSON.parse(fs.readFileSync('safety-report.json', 'utf8'));
             if (safetyData.vulnerabilities && safetyData.vulnerabilities.length > 0) {
-              safetyResults = `## 🚨 Safety Vulnerabilities Found\\n`;
+              safetyResults = `## Safety Vulnerabilities Found\\n`;
               safetyData.vulnerabilities.forEach(vuln => {
                 safetyResults += `- **${vuln.package}**: ${vuln.advisory}\\n`;
               });
             } else {
-              safetyResults = '## ✅ No Safety Vulnerabilities Found\\n';
+              safetyResults = '## No Safety Vulnerabilities Found\\n';
             }
           } catch (e) {
-            safetyResults = '## ⚠️ Safety scan failed\\n';
+            safetyResults = '## Safety scan failed\\n';
           }
           
           // Read bandit report
@@ -90,19 +84,19 @@ jobs:
           try {
             const banditData = JSON.parse(fs.readFileSync('bandit-report.json', 'utf8'));
             if (banditData.results && banditData.results.length > 0) {
-              banditResults = `## 🚨 Bandit Security Issues Found\\n`;
+              banditResults = `## Bandit Security Issues Found\\n`;
               banditData.results.forEach(issue => {
                 banditResults += `- **${issue.test_name}**: ${issue.filename}:${issue.line_number}\\n`;
               });
             } else {
-              banditResults = '## ✅ No Bandit Issues Found\\n';
+              banditResults = '## No Bandit Issues Found\\n';
             }
           } catch (e) {
-            banditResults = '## ⚠️ Bandit scan failed\\n';
+            banditResults = '## Bandit scan failed\\n';
           }
           
           // Create comment
-          const comment = `# 🔒 Security Scan Results\\n\\n${safetyResults}\\n\\n${banditResults}\\n\\n---\\n\\n*This security scan runs automatically on every PR and daily.*`;
+          const comment = `# Security Scan Results\\n\\n${safetyResults}\\n\\n${banditResults}\\n\\n---\\n\\n*This security scan runs automatically on every PR and bi-weekly.*`;
           
           github.rest.issues.createComment({
             issue_number: context.issue.number,
