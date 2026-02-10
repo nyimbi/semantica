@@ -109,7 +109,7 @@ class ResourceScheduler:
 
         self.resources: Dict[str, Resource] = {}
         self.allocations: Dict[str, ResourceAllocation] = {}
-        self.lock = threading.RLock()  # RLock allows re-entrancy for nested lock acquisition in allocate_resources
+self.lock = threading.RLock()  # RLock allows re-entrancy for nested lock acquisition in allocate_resources
 
         self._initialize_resources()
 
@@ -223,7 +223,14 @@ class ResourceScheduler:
                     if gpu_allocation:
                         allocations["gpu"] = gpu_allocation
 
-            # Update progress tracking outside of lock
+            # Validate allocations before returning
+            if not allocations:
+                # Clean up any allocated resources before raising error
+                if allocations:
+                    self.release_resources(allocations)
+                raise ValidationError("No resources were allocated - insufficient capacity")
+
+            # Update progress tracking outside of lock (after validation)
             self.progress_tracker.update_tracking(
                 tracking_id, message="Allocating CPU resources..."
             )
@@ -234,10 +241,6 @@ class ResourceScheduler:
                 self.progress_tracker.update_tracking(
                     tracking_id, message="Allocating GPU resources..."
                 )
-
-            # Validate allocations before returning
-            if not allocations:
-                raise ValidationError("No resources were allocated - insufficient capacity")
             
             self.progress_tracker.stop_tracking(
                 tracking_id,
@@ -247,6 +250,10 @@ class ResourceScheduler:
             return allocations
 
         except Exception as e:
+            # Clean up resources on any error
+            if 'allocations' in locals() and allocations:
+                self.release_resources(allocations)
+            
             self.progress_tracker.stop_tracking(
                 tracking_id, status="failed", message=str(e)
             )
