@@ -7,7 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- **Enhanced Graph Algorithms in KG Module** (PR #292 by @KaifAhmad1):
+- **Improved Vector Store for Decision Tracking** (PR #293 by @KaifAhmad1):
+  - Comprehensive decision tracking capabilities with hybrid search combining semantic and structural embeddings
+  - New DecisionEmbeddingPipeline for generating semantic and structural embeddings with KG algorithm integration
+  - HybridSimilarityCalculator with configurable weights (semantic: 0.7, structural: 0.3)
+  - DecisionContext high-level interface for decision management with explainable AI features
+  - ContextRetriever with hybrid precedent search and multi-hop reasoning
+  - User-friendly convenience API: quick_decision(), find_precedents(), explain(), similar_to(), batch_decisions(), filter_decisions()
+  - Knowledge Graph algorithm integration: Node2Vec, PathFinder, CommunityDetector, CentralityCalculator, SimilarityCalculator, ConnectivityAnalyzer
+  - Explainable AI with path tracing, confidence scoring, and comprehensive decision explanations
+  - Performance optimizations: 0.028s per decision processing, 0.031s search performance, ~0.8KB per decision memory usage
+  - 100% backward compatibility maintained with existing VectorStore functionality
+  - 34+ comprehensive tests covering all functionality including end-to-end scenarios and performance benchmarks
+  - Real-world validation examples for banking and insurance domains
+  - Documentation with clear imports, examples, and API references
+
+- **Improved Graph Algorithms in KG Module** (PR #292 by @KaifAhmad1):
   - Complete algorithm suite with 30+ graph algorithms across 7 categories
   - Node Embeddings: Node2Vec, DeepWalk, Word2Vec for structural similarity analysis
   - Similarity Analysis: Cosine, Euclidean, Manhattan, Correlation metrics with batch processing
@@ -24,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Performance optimizations with sparse matrix operations and batch processing
   - Full backward compatibility maintained with gradual migration support
 
-- **Enhanced Security Configuration with Dependabot**:
+- **Improved Security Configuration with Dependabot**:
   - Configured bi-weekly security updates with manual review by @KaifAhmad1
   - Implemented automated security scans (Monday & Thursday at 7 AM IST) with Bandit, Safety, Semgrep
   - Added security-critical package grouping (cryptography, requests, urllib3, certifi, pyopenssl)
@@ -39,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Improved performance by moving progress tracking updates outside lock scope
   - Implemented comprehensive resource cleanup on allocation failures to prevent leaks
   - Added complete regression test suite (6 tests) for deadlock prevention and edge cases
-  - Enhanced error handling and documentation for better operator visibility
+  - Improved error handling and documentation for better operator visibility
   - Zero breaking changes, maintains thread safety and backward compatibility
 
 ## [0.2.7] - 2026-02-09
