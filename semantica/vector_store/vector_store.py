@@ -713,7 +713,8 @@ class VectorStore:
         category: Optional[str] = None,
         outcome: Optional[str] = None,
         entities: Optional[List[str]] = None,
-        limit: int = 50
+        limit: int = 50,
+        **kwargs
     ) -> List[Dict[str, Any]]:
         """
         Filter decisions with natural language queries.
@@ -724,11 +725,12 @@ class VectorStore:
             confidence_min: Minimum confidence threshold
             category: Decision category filter
             outcome: Decision outcome filter
-            entities: Entities to filter by
+            entities: List of entities to filter by
             limit: Maximum number of results
+            **kwargs: Additional metadata filters (e.g., loan_amount_min=100000)
             
         Returns:
-            List of filtered decisions
+            Filtered decisions
         """
         # Build filters
         filters = {}
@@ -744,6 +746,24 @@ class VectorStore:
         
         if entities is not None:
             filters["entities"] = entities
+        
+        # Process additional kwargs as metadata filters
+        for key, value in kwargs.items():
+            if key.endswith('_min'):
+                # Handle minimum range filters
+                field_name = key[:-4]  # Remove '_min' suffix
+                if field_name not in filters:
+                    filters[field_name] = {}
+                filters[field_name]["min"] = value
+            elif key.endswith('_max'):
+                # Handle maximum range filters
+                field_name = key[:-4]  # Remove '_max' suffix
+                if field_name not in filters:
+                    filters[field_name] = {}
+                filters[field_name]["max"] = value
+            else:
+                # Handle exact match filters
+                filters[key] = value
         
         # Apply time range filter
         if time_range:
@@ -906,9 +926,17 @@ class VectorStore:
                         break
                 elif isinstance(value, list):
                     # Handle list membership
-                    if metadata[key] not in value:
-                        match = False
-                        break
+                    metadata_value = metadata[key]
+                    if isinstance(metadata_value, list):
+                        # Both are lists - check for intersection
+                        if not set(metadata_value) & set(value):
+                            match = False
+                            break
+                    else:
+                        # Metadata value is scalar, check if it's in the filter list
+                        if metadata_value not in value:
+                            match = False
+                            break
                 else:
                     # Handle exact match
                     if metadata[key] != value:

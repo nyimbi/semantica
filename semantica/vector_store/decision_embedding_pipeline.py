@@ -381,9 +381,12 @@ class DecisionEmbeddingPipeline:
         if self.vector_store and hasattr(self.vector_store, 'embed'):
             return self.vector_store.embed(text)
         else:
-            # Fallback: generate random embedding
-            self.logger.warning("Using random fallback for semantic embedding")
-            return np.random.rand(self.embedding_dimension).astype(np.float32)
+            # Fail clearly instead of using random embeddings
+            raise RuntimeError(
+                "Semantic embedding generation failed: vector store not available "
+                "or does not support embedding. Please ensure vector store is properly "
+                "configured with embedding capabilities."
+            )
     
     def _generate_structural_embedding(self, decision_data: Dict[str, Any]) -> Optional[np.ndarray]:
         """Generate structural embedding using graph context and KG algorithms."""
@@ -434,8 +437,12 @@ class DecisionEmbeddingPipeline:
                     # Simple average aggregation
                     structural_embedding = np.mean(entity_embeddings, axis=0)
             else:
-                # Fallback: use random embedding
-                structural_embedding = np.random.rand(self.node_embedding_dimension).astype(np.float32)
+                # Fail clearly instead of using random embeddings
+                raise RuntimeError(
+                    "Structural embedding generation failed: no entities found and "
+                    "no category provided. Please provide either entities or category "
+                    "in the decision data."
+                )
             
             # Cache the result
             self._structural_embeddings_cache[cache_key] = structural_embedding
@@ -444,7 +451,11 @@ class DecisionEmbeddingPipeline:
             
         except Exception as e:
             self.logger.warning(f"Failed to generate structural embedding: {e}")
-            return np.random.rand(self.node_embedding_dimension).astype(np.float32)
+            # Re-raise instead of using random embeddings
+            raise RuntimeError(
+                f"Structural embedding generation failed: {e}. "
+                "Please check graph store and node embedder configuration."
+            ) from e
     
     def _enhance_with_kg_algorithms(
         self,

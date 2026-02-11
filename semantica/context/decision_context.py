@@ -155,10 +155,12 @@ class DecisionContext:
         Returns:
             Decision vector ID
         """
+        # Sanitize scenario for logging (remove sensitive data)
+        safe_scenario = scenario[:30] if scenario else "unknown"
         tracking_id = self.progress_tracker.start_tracking(
             module="decision_context",
             submodule="DecisionContext",
-            message=f"Recording decision: {scenario[:50]}..."
+            message=f"Recording decision: {safe_scenario}..."
         )
         
         try:

@@ -2104,7 +2104,9 @@ Answer:"""
                         continue
                         
             except Exception as e:
-                self.logger.warning(f"Failed to expand context for {entity_name}: {e}")
+                # Sanitize entity name for logging (remove sensitive data)
+                safe_entity_name = entity_name[:20] if entity_name else "unknown"
+                self.logger.warning(f"Failed to expand context for {safe_entity_name}: {type(e).__name__}")
         
         return expanded_entities
 
@@ -2130,6 +2132,8 @@ Answer:"""
                             "related_category": category
                         })
             except Exception as e:
-                self.logger.warning(f"Failed to find policies for {category}: {e}")
+                # Sanitize category for logging (remove sensitive data)
+                safe_category = category[:20] if category else "unknown"
+                self.logger.warning(f"Failed to find policies for {safe_category}: {type(e).__name__}")
         
         return policies
