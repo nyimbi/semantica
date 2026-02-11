@@ -39,11 +39,13 @@ from .agent_context import AgentContext
 from .agent_memory import AgentMemory, MemoryItem
 from .context_graph import ContextEdge, ContextGraph, ContextNode
 from .context_retriever import ContextRetriever, RetrievedContext
+from .decision_context import DecisionContext
 from .entity_linker import EntityLink, EntityLinker, LinkedEntity
 
 __all__ = [
     # High-level interface
     "AgentContext",
+    "DecisionContext",
     # Main classes
     "ContextGraph",
     "ContextNode",

@@ -1,6 +1,37 @@
 # Context Module Usage Guide
 
-This guide demonstrates how to use the Semantica context module for building context graphs, managing agent memory, retrieving context, and linking entities.
+This guide demonstrates how to use the Semantica context module for building context graphs, managing agent memory, retrieving context, linking entities, and enhanced decision tracking with hybrid search capabilities.
+
+## Quick Imports
+
+```python
+# Core context classes
+from semantica.context import AgentContext, ContextGraph, ContextRetriever, DecisionContext
+
+# Memory management
+from semantica.context import AgentMemory
+
+# Entity linking
+from semantica.context import EntityLinker
+
+# For vector storage (often used with context)
+from semantica.vector_store import VectorStore
+```
+
+## Quick Example
+
+```python
+# Simple context setup
+vector_store = VectorStore(backend="inmemory", dimension=384)
+context = AgentContext(vector_store=vector_store)
+
+# Store a memory
+memory_id = context.store("User likes Python programming", conversation_id="conv1")
+
+# Retrieve context
+results = context.retrieve("Python programming", max_results=5)
+print(f"Found {len(results)} results")
+```
 
 ## Table of Contents
 
@@ -10,6 +41,9 @@ This guide demonstrates how to use the Semantica context module for building con
 4. [Agent Memory Management](#agent-memory-management)
 5. [Context Retrieval](#context-retrieval)
 6. [Entity Linking](#entity-linking)
+7. [Decision Tracking](#decision-tracking)
+8. [Hybrid Search for Decisions](#hybrid-search-for-decisions)
+9. [Explainable AI](#explainable-ai)
 
 ## High-Level Interface (Quick Start)
 
@@ -325,4 +359,255 @@ print(uri) # e.g., "python_programming_language"
 
 # Similarity matching
 score = linker._calculate_text_similarity("Python", "Python Language")
+```
+
+## Decision Tracking
+
+The `DecisionContext` class provides enhanced decision tracking capabilities with hybrid search, explainable AI, and KG algorithm integration.
+
+### Basic Decision Recording
+
+```python
+from semantica.context import DecisionContext
+from semantica.vector_store import VectorStore
+
+# Initialize decision context
+vector_store = VectorStore(backend="inmemory", dimension=384)
+decision_context = DecisionContext(vector_store=vector_store, graph_store=None)
+
+# Record a decision
+decision_id = decision_context.record_decision(
+    scenario="Credit limit increase for premium customer",
+    reasoning="Excellent payment history and high credit score",
+    outcome="approved",
+    confidence=0.92,
+    entities=["customer_123", "premium_segment", "credit_card"],
+    category="credit_approval",
+    amount=50000,
+    risk_level="low"
+)
+
+print(f"Recorded decision: {decision_id}")
+```
+
+### Batch Decision Processing
+
+```python
+# Process multiple decisions
+decisions = [
+    {
+        "scenario": "Credit limit increase request",
+        "reasoning": "Good payment history",
+        "outcome": "approved",
+        "confidence": 0.85,
+        "entities": ["customer_456"],
+        "category": "credit_approval"
+    },
+    {
+        "scenario": "Fraud detection alert",
+        "reasoning": "Suspicious transaction pattern",
+        "outcome": "blocked",
+        "confidence": 0.95,
+        "entities": ["transaction_789", "customer_456"],
+        "category": "fraud_detection"
+    }
+]
+
+decision_ids = []
+for decision in decisions:
+    decision_id = decision_context.record_decision(**decision)
+    decision_ids.append(decision_id)
+
+print(f"Processed {len(decision_ids)} decisions")
+```
+
+### Decision Context Retrieval
+
+```python
+# Get comprehensive decision context
+context_info = decision_context.get_decision_context(
+    decision_id,
+    depth=2,
+    include_entities=True,
+    include_policies=True
+)
+
+print(f"Decision context: {len(context_info.related_entities)} entities")
+print(f"Related relationships: {len(context_info.related_relationships)}")
+```
+
+## Hybrid Search for Decisions
+
+The enhanced context retriever supports hybrid search combining semantic and structural embeddings.
+
+### Finding Similar Decisions
+
+```python
+from semantica.context import ContextRetriever
+
+# Initialize retriever with decision context
+retriever = ContextRetriever(
+    vector_store=vector_store,
+    knowledge_graph=None
+)
+
+# Find similar decisions using hybrid search
+precedents = decision_context.find_similar_decisions(
+    scenario="Credit limit increase for good customer",
+    limit=5,
+    use_hybrid_search=True,
+    semantic_weight=0.7,
+    structural_weight=0.3
+)
+
+for precedent in precedents:
+    print(f"Score: {precedent['score']:.3f}")
+    print(f"Content: {precedent['content'][:100]}...")
+    print(f"Entities: {precedent['related_entities']}")
+```
+
+### Decision Precedent Search
+
+```python
+# Search for decision precedents
+precedents = retriever.retrieve_decision_precedents(
+    query="Credit approval for premium customers",
+    limit=10,
+    use_hybrid_search=True,
+    include_context=True
+)
+
+print(f"Found {len(precedents)} precedents")
+
+for precedent in precedents:
+    print(f"Scenario: {precedent['scenario']}")
+    print(f"Outcome: {precedent['outcome']}")
+    print(f"Confidence: {precedent['confidence']}")
+```
+
+### Query Decisions with Context
+
+```python
+# Query decisions with multi-hop context expansion
+queried = retriever.query_decisions(
+    query="High-risk credit decisions",
+    max_hops=2,
+    include_context=True,
+    use_hybrid_search=True,
+    filters={"category": "credit_approval", "risk_level": "high"}
+)
+
+print(f"Found {len(queried)} high-risk decisions")
+```
+
+## Explainable AI
+
+The decision tracking system provides comprehensive explanations with path tracing and confidence scoring.
+
+### Decision Explanations
+
+```python
+# Generate comprehensive decision explanation
+explanation = decision_context.explain_decision(
+    decision_id,
+    include_paths=True,
+    include_confidence=True,
+    include_weights=True
+)
+
+print(f"Scenario: {explanation['scenario']}")
+print(f"Reasoning: {explanation['reasoning']}")
+print(f"Outcome: {explanation['outcome']}")
+print(f"Confidence: {explanation['confidence']}")
+
+# Available explanation components
+components = [
+    "scenario", "reasoning", "outcome", "confidence",
+    "semantic_weight", "structural_weight", "embedding_info",
+    "related_entities", "similar_decisions", "path_tracing"
+]
+
+for component in components:
+    if component in explanation:
+        print(f"{component}: {explanation[component]}")
+```
+
+### Path Tracing and Context
+
+```python
+# Get decision with path tracing
+explanation = decision_context.explain_decision(
+    decision_id,
+    include_paths=True,
+    max_depth=3
+)
+
+# Trace decision paths
+if "path_tracing" in explanation:
+    paths = explanation["path_tracing"]
+    for path in paths:
+        print(f"Path: {' -> '.join(path['entities'])}")
+        print(f"Confidence: {path['confidence']}")
+        print(f"Relationships: {path['relationships']}")
+```
+
+### Confidence and Weight Analysis
+
+```python
+# Analyze decision confidence and weights
+explanation = decision_context.explain_decision(
+    decision_id,
+    include_confidence=True,
+    include_weights=True
+)
+
+print(f"Decision confidence: {explanation['confidence']}")
+print(f"Semantic weight: {explanation['semantic_weight']}")
+print(f"Structural weight: {explanation['structural_weight']}")
+
+# Check if structural embedding was used
+if "has_structural_embedding" in explanation:
+    has_structural = explanation["has_structural_embedding"]
+    print(f"Structural embedding used: {has_structural}")
+```
+
+### Real-World Examples
+
+```python
+# Banking decision example
+banking_decision = decision_context.record_decision(
+    scenario="Mortgage application approval",
+    reasoning="Strong credit score (750), stable employment, 20% down payment",
+    outcome="approved",
+    confidence=0.94,
+    entities=["applicant_001", "mortgage_30yr", "property_main"],
+    category="mortgage_approval",
+    loan_amount=350000,
+    credit_score=750
+)
+
+# Get banking decision explanation
+banking_explanation = decision_context.explain_decision(banking_decision)
+print(f"Banking decision: {banking_explanation['outcome']}")
+print(f"Risk assessment: {banking_explanation['confidence']}")
+
+# Insurance decision example
+insurance_decision = decision_context.record_decision(
+    scenario="Auto insurance claim approval",
+    reasoning="Clear liability, reasonable repair costs, no prior claims",
+    outcome="approved",
+    confidence=0.96,
+    entities=["claim_auto_001", "driver_safe", "policy_active"],
+    category="auto_insurance",
+    claim_amount=2500
+)
+
+# Find similar insurance decisions
+insurance_precedents = decision_context.find_similar_decisions(
+    scenario="Auto claim with clear liability",
+    limit=5,
+    filters={"category": "auto_insurance"}
+)
+
+print(f"Found {len(insurance_precedents)} similar insurance claims")
 ```

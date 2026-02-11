@@ -77,7 +77,8 @@ dependencies = [
   "toml>=0.10.0",
   "python-dotenv>=0.20.0",
   "loguru>=0.6.0",
-  "structlog>=22.1.0"
+  "structlog>=22.1.0",
+  "gensim>=4.3.0"
 ]
 
 # ---------------- OPTIONAL DEPENDENCIES ----------------
