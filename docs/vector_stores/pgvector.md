@@ -372,4 +372,4 @@ TEST_PGVECTOR_URL="postgresql://postgres:postgres@localhost:5432/test" \
 - [pgvector Documentation](https://github.com/pgvector/pgvector)
 - [PgVector Python Client](https://github.com/pgvector/pgvector-python)
 - [psycopg Documentation](https://www.psycopg.org/)
-- [Vector Store Usage Guide](vector_store_usage.md)
+- [Vector Store Usage Guide](../vector_store_usage.md)
