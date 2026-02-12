@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Added PgVector Store Support** (PR #303 by @Sameer6305, @KaifAhmad1):
+  - Native PostgreSQL vector storage using pgvector extension with full integration
+  - Multiple distance metrics: cosine, L2/Euclidean, inner product with automatic score normalization
+  - Advanced indexing: HNSW and IVFFlat for approximate nearest neighbor search with tunable parameters
+  - JSONB metadata storage with flexible filtering capabilities and batch operations
+  - Connection pooling support with psycopg3/psycopg2 fallback and efficient resource management
+  - Comprehensive VectorStore integration with backend delegation and unified API
+  - Idempotent index creation and table management with safe migration support
+  - Production-ready security: SQL injection protection with psycopg_sql.SQL() and input validation
+  - Performance optimizations: UUID4-based IDs, batch executemany operations, connection pooling
+  - Full backward compatibility with existing vector store implementations
+  - 36+ comprehensive test cases with Docker integration and dependency skipping
+  - Complete documentation with setup guides, examples, and performance tuning
+  - CI/CD integration: resolved benchmark compatibility and fixed documentation links
+
 - **Improved Vector Store for Decision Tracking** (PR #293 by @KaifAhmad1):
   - Comprehensive decision tracking capabilities with hybrid search combining semantic and structural embeddings
   - New DecisionEmbeddingPipeline for generating semantic and structural embeddings with KG algorithm integration
