@@ -1185,7 +1185,7 @@ class ContextGraph:
             
         except Exception as e:
             self.logger.error(f"Failed to analyze graph with KG: {e}")
-            return {"error": str(e)}
+            return {"error": "Graph analysis failed due to an internal error"}
     
     def get_node_centrality(self, node_id: str) -> Dict[str, float]:
         """
@@ -1222,7 +1222,7 @@ class ContextGraph:
             
         except Exception as e:
             self.logger.error(f"Failed to get node centrality: {e}")
-            return {"error": str(e)}
+            return {"error": "Node centrality calculation failed due to an internal error"}
     
     def find_similar_nodes(
         self, node_id: str, similarity_type: str = "content", top_k: int = 10
@@ -1671,7 +1671,7 @@ class ContextGraph:
             
         except Exception as e:
             self.logger.error(f"Causal analysis failed: {e}")
-            return [{"error": f"Causal analysis failed: {e}"}]
+            return [{"error": "Causal analysis failed due to an internal error"}]
     
     def enforce_decision_policy(
         self,
