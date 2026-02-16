@@ -420,7 +420,7 @@ class CausalChainAnalyzer:
             data["timestamp"] = datetime.fromisoformat(data["timestamp"])
         
         return Decision(
-            decision_id=data.get("decision_id", ""),
+            decision_id=data["decision_id"],  # Required field
             category=data.get("category", ""),
             scenario=data.get("scenario", ""),
             reasoning=data.get("reasoning", ""),
@@ -430,5 +430,6 @@ class CausalChainAnalyzer:
             decision_maker=data.get("decision_maker", ""),
             reasoning_embedding=data.get("reasoning_embedding"),
             node2vec_embedding=data.get("node2vec_embedding"),
-            metadata=data.get("metadata", {})
+            metadata=data.get("metadata", {}),
+            auto_generate_id=False  # Don't auto-generate for deserialization
         )

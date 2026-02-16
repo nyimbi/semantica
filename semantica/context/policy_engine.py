@@ -814,7 +814,7 @@ class PolicyEngine:
                 data[field] = datetime.fromisoformat(data[field])
         
         return Policy(
-            policy_id=data.get("policy_id", ""),
+            policy_id=data["policy_id"],  # Required field
             name=data.get("name", ""),
             description=data.get("description", ""),
             rules=data.get("rules", {}),
@@ -822,5 +822,6 @@ class PolicyEngine:
             version=data.get("version", ""),
             created_at=data.get("created_at", datetime.now()),
             updated_at=data.get("updated_at", datetime.now()),
-            metadata=data.get("metadata", {})
+            metadata=data.get("metadata", {}),
+            auto_generate_id=False  # Don't auto-generate for deserialization
         )

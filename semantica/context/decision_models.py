@@ -99,10 +99,12 @@ class Decision:
     node2vec_embedding: Optional[List[float]] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
     
-    def __post_init__(self):
+    def __post_init__(self, auto_generate_id: bool = True):
         """Validate decision data."""
-        if not self.decision_id:  # Handle both None and empty string
+        if auto_generate_id and not self.decision_id:  # Handle both None and empty string
             self.decision_id = str(uuid.uuid4())
+        elif not self.decision_id and not auto_generate_id:
+            raise ValueError("decision_id is required when auto_generate_id=False")
         if not 0 <= self.confidence <= 1:
             raise ValueError("Confidence must be between 0 and 1")
     
@@ -141,10 +143,12 @@ class DecisionContext:
     cross_system_inputs: Dict[str, Any] = field(default_factory=dict)
     metadata: Dict[str, Any] = field(default_factory=dict)
     
-    def __post_init__(self):
-        """Validate context data."""
-        if not self.context_id:  # Handle both None and empty string
+    def __post_init__(self, auto_generate_id: bool = True):
+        """Validate decision context data."""
+        if auto_generate_id and not self.context_id:  # Handle both None and empty string
             self.context_id = str(uuid.uuid4())
+        elif not self.context_id and not auto_generate_id:
+            raise ValueError("context_id is required when auto_generate_id=False")
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert context to dictionary."""
@@ -177,10 +181,12 @@ class Policy:
     updated_at: datetime
     metadata: Dict[str, Any] = field(default_factory=dict)
     
-    def __post_init__(self):
+    def __post_init__(self, auto_generate_id: bool = True):
         """Validate policy data."""
-        if not self.policy_id:  # Handle both None and empty string
+        if auto_generate_id and not self.policy_id:  # Handle both None and empty string
             self.policy_id = str(uuid.uuid4())
+        elif not self.policy_id and not auto_generate_id:
+            raise ValueError("policy_id is required when auto_generate_id=False")
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert policy to dictionary."""
@@ -218,10 +224,12 @@ class PolicyException:
     justification: str
     metadata: Dict[str, Any] = field(default_factory=dict)
     
-    def __post_init__(self):
-        """Validate exception data."""
-        if not self.exception_id:  # Handle both None and empty string
+    def __post_init__(self, auto_generate_id: bool = True):
+        """Validate policy exception data."""
+        if auto_generate_id and not self.exception_id:  # Handle both None and empty string
             self.exception_id = str(uuid.uuid4())
+        elif not self.exception_id and not auto_generate_id:
+            raise ValueError("exception_id is required when auto_generate_id=False")
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert exception to dictionary."""
@@ -254,10 +262,12 @@ class Precedent:
     relationship_type: str  # "similar_scenario", "same_policy", "exception_precedent"
     metadata: Dict[str, Any] = field(default_factory=dict)
     
-    def __post_init__(self):
+    def __post_init__(self, auto_generate_id: bool = True):
         """Validate precedent data."""
-        if not self.precedent_id:  # Handle both None and empty string
+        if auto_generate_id and not self.precedent_id:  # Handle both None and empty string
             self.precedent_id = str(uuid.uuid4())
+        elif not self.precedent_id and not auto_generate_id:
+            raise ValueError("precedent_id is required when auto_generate_id=False")
         if not 0 <= self.similarity_score <= 1:
             raise ValueError("Similarity score must be between 0 and 1")
         valid_types = ["similar_scenario", "same_policy", "exception_precedent"]
@@ -292,10 +302,12 @@ class ApprovalChain:
     timestamp: datetime
     metadata: Dict[str, Any] = field(default_factory=dict)
     
-    def __post_init__(self):
-        """Validate approval data."""
-        if not self.approval_id:  # Handle both None and empty string
+    def __post_init__(self, auto_generate_id: bool = True):
+        """Validate approval chain data."""
+        if auto_generate_id and not self.approval_id:  # Handle both None and empty string
             self.approval_id = str(uuid.uuid4())
+        elif not self.approval_id and not auto_generate_id:
+            raise ValueError("approval_id is required when auto_generate_id=False")
         valid_methods = ["slack_dm", "zoom_call", "email", "system"]
         if self.approval_method not in valid_methods:
             raise ValueError(f"Approval method must be one of: {valid_methods}")

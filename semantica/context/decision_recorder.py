@@ -231,7 +231,7 @@ class DecisionRecorder:
             Exception ID
         """
         try:
-            exception = Exception(
+            exception = PolicyException(
                 exception_id=str(uuid.uuid4()),
                 decision_id=decision_id,
                 policy_id=policy_id,
@@ -423,7 +423,7 @@ class DecisionRecorder:
             "metadata": decision.metadata
         })
     
-    def _store_exception_node(self, exception: Exception) -> None:
+    def _store_exception_node(self, exception: PolicyException) -> None:
         """Store exception node in graph database."""
         query = """
         CREATE (e:Exception {

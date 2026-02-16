@@ -239,9 +239,9 @@ class TestDecisionRecorder:
     
     def test_store_exception_node(self, decision_recorder, mock_graph_store):
         """Test storing exception node in graph."""
-        from semantica.context.decision_models import Exception
+        from semantica.context.decision_models import PolicyException
         
-        exception = Exception(
+        exception = PolicyException(
             exception_id="exc_001",
             decision_id="decision_001",
             policy_id="policy_001",

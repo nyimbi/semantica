@@ -641,7 +641,7 @@ class DecisionQuery:
             data["timestamp"] = datetime.fromisoformat(data["timestamp"])
         
         return Decision(
-            decision_id=data.get("decision_id", ""),
+            decision_id=data["decision_id"],  # Required field
             category=data.get("category", ""),
             scenario=data.get("scenario", ""),
             reasoning=data.get("reasoning", ""),
@@ -651,7 +651,8 @@ class DecisionQuery:
             decision_maker=data.get("decision_maker", ""),
             reasoning_embedding=data.get("reasoning_embedding"),
             node2vec_embedding=data.get("node2vec_embedding"),
-            metadata=data.get("metadata", {})
+            metadata=data.get("metadata", {}),
+            auto_generate_id=False  # Don't auto-generate for deserialization
         )
     
     def _dict_to_exception(self, data: Dict[str, Any]) -> PolicyException:
@@ -661,14 +662,15 @@ class DecisionQuery:
             data["approval_timestamp"] = datetime.fromisoformat(data["approval_timestamp"])
         
         return PolicyException(
-            exception_id=data.get("exception_id", ""),
-            decision_id=data.get("decision_id", ""),
-            policy_id=data.get("policy_id", ""),
+            exception_id=data["exception_id"],  # Required field
+            decision_id=data["decision_id"],  # Required field
+            policy_id=data["policy_id"],  # Required field
             reason=data.get("reason", ""),
             approver=data.get("approver", ""),
             approval_timestamp=data.get("approval_timestamp", datetime.now()),
             justification=data.get("justification", ""),
-            metadata=data.get("metadata", {})
+            metadata=data.get("metadata", {}),
+            auto_generate_id=False  # Don't auto-generate for deserialization
         )
     
     def _cosine_similarity(self, vec1: List[float], vec2: List[float]) -> float:
