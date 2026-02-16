@@ -1560,7 +1560,7 @@ class ContextGraph:
             decision = self._decisions[decision_id]
             
             # Content similarity
-            content_sim = self._calculate_content_similarity(scenario, decision)
+            content_sim = self._calculate_decision_content_similarity(scenario, decision)
             
             # Structural similarity (graph-based)
             structural_sim = 0.0
@@ -1871,7 +1871,7 @@ class ContextGraph:
         except Exception as e:
             self.logger.exception("Failed to add decision to graph")
     
-    def _calculate_content_similarity(self, scenario: str, decision: Dict[str, Any]) -> float:
+    def _calculate_decision_content_similarity(self, scenario: str, decision: Dict[str, Any]) -> float:
         """Calculate content similarity between scenario and decision."""
         try:
             # Simple word-based similarity
@@ -1885,7 +1885,7 @@ class ContextGraph:
             return len(intersection) / len(union) if union else 0.0
             
         except Exception as e:
-            self.logger.warning(f"Content similarity calculation failed: {e}")
+            self.logger.exception("Content similarity calculation failed")
             return 0.0
     
     def _calculate_structural_similarity_for_decision(self, decision_id: str, scenario: str) -> float:
