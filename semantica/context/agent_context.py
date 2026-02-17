@@ -1805,6 +1805,19 @@ class AgentContext:
                 decision_id, direction, max_depth
             )
 
+        if self._decision_backend == "context_graph":
+            # Use ContextGraph's get_causal_chain method
+            if hasattr(self.knowledge_graph, "get_causal_chain"):
+                return self.knowledge_graph.get_causal_chain(
+                    decision_id=decision_id,
+                    direction=direction,
+                    max_depth=max_depth
+                )
+            # Fallback to causal analyzer
+            return self._causal_analyzer.get_causal_chain(
+                decision_id, direction, max_depth
+            )
+
         if hasattr(self.knowledge_graph, "get_causal_chain"):
             return self.knowledge_graph.get_causal_chain(
                 decision_id=decision_id,
