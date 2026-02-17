@@ -594,11 +594,12 @@ class TestContextGraphDecisionsEdgeCases:
             decision_maker="test_agent"
         )
         
-        # Should still add the decision
+        # Should still add the decision (auto-generates UUID for empty string)
         context_graph.add_decision(decision)
         
-        # Should be accessible with empty string key
-        assert "" in context_graph.nodes
+        # Should have generated UUID for empty string (not preserve empty string)
+        assert len(context_graph.nodes) == 1
+        assert "" not in context_graph.nodes  # Empty string should be replaced with UUID
     
     def test_decision_with_null_fields(self, context_graph):
         """Test adding decision with null fields."""

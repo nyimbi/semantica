@@ -616,10 +616,49 @@ class ContextGraph:
 
     # --- Internal Helpers ---
 
+    def _normalize_timestamp(self, timestamp_value) -> datetime:
+        """
+        Normalize timestamp value to datetime object.
+        
+        Handles various timestamp formats:
+        - datetime: returns as-is
+        - int/float: converts from epoch seconds
+        - str: parses ISO format (with optional Z)
+        - None/invalid: returns current datetime
+        
+        Args:
+            timestamp_value: Timestamp value in various formats
+            
+        Returns:
+            datetime: Normalized datetime object
+        """
+        from datetime import datetime
+        
+        if isinstance(timestamp_value, datetime):
+            return timestamp_value
+        elif isinstance(timestamp_value, (int, float)):
+            return datetime.fromtimestamp(timestamp_value)
+        elif isinstance(timestamp_value, str):
+            # Handle ISO format with optional Z suffix
+            timestamp_str = timestamp_value.rstrip('Z')  # Remove Z if present
+            try:
+                return datetime.fromisoformat(timestamp_str)
+            except ValueError:
+                # Fallback to current datetime if parsing fails
+                return datetime.now()
+        else:
+            # Fallback for None or other types
+            return datetime.now()
+
     def _add_internal_node(self, node: ContextNode) -> bool:
         """Internal method to add a node."""
         self.nodes[node.node_id] = node
-        self.node_type_index[node.node_type].add(node.node_id)
+        # Handle edge case where node_type might be None or not a string
+        if hasattr(node, 'node_type') and isinstance(node.node_type, str):
+            self.node_type_index[node.node_type].add(node.node_id)
+        else:
+            # Use 'unknown' as fallback for invalid node_type
+            self.node_type_index['unknown'].add(node.node_id)
         return True
 
     def _add_internal_edge(self, edge: ContextEdge) -> bool:
@@ -939,11 +978,15 @@ class ContextGraph:
         """
         from .decision_models import Decision
         
-        # Handle empty decision ID by generating UUID only if None
-        node_id = decision.decision_id if decision.decision_id is not None else str(uuid.uuid4())
+        # Handle empty decision ID by generating UUID for both None and empty string
+        # This ensures consistent behavior with Decision model's __post_init__ method
+        node_id = decision.decision_id if decision.decision_id else str(uuid.uuid4())
         
         # Handle None metadata
         metadata = decision.metadata or {}
+        
+        # Normalize timestamp to ensure consistent storage format
+        normalized_timestamp = self._normalize_timestamp(decision.timestamp)
         
         node = ContextNode(
             node_id=node_id,
@@ -954,7 +997,7 @@ class ContextGraph:
                 "reasoning": decision.reasoning,
                 "outcome": decision.outcome,
                 "confidence": decision.confidence,
-                "timestamp": decision.timestamp.isoformat(),
+                "timestamp": normalized_timestamp.isoformat(),
                 "decision_maker": decision.decision_maker,
                 "reasoning_embedding": decision.reasoning_embedding,
                 "node2vec_embedding": decision.node2vec_embedding,
@@ -986,8 +1029,12 @@ class ContextGraph:
             return
         
         # Check if nodes are decision nodes - if not, skip adding relationship
-        if (self.nodes[source_decision_id].node_type != "Decision" or 
-            self.nodes[target_decision_id].node_type != "Decision"):
+        source_node = self.nodes[source_decision_id]
+        target_node = self.nodes[target_decision_id]
+        if (not hasattr(source_node, 'node_type') or not isinstance(source_node.node_type, str) or
+            not hasattr(target_node, 'node_type') or not isinstance(target_node.node_type, str) or
+            source_node.node_type.lower() != "decision" or 
+            target_node.node_type.lower() != "decision"):
             return
         
         edge = ContextEdge(
@@ -1038,8 +1085,10 @@ class ContextGraph:
                 # Get decision node
                 if current_id in self.nodes:
                     node = self.nodes[current_id]
-                    if node.node_type == "Decision":
+                    if (hasattr(node, 'node_type') and isinstance(node.node_type, str) and
+                        node.node_type.lower() == "decision"):
                         decision_data = node.properties
+                        timestamp = self._normalize_timestamp(decision_data.get("timestamp"))
                         decision = Decision(
                             decision_id=current_id,
                             category=decision_data.get("category", ""),
@@ -1047,7 +1096,7 @@ class ContextGraph:
                             reasoning=decision_data.get("reasoning", ""),
                             outcome=decision_data.get("outcome", ""),
                             confidence=decision_data.get("confidence", 0.0),
-                            timestamp=datetime.fromisoformat(decision_data.get("timestamp", datetime.now().isoformat())),
+                            timestamp=timestamp,
                             decision_maker=decision_data.get("decision_maker", ""),
                             reasoning_embedding=decision_data.get("reasoning_embedding"),
                             node2vec_embedding=decision_data.get("node2vec_embedding"),
@@ -1100,9 +1149,11 @@ class ContextGraph:
         for pid in precedent_ids[:limit]:
             if pid in self.nodes:
                 node = self.nodes[pid]
-                if node.node_type == "Decision":
+                if (hasattr(node, 'node_type') and isinstance(node.node_type, str) and
+                    node.node_type.lower() == "decision"):
                     decision_data = node.properties
                     from .decision_models import Decision
+                    timestamp = self._normalize_timestamp(decision_data.get("timestamp"))
                     decision = Decision(
                         decision_id=pid,
                         category=decision_data.get("category", ""),
@@ -1110,7 +1161,7 @@ class ContextGraph:
                         reasoning=decision_data.get("reasoning", ""),
                         outcome=decision_data.get("outcome", ""),
                         confidence=decision_data.get("confidence", 0.0),
-                        timestamp=datetime.fromisoformat(decision_data.get("timestamp", datetime.now().isoformat())),
+                        timestamp=timestamp,
                         decision_maker=decision_data.get("decision_maker", ""),
                         reasoning_embedding=decision_data.get("reasoning_embedding"),
                         node2vec_embedding=decision_data.get("node2vec_embedding"),
@@ -1513,7 +1564,7 @@ class ContextGraph:
         self.logger.info(f"Recorded decision {decision_id} in category {category}")
         return decision_id
     
-    def find_precedents(
+    def find_precedents_by_scenario(
         self,
         scenario: str,
         category: Optional[str] = None,
@@ -1999,7 +2050,7 @@ class ContextGraph:
     
     # --- Easy-to-Use Convenience Methods ---
     
-    def add_decision(
+    def add_decision_simple(
         self,
         category: str,
         scenario: str,
@@ -2056,7 +2107,7 @@ class ContextGraph:
         Returns:
             List of similar decisions with similarity scores
         """
-        return self.find_precedents(
+        return self.find_precedents_by_scenario(
             scenario=scenario,
             category=category,
             limit=max_results,

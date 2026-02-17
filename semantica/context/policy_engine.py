@@ -822,6 +822,5 @@ class PolicyEngine:
             version=data.get("version", ""),
             created_at=data.get("created_at", datetime.now()),
             updated_at=data.get("updated_at", datetime.now()),
-            metadata=data.get("metadata", {}),
-            auto_generate_id=False  # Don't auto-generate for deserialization
+            metadata=data.get("metadata", {})
         )

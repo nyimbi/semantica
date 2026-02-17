@@ -315,7 +315,7 @@ class TestContextGraphsExamples:
         
         # Test empty decision ID handling
         decision_empty_id = Decision(
-            decision_id="",  # Empty ID
+            decision_id="",  # Empty ID - will be auto-generated
             category="test",
             scenario="test scenario",
             reasoning="test reasoning",
@@ -326,7 +326,8 @@ class TestContextGraphsExamples:
         )
         
         graph.add_decision(decision_empty_id)
-        assert "" in graph.nodes  # Empty string should be preserved as key
+        assert len(graph.nodes) == 1  # Should have generated UUID for empty string
+        assert "" not in graph.nodes  # Empty string should not be preserved
         print("+ Empty decision ID handling working")
         
         # Test None decision ID handling

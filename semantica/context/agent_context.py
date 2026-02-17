@@ -1659,9 +1659,9 @@ class AgentContext:
             raise RuntimeError("Decision tracking is not enabled")
 
         # Delegate to ContextGraph if available
-        if self._decision_backend == "context_graph" and hasattr(self.knowledge_graph, "find_precedents"):
+        if self._decision_backend == "context_graph" and hasattr(self.knowledge_graph, "find_precedents_by_scenario"):
             try:
-                precedents = self.knowledge_graph.find_precedents(
+                precedents = self.knowledge_graph.find_precedents_by_scenario(
                     scenario=scenario,
                     category=category,
                     limit=limit,
@@ -1801,6 +1801,19 @@ class AgentContext:
             raise RuntimeError("Decision tracking is not enabled")
 
         if self._decision_backend == "graph_store":
+            return self._causal_analyzer.get_causal_chain(
+                decision_id, direction, max_depth
+            )
+
+        if self._decision_backend == "context_graph":
+            # Use ContextGraph's get_causal_chain method
+            if hasattr(self.knowledge_graph, "get_causal_chain"):
+                return self.knowledge_graph.get_causal_chain(
+                    decision_id=decision_id,
+                    direction=direction,
+                    max_depth=max_depth
+                )
+            # Fallback to causal analyzer
             return self._causal_analyzer.get_causal_chain(
                 decision_id, direction, max_depth
             )

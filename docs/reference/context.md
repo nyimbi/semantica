@@ -186,7 +186,24 @@ knowledge.add_edge("FastAPI", "Programming", "used_for")
 ### Easy Decision Management
 ```python
 # Record decisions in your knowledge graph
-decision_id = knowledge.add_decision(
+from semantica.context.decision_models import Decision
+from datetime import datetime
+
+decision = Decision(
+    decision_id="tech_choice_001",
+    category="technology_choice",
+    scenario="Framework selection for web API",
+    reasoning="FastAPI provides better performance for Python APIs",
+    outcome="selected_fastapi",
+    confidence=0.92,
+    timestamp=datetime.now(),
+    decision_maker="system",
+    metadata={"entities": ["Python", "FastAPI", "web_project"]}
+)
+knowledge.add_decision(decision)
+
+# Or use the convenience method for quick decisions
+decision_id = knowledge.add_decision_simple(
     category="technology_choice",
     scenario="Framework selection for web API",
     reasoning="FastAPI provides better performance for Python APIs",
@@ -196,10 +213,10 @@ decision_id = knowledge.add_decision(
 )
 
 # Find similar decisions easily
-similar = knowledge.find_similar_decisions(
+similar = knowledge.find_precedents_by_scenario(
     scenario="web framework",
     category="technology_choice",
-    max_results=3
+    limit=3
 )
 
 print(f"Found {len(similar)} similar decisions")
@@ -259,7 +276,9 @@ print(f"Python importance score: {importance.get('degree', 0)}")
 | `add_node(node_id, node_type, properties)` | Add concepts to remember | Build knowledge base |
 | `add_edge(source, target, relation)` | Connect related concepts | Show relationships |
 | `add_decision(category, scenario, reasoning, outcome, confidence, ...)` | Record decisions | Track choices and learn |
-| `find_similar_decisions(scenario, category, ...)` | Find similar decisions | Make consistent choices |
+| `add_decision_simple(category, scenario, reasoning, outcome, confidence, ...)` | Easy decision recording | Quick decision tracking |
+| `find_precedents(decision_id, limit)` | Find precedents by ID | Get connected decisions |
+| `find_precedents_by_scenario(scenario, category, ...)` | Find similar decisions | Make consistent choices |
 | `analyze_decision_impact(decision_id)` | Understand decision influence | See how decisions affect others |
 | `get_decision_summary()` | Get decision statistics | Understand decision patterns |
 | `trace_decision_chain(decision_id)` | Trace decision connections | Understand decision relationships |
@@ -378,7 +397,24 @@ ecommerce_graph.add_node("laptop_xyz", "product", {"category": "electronics"})
 ecommerce_graph.add_edge("user_123", "laptop_xyz", "viewed")
 
 # Make recommendation decision
-rec_decision = ecommerce_graph.add_decision(
+from semantica.context.decision_models import Decision
+from datetime import datetime
+
+rec_decision = Decision(
+    decision_id="rec_001",
+    category="product_recommendation",
+    scenario="Laptop recommendation for premium user",
+    reasoning="User prefers high-performance electronics",
+    outcome="recommended_gaming_laptop",
+    confidence=0.87,
+    timestamp=datetime.now(),
+    decision_maker="recommendation_system",
+    metadata={"entities": ["user_123", "laptop_xyz"]}
+)
+ecommerce_graph.add_decision(rec_decision)
+
+# Or use the convenience method
+rec_decision_id = ecommerce_graph.add_decision_simple(
     category="product_recommendation",
     scenario="Laptop recommendation for premium user",
     reasoning="User prefers high-performance electronics",
@@ -388,9 +424,9 @@ rec_decision = ecommerce_graph.add_decision(
 )
 
 # Find similar recommendations
-similar_recs = ecommerce_graph.find_similar_decisions(
+similar_recs = ecommerce_graph.find_precedents_by_scenario(
     scenario="laptop recommendation",
-    max_results=5
+    limit=5
 )
 ```
 
