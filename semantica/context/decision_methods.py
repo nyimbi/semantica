@@ -416,7 +416,11 @@ def _append_immutable_trace_events(
             previous_trace_id = latest_map.get("trace_id")
             previous_hash = latest_map.get("event_hash", "") or ""
             next_index = int(latest_map.get("event_index", 0) or 0) + 1
-    except Exception:
+    except Exception as e:
+        logger.warning(
+            "Failed to lookup previous immutable trace event; starting new chain "
+            f"for decision_id={decision_id}: {e}"
+        )
         # Start a fresh chain if previous trace lookup fails.
         previous_trace_id = None
         previous_hash = ""

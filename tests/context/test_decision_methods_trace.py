@@ -4,7 +4,10 @@ from datetime import datetime
 import logging
 from unittest.mock import Mock
 
-from semantica.context.decision_methods import capture_decision_trace
+from semantica.context.decision_methods import (
+    _append_immutable_trace_events,
+    capture_decision_trace,
+)
 from semantica.context.decision_models import Decision
 
 
@@ -112,3 +115,28 @@ def test_capture_decision_trace_accepts_versioned_policy_refs():
     ]
     assert policy_calls
     assert policy_calls[0][0][1]["policy_version"] == "3.2"
+
+
+def test_append_immutable_trace_events_logs_lookup_failure_and_continues(caplog):
+    graph_store = Mock()
+    calls = {"n": 0}
+
+    def _execute_query(*args, **kwargs):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise RuntimeError("lookup failed")
+        return {"records": []}
+
+    graph_store.execute_query = Mock(side_effect=_execute_query)
+
+    with caplog.at_level(logging.WARNING):
+        _append_immutable_trace_events(
+            graph_store=graph_store,
+            decision_id="decision_trace_test_001",
+            events=[{"event_type": "DECISION_RECORDED", "payload": {"ok": True}}],
+            logger=logging.getLogger("test_logger"),
+        )
+
+    assert "Failed to lookup previous immutable trace event" in caplog.text
+    assert "decision_id=decision_trace_test_001" in caplog.text
+    assert graph_store.execute_query.call_count >= 2
