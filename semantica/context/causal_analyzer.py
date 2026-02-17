@@ -131,6 +131,7 @@ class CausalChainAnalyzer:
             results = self.graph_store.execute_query(query, {
                 "decision_id": decision_id
             })
+            results = self._extract_records(results)
             
             decisions = []
             for record in results:
@@ -174,6 +175,7 @@ class CausalChainAnalyzer:
             results = self.graph_store.execute_query(query, {
                 "decision_id": decision_id
             })
+            results = self._extract_records(results)
             
             decisions = []
             for record in results:
@@ -218,6 +220,7 @@ class CausalChainAnalyzer:
             results = self.graph_store.execute_query(query, {
                 "decision_id": decision_id
             })
+            results = self._extract_records(results)
             
             decisions = []
             for record in results:
@@ -256,7 +259,7 @@ class CausalChainAnalyzer:
             ORDER BY loop_length
             """
             
-            results = self.graph_store.execute_query(query)
+            results = self._extract_records(self.graph_store.execute_query(query))
             
             loops = []
             for record in results:
@@ -329,6 +332,7 @@ class CausalChainAnalyzer:
             results = self.graph_store.execute_query(query, {
                 "decision_id": decision_id
             })
+            results = self._extract_records(results)
             
             root_decisions = []
             for record in results:
@@ -444,3 +448,12 @@ class CausalChainAnalyzer:
             node2vec_embedding=data.get("node2vec_embedding"),
             metadata=data.get("metadata", {}),
         )
+
+    def _extract_records(self, results: Any) -> List[Dict[str, Any]]:
+        """Normalize execute_query result shapes to a list of record maps."""
+        if isinstance(results, dict):
+            records = results.get("records", [])
+            return records if isinstance(records, list) else []
+        if isinstance(results, list):
+            return results
+        return []

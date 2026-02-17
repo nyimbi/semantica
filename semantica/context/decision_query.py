@@ -344,7 +344,7 @@ class DecisionQuery:
         query_parts.append("LIMIT $limit")
         
         query = " ".join(query_parts)
-        results = self.graph_store.execute_query(query, params)
+        results = self._extract_records(self.graph_store.execute_query(query, params))
 
         decisions = []
         for record in results:
@@ -395,6 +395,7 @@ class DecisionQuery:
                 "category": category,
                 "limit": limit
             })
+            results = self._extract_records(results)
             
             decisions = []
             for record in results:
@@ -433,6 +434,7 @@ class DecisionQuery:
                 "entity_id": entity_id,
                 "limit": limit
             })
+            results = self._extract_records(results)
             
             decisions = []
             for record in results:
@@ -478,6 +480,7 @@ class DecisionQuery:
                 "end": end,
                 "limit": limit
             })
+            results = self._extract_records(results)
             
             decisions = []
             for record in results:
@@ -526,6 +529,7 @@ class DecisionQuery:
             results = self.graph_store.execute_query(query, {
                 "start_entity": start_entity
             })
+            results = self._extract_records(results)
             
             decisions = []
             for record in results:
@@ -572,6 +576,7 @@ class DecisionQuery:
             results = self.graph_store.execute_query(query, {
                 "decision_id": decision_id
             })
+            results = self._extract_records(results)
             
             paths = []
             for record in results:
@@ -616,6 +621,7 @@ class DecisionQuery:
             LIMIT $limit
             """
             results = self.graph_store.execute_query(query, {"limit": limit})
+            results = self._extract_records(results)
             
             exceptions = []
             for record in results:
@@ -827,6 +833,7 @@ class DecisionQuery:
             results = self.graph_store.execute_query(query, {
                 "decision_id": decision_id
             })
+            results = self._extract_records(results)
             
             return {"nodes": results, "max_depth": max_depth}
         except Exception:
@@ -879,10 +886,12 @@ class DecisionQuery:
             downstream_results = self.graph_store.execute_query(downstream_query, {
                 "decision_id": decision_id
             })
+            downstream_results = self._extract_records(downstream_results)
             
             upstream_results = self.graph_store.execute_query(upstream_query, {
                 "decision_id": decision_id
             })
+            upstream_results = self._extract_records(upstream_results)
             
             # Process results
             for record in downstream_results:
@@ -976,3 +985,12 @@ class DecisionQuery:
         except Exception as e:
             self.logger.error(f"Failed to predict relationships: {e}")
             return []
+
+    def _extract_records(self, results: Any) -> List[Dict[str, Any]]:
+        """Normalize execute_query result shapes to a list of record maps."""
+        if isinstance(results, dict):
+            records = results.get("records", [])
+            return records if isinstance(records, list) else []
+        if isinstance(results, list):
+            return results
+        return []
