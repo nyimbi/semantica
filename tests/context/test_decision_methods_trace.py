@@ -78,3 +78,27 @@ def test_capture_decision_trace_accepts_legacy_payload_shapes():
 
     assert decision_id == decision.decision_id
     assert graph_store.execute_query.call_count > 0
+
+
+def test_capture_decision_trace_accepts_versioned_policy_refs():
+    decision = _sample_decision()
+    graph_store = Mock()
+    graph_store.execute_query = Mock(
+        return_value={"records": [{"policy_id": "renewal_discount_policy", "version": "3.2"}]}
+    )
+
+    decision_id = capture_decision_trace(
+        decision=decision,
+        cross_system_context={"crm": {"arr": 120000}},
+        graph_store=graph_store,
+        policy_ids=[{"policy_id": "renewal_discount_policy", "version": "3.2"}],
+        immutable_audit_log=False,
+    )
+
+    assert decision_id == decision.decision_id
+    policy_calls = [
+        c for c in graph_store.execute_query.call_args_list
+        if "policy_version" in c[0][1]
+    ]
+    assert policy_calls
+    assert policy_calls[0][0][1]["policy_version"] == "3.2"

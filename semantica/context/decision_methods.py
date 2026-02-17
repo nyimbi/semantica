@@ -221,7 +221,7 @@ def capture_decision_trace(
     graph_store: Optional[GraphStore] = None,
     entities: Optional[List[str]] = None,
     source_documents: Optional[List[str]] = None,
-    policy_ids: Optional[List[str]] = None,
+    policy_ids: Optional[Union[str, Dict[str, str], List[Union[str, Dict[str, str]]]]] = None,
     exceptions: Optional[List[Dict[str, Any]]] = None,
     approvals: Optional[List[Dict[str, Any]]] = None,
     precedents: Optional[List[Dict[str, str]]] = None,
@@ -236,7 +236,9 @@ def capture_decision_trace(
         graph_store: Optional graph store used to persist full trace
         entities: Optional list of linked entities
         source_documents: Optional list of source documents
-        policy_ids: Optional list of policy IDs applied to the decision
+        policy_ids: Optional list of policy refs. Supports:
+            - "policy_id"
+            - {"policy_id": "...", "version": "..."}
         exceptions: Optional list of exception records
         approvals: Optional list of approval records
         precedents: Optional list of precedent links
@@ -259,7 +261,7 @@ def capture_decision_trace(
         recorder = DecisionRecorder(graph_store)
         entities = _normalize_string_list(entities)
         source_documents = _normalize_string_list(source_documents)
-        policy_ids = _normalize_string_list(policy_ids)
+        policy_refs = _normalize_policy_refs(policy_ids)
         exceptions = _normalize_record_list(exceptions)
         approvals = _normalize_record_list(approvals)
         precedents = _normalize_precedents(precedents)
@@ -294,10 +296,16 @@ def capture_decision_trace(
                 }
             )
 
-        if policy_ids:
-            recorder.apply_policies(decision_id, policy_ids)
+        if policy_refs:
+            applied_policies = recorder.apply_policies(decision_id, policy_refs)
             trace_events.append(
-                {"event_type": "POLICIES_APPLIED", "payload": {"policy_ids": policy_ids}}
+                {
+                    "event_type": "POLICIES_APPLIED",
+                    "payload": {
+                        "policy_ids": [p.get("policy_id") for p in policy_refs],
+                        "applied_policies": applied_policies,
+                    },
+                }
             )
 
         if exceptions:
@@ -479,6 +487,36 @@ def _normalize_record_list(
     if isinstance(value, list):
         return [item for item in value if isinstance(item, dict)]
     return []
+
+
+def _normalize_policy_refs(
+    value: Optional[Union[str, Dict[str, str], List[Union[str, Dict[str, str]]]]]
+) -> List[Dict[str, str]]:
+    """Normalize policy refs to [{policy_id, version?}] for version-safe matching."""
+    if value is None:
+        return []
+
+    raw_items: List[Union[str, Dict[str, str]]]
+    if isinstance(value, (str, dict)):
+        raw_items = [value]
+    elif isinstance(value, list):
+        raw_items = value
+    else:
+        return []
+
+    normalized: List[Dict[str, str]] = []
+    for item in raw_items:
+        if isinstance(item, str) and item:
+            normalized.append({"policy_id": item})
+        elif isinstance(item, dict):
+            policy_id = item.get("policy_id")
+            if not policy_id:
+                continue
+            ref: Dict[str, str] = {"policy_id": str(policy_id)}
+            if item.get("version") is not None and str(item.get("version")):
+                ref["version"] = str(item.get("version"))
+            normalized.append(ref)
+    return normalized
 
 
 def _normalize_precedents(

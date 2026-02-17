@@ -139,11 +139,29 @@ class TestDecisionRecorder:
         """Test applying policies to decision."""
         decision_id = "decision_001"
         policy_ids = ["policy_001", "policy_002"]
+        mock_graph_store.execute_query.return_value = {"records": [{"policy_id": "policy_001", "version": "2.0"}]}
         
-        decision_recorder.apply_policies(decision_id, policy_ids)
+        applied = decision_recorder.apply_policies(decision_id, policy_ids)
         
         # Verify graph store was called for each policy
         assert mock_graph_store.execute_query.call_count == len(policy_ids)
+        assert isinstance(applied, list)
+
+    def test_apply_policies_with_explicit_version(self, decision_recorder, mock_graph_store):
+        """Test applying a specific policy version to avoid ambiguous linking."""
+        decision_id = "decision_001"
+        policy_refs = [{"policy_id": "policy_001", "version": "3.2"}]
+        mock_graph_store.execute_query.return_value = {
+            "records": [{"policy_id": "policy_001", "version": "3.2"}]
+        }
+
+        applied = decision_recorder.apply_policies(decision_id, policy_refs)
+
+        assert len(applied) == 1
+        assert applied[0]["policy_id"] == "policy_001"
+        assert applied[0]["version"] == "3.2"
+        call = mock_graph_store.execute_query.call_args_list[0]
+        assert call[0][1]["policy_version"] == "3.2"
     
     def test_record_exception(self, decision_recorder, mock_graph_store):
         """Test recording policy exception."""
