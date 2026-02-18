@@ -1989,8 +1989,14 @@ class AgentContext:
                     payload["records_found"] = 0
                     payload["records"] = []
             except Exception as e:
+                self.logger.warning(
+                    "Cross-system input capture failed for system=%s entity_id=%s: %s",
+                    system,
+                    entity_id,
+                    str(e),
+                )
                 payload["status"] = "capture_failed"
-                payload["error"] = str(e)
+                payload["error"] = "internal_capture_error"
                 payload["records_found"] = 0
                 payload["records"] = []
 

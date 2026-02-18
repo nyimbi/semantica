@@ -246,6 +246,22 @@ class TestAgentContextDecisions:
             assert context[system]["system_name"] == system
             assert "captured_at" in context[system]
             assert context[system]["status"] == "captured"
+
+    def test_capture_cross_system_inputs_sanitizes_errors(
+        self, agent_context_with_decisions, mock_knowledge_graph
+    ):
+        """Test capture errors are sanitized in returned payload."""
+        mock_knowledge_graph.execute_query.side_effect = RuntimeError(
+            "backend connection failed: sensitive details"
+        )
+
+        context = agent_context_with_decisions.capture_cross_system_inputs(
+            ["salesforce"], "customer_001"
+        )
+
+        assert context["salesforce"]["status"] == "capture_failed"
+        assert context["salesforce"]["error"] == "internal_capture_error"
+        assert "sensitive" not in context["salesforce"]["error"]
     
     def test_backward_compatibility(self, mock_vector_store, mock_knowledge_graph):
         """Test backward compatibility when decision tracking is not explicitly set."""
