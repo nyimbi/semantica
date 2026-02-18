@@ -2,9 +2,9 @@
 
 Thank you for your interest in contributing! Every contribution, no matter how small, is valuable. 🎉
 
-⭐ **Give us a Star** • 🍴 **[Fork Semantica](https://github.com/Hawksight-AI/semantica/fork)** • 💬 **Join our [Discord](https://discord.gg/ggb7vWeP)**
+⭐ **Give us a Star** • 🍴 **[Fork Semantica](https://github.com/Hawksight-AI/semantica/fork)** • 💬 **Join our [Discord](https://discord.gg/N7WmAuDH)**
 
-> **New to contributing?** Start with a [`good first issue`](https://github.com/Hawksight-AI/semantica/labels/good%20first%20issue) or join our [Discord](https://discord.gg/ggb7vWeP) community.
+> **New to contributing?** Start with a [`good first issue`](https://github.com/Hawksight-AI/semantica/labels/good%20first%20issue) or join our [Discord](https://discord.gg/N7WmAuDH) community.
 
 ---
 
@@ -15,7 +15,7 @@ Thank you for your interest in contributing! Every contribution, no matter how s
 3. Make your changes
 4. Submit a pull request!
 
-**Need help?** Join [Discord](https://discord.gg/ggb7vWeP) or [GitHub Discussions](https://github.com/Hawksight-AI/semantica/discussions)
+**Need help?** Join [Discord](https://discord.gg/N7WmAuDH) or [GitHub Discussions](https://github.com/Hawksight-AI/semantica/discussions)
 
 ---
 
@@ -108,7 +108,7 @@ Thank you for your interest in contributing! Every contribution, no matter how s
 
 **What:** Help others in the community
 
-**Where:** [Discord](https://discord.gg/ggb7vWeP), [GitHub Discussions](https://github.com/Hawksight-AI/semantica/discussions)
+**Where:** [Discord](https://discord.gg/N7WmAuDH), [GitHub Discussions](https://github.com/Hawksight-AI/semantica/discussions)
 
 **Examples:** Answer questions, review PRs, share your projects
 
@@ -326,7 +326,7 @@ result = instance.method()
 
 ## 🆘 Getting Help
 
-- 💬 [Discord](https://discord.gg/ggb7vWeP) - Real-time chat
+- 💬 [Discord](https://discord.gg/N7WmAuDH) - Real-time chat
 - 💭 [GitHub Discussions](https://github.com/Hawksight-AI/semantica/discussions) - Q&A
 - 🐛 [GitHub Issues](https://github.com/Hawksight-AI/semantica/issues) - Bug reports
 
@@ -363,4 +363,4 @@ This project follows a [Code of Conduct](CODE_OF_CONDUCT.md). Be respectful and 
 
 Every contribution matters - whether it's a single line of code, a typo fix, a helpful answer, or a bug report. We appreciate you! 🙏
 
-⭐ **Give us a Star** • 🍴 **[Fork Semantica](https://github.com/Hawksight-AI/semantica/fork)** • 💬 **Join our [Discord](https://discord.gg/ggb7vWeP)**
+⭐ **Give us a Star** • 🍴 **[Fork Semantica](https://github.com/Hawksight-AI/semantica/fork)** • 💬 **Join our [Discord](https://discord.gg/N7WmAuDH)**

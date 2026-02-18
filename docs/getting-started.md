@@ -96,6 +96,6 @@ kg = GraphBuilder().build_graph(entities, relationships)
 
 ## Need Help?
 
-- **[💬 Discord Community](https://discord.gg/ggb7vWeP)** - Get help from the community
+- **[💬 Discord Community](https://discord.gg/N7WmAuDH)** - Get help from the community
 - **[🐛 Issues](https://github.com/Hawksight-AI/semantica/issues)** - Report bugs or request features
 - **[📖 Documentation](https://semantica.readthedocs.io/)** - Full documentation site
