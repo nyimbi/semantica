@@ -1957,17 +1957,44 @@ class AgentContext:
         Returns:
             Cross-system context
         """
-        # This is a placeholder for cross-system context capture
-        # In practice, this would integrate with various systems
         context = {}
-        
+
         for system in systems:
-            context[system] = {
+            captured_at = datetime.now().isoformat()
+            payload: Dict[str, Any] = {
                 "entity_id": entity_id,
                 "system_name": system,
-                "captured_at": datetime.now().isoformat(),
-                "status": "captured"
+                "captured_at": captured_at,
             }
+
+            try:
+                # GraphStore-backed capture path
+                if self.knowledge_graph and hasattr(self.knowledge_graph, "execute_query"):
+                    query = """
+                    MATCH (c:CrossSystemContext {system_name: $system_name})
+                    WHERE c.context_data IS NOT NULL
+                    RETURN c
+                    ORDER BY c.created_at DESC
+                    LIMIT 5
+                    """
+                    result = self.knowledge_graph.execute_query(
+                        query, {"system_name": system}
+                    )
+                    records = result.get("records", []) if isinstance(result, dict) else result
+                    payload["status"] = "captured"
+                    payload["records_found"] = len(records) if isinstance(records, list) else 0
+                    payload["records"] = records if isinstance(records, list) else []
+                else:
+                    payload["status"] = "captured_without_backend"
+                    payload["records_found"] = 0
+                    payload["records"] = []
+            except Exception as e:
+                payload["status"] = "capture_failed"
+                payload["error"] = str(e)
+                payload["records_found"] = 0
+                payload["records"] = []
+
+            context[system] = payload
         
         return context
 
