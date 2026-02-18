@@ -25,6 +25,47 @@ def _decision() -> Decision:
     )
 
 
+def _realistic_cross_system_context():
+    """Representative enterprise sources used by agentic workflows."""
+    return {
+        "salesforce": {
+            "account_id": "001A",
+            "arr": 120000,
+            "customer_tier": "enterprise",
+            "renewal_date": "2026-03-15",
+        },
+        "zendesk": {
+            "open_escalations": 2,
+            "sev1_tickets_last_90d": 3,
+            "latest_ticket_id": "ZD-9912",
+        },
+        "pagerduty": {
+            "sev1_incidents_last_90d": 3,
+            "latest_incident": "PD-4421",
+            "service": "api-gateway",
+        },
+        "slack": {
+            "risk_channel": "#renewal-risk",
+            "churn_flag": True,
+            "latest_thread_ref": "ts-1739202.1234",
+        },
+        "stripe": {
+            "invoice_status": "past_due",
+            "last_payment_attempt": "2026-01-28",
+            "days_past_due": 14,
+        },
+        "product_telemetry": {
+            "weekly_active_users": 284,
+            "api_error_rate": 0.038,
+            "feature_adoption_score": 0.72,
+        },
+        "confluence": {
+            "playbook_version": "renewals-v4.2",
+            "policy_page_id": "CONF-778",
+        },
+    }
+
+
 def test_e2e_decision_trace_capture_with_immutable_lineage():
     graph_store = Mock()
 
@@ -47,7 +88,7 @@ def test_e2e_decision_trace_capture_with_immutable_lineage():
 
     decision_id = capture_decision_trace(
         decision=_decision(),
-        cross_system_context={"crm": {"arr": 120000}, "zendesk": {"sev1": 3}},
+        cross_system_context=_realistic_cross_system_context(),
         graph_store=graph_store,
         entities=["customer_123"],
         source_documents=["note_001"],
@@ -225,3 +266,38 @@ def test_e2e_cross_system_capture_sanitizes_internal_errors():
     assert data["salesforce"]["status"] == "capture_failed"
     assert data["salesforce"]["error"] == "internal_capture_error"
     assert "secret" not in data["salesforce"]["error"]
+
+
+def test_e2e_cross_system_capture_with_real_source_mix():
+    vector_store = Mock()
+    knowledge_graph = Mock()
+
+    # Simulate backend records for all systems with wrapper shape.
+    knowledge_graph.execute_query = Mock(
+        return_value={
+            "records": [
+                {
+                    "c": {
+                        "context_id": "ctx_001",
+                        "system_name": "source",
+                        "context_data": {"sample": True},
+                    }
+                }
+            ]
+        }
+    )
+
+    ctx = AgentContext(
+        vector_store=vector_store, knowledge_graph=knowledge_graph, decision_tracking=True
+    )
+    systems = list(_realistic_cross_system_context().keys())
+    data = ctx.capture_cross_system_inputs(systems, "customer_123")
+
+    assert set(data.keys()) == set(systems)
+    for system in systems:
+        assert data[system]["system_name"] == system
+        assert data[system]["entity_id"] == "customer_123"
+        assert data[system]["status"] == "captured"
+        assert "captured_at" in data[system]
+        assert "records_found" in data[system]
+        assert "records" in data[system]
