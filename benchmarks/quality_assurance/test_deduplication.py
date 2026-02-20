@@ -197,7 +197,13 @@ def test_duplicate_detection_scaling_opt(benchmark, dataset_size):
         similarity_threshold=0.8,
         similarity={
             "candidate_strategy": "blocking_v2", 
-            "max_candidates_per_entity": 50
+            "max_candidates_per_entity": 50,
+            "prefilter_enabled": True,
+            "score_breakdown_enabled": True,
+            "prefilter_thresholds": {
+                "min_length_ratio": 0.4,
+                "require_shared_token": True
+            }
         }
     )
 
@@ -218,7 +224,13 @@ def test_duplicate_detection_worst_Case(benchmark, dataset_size):
         similarity_threshold=0.8,
         similarity={
             "candidate_strategy": "blocking_v2", 
-            "max_candidates_per_entity": 50
+            "max_candidates_per_entity": 50,
+            "prefilter_enabled": True,
+            "score_breakdown_enabled": True,
+            "prefilter_thresholds": {
+                "min_length_ratio": 0.4,
+                "require_shared_token": True
+            }
         }
     )
 

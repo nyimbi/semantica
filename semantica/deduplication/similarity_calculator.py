@@ -129,6 +129,16 @@ class SimilarityCalculator:
         self.property_weight = property_weight
         self.relationship_weight = relationship_weight
         self.similarity_threshold = similarity_threshold
+        
+        # Prefilter
+        self.prefilter_enabled = self.config.get("prefilter_enabled", False)
+        self.score_breakdown_enabled = self.config.get("score_breakdown_enabled", False)
+        self.prefilter_thresholds = self.config.get("prefilter_thresholds", {
+            "min_length_ration": 0.3,
+            "min_overlap_ratio": 0.0,
+            "required_shared_token": False
+        })
+
 
         # Validate weights sum to approximately 1.0
         total_weight = (
@@ -148,6 +158,64 @@ class SimilarityCalculator:
             self.progress_tracker.enabled = True
 
         self.logger.debug("Similarity calculator initialized")
+    
+    def _prefilter_pair(
+        self, entity1: Dict[str, Any], entity2: Dict[str, Any], thresholds: Dict[str, float]
+    ) -> Tuple[bool, str]:
+        """
+        Fast prefilter stage to drop obvious non-matches before full semantic scoring.
+        Returns a tuple: (passed_prefilter:bool, rejected_reason:str).
+        """
+        
+        # Type mismatch gate
+        
+        type1 = entity1.get("type")
+        type2 = entity2.get("type")
+        if type1 and type2 and type1 != type2:
+            return False, "type_mismatch"
+        
+        # Prepare names for string/token gates
+        
+        name1 = entity1.get("_lower_name") or str(entity1.get("name") or entity1.get("text") or "").lower().strip()
+        name2 = entity2.get("_lower_name") or str(entity2.get("name") or entity2.get("text") or "").lower().strip()
+        
+        # Pass on missing names as we are falling back to property/relationship logic
+        if not name1 or not name2:
+            return True, ""
+        
+        # Name length-ratio gate
+        
+        len1, len2  = len(name1), len(name2)
+        
+        if len1 > 0 or len2 > 0:
+            length_ratio = min(len1, len2) / max(len1, len2)
+            min_length_ratio = thresholds.get("min_length_ratio", 0.3)
+            
+            if length_ratio < min_length_ratio:
+                return False, f"length_ratio_below_{min_length_ratio}"
+
+        # Token overlap gate
+        
+        if thresholds.get("require_shared_token", False) or thresholds.get("min_token_overlap_ratio", 0.0) > 0:
+            tokens1 = set(t for t in name1.replace("_", " ").replace("-", " ").split() if len(t) > 2)
+            tokens2 = set(t for t in name2.replace("_", " ").replace("-", " ").split() if len(t) > 2)
+            
+            if tokens1 and tokens2:
+                overlap = len(tokens1.intersection(tokens2))
+                
+                min_overlap_ratio = thresholds.get("min_token_overlap_ratio", 0.0)
+                
+                if min_overlap_ratio > 0:
+                    max_possible_overlap = min(len(tokens1), len(tokens2))
+                    overlap_ratio = overlap / max_possible_overlap
+                    if overlap_ratio < min_overlap_ratio:
+                        return False, f"token_overlap_below_{min_overlap_ratio}"
+
+                elif thresholds.get("require_shared_token", False) and overlap == 0:
+                    return False, "no_shared_tokens"
+        
+        return True, ""
+        
 
     def calculate_similarity(
         self, entity1: Dict[str, Any], entity2: Dict[str, Any], track: bool = True, **options
@@ -159,6 +227,8 @@ class SimilarityCalculator:
         similarity factors: string similarity, property similarity, relationship
         similarity, and embedding similarity (if available). Results are aggregated
         using configurable weights.
+        
+        Includes an optional Two-Stage prefilter to fast-fail obvious non-matches.
 
         Args:
             entity1: First entity dictionary
@@ -171,7 +241,6 @@ class SimilarityCalculator:
         """
         tracking_id = None
         if track:
-            # Track similarity calculation
             tracking_id = self.progress_tracker.start_tracking(
                 file=None,
                 module="deduplication",
@@ -180,15 +249,33 @@ class SimilarityCalculator:
             )
 
         try:
+            # Fast Prefilter
+            merged_options = {**self.config, **options}
+            prefilter_enabled = merged_options.get("prefilter_enabled", self.prefilter_enabled)
+            
+            if prefilter_enabled:
+                thresholds = merged_options.get("prefilter_thresholds", self.prefilter_thresholds)
+                passed, reason = self._prefilter_pair(entity1, entity2, thresholds)
+                
+                if not passed:
+                    if tracking_id:
+                        self.progress_tracker.stop_tracking(
+                            tracking_id, status="completed", message=f"Rejected by prefilter: {reason}"
+                        )
+                    return SimilarityResult(
+                        score=0.0,
+                        method="prefiltered",
+                        metadata={"rejection_reason": reason}
+                    )
+
             components = {}
 
-            # String similarity (usually the most important and fastest)
+            # String similarity
             if tracking_id:
                 self.progress_tracker.update_tracking(
                     tracking_id, message="Calculating string similarity..."
                 )
             
-            # Use pre-calculated lowercase name if available
             name1 = entity1.get("_lower_name")
             if name1 is None:
                 name1 = entity1.get("name") or entity1.get("text") or ""
@@ -200,14 +287,10 @@ class SimilarityCalculator:
             string_score = self.calculate_string_similarity(name1, name2)
             components["string"] = string_score
 
-            # Short-circuit if string similarity is too low and weight is high
-            # If string similarity is 0 and it accounts for 60% of score,
-            # max possible score is 0.4, which is below most thresholds.
+            # Short-circuit if string similarity is too low
             if self.string_weight > 0.5 and string_score < 0.3 and not ("embedding" in entity1 and "embedding" in entity2):
-                # Only short-circuit if no embeddings (which might provide semantic similarity)
-                # and string similarity is very low.
-                overall_score = string_score * self.string_weight # Rough estimate
-                if overall_score < (options.get("threshold") or self.similarity_threshold) * 0.5:
+                overall_score = string_score * self.string_weight
+                if overall_score < (merged_options.get("threshold") or self.similarity_threshold) * 0.5:
                     return SimilarityResult(score=overall_score, method="short_circuit", components=components)
 
             # Property similarity
@@ -223,12 +306,10 @@ class SimilarityCalculator:
                 self.progress_tracker.update_tracking(
                     tracking_id, message="Calculating relationship similarity..."
                 )
-            relationship_score = self.calculate_relationship_similarity(
-                entity1, entity2
-            )
+            relationship_score = self.calculate_relationship_similarity(entity1, entity2)
             components["relationship"] = relationship_score
 
-            # Embedding similarity (if available)
+            # Embedding similarity
             embedding_score = 0.0
             if "embedding" in entity1 and "embedding" in entity2:
                 if tracking_id:
@@ -252,17 +333,21 @@ class SimilarityCalculator:
                 "embedding": self.embedding_weight if embedding_score > 0 else 0.0,
             }
 
-            # Normalize weights
             total_weight = sum(w for k, w in weights.items() if k in components)
             if total_weight > 0:
-                weights = {
-                    k: w / total_weight for k, w in weights.items() if k in components
-                }
+                weights = {k: w / total_weight for k, w in weights.items() if k in components}
 
             overall_score = sum(
                 components.get(key, 0.0) * weight for key, weight in weights.items()
             )
-
+            
+            # Explainability metadata
+            
+            metadata = {"weights": weights}
+            self.score_breakdown_enabled = merged_options.get("score_breakdown_enabled", self.score_breakdown_enabled)
+            if self.score_breakdown_enabled:
+                metadata["score_breakdown"] = components
+            
             if tracking_id:
                 self.progress_tracker.stop_tracking(
                     tracking_id,
@@ -273,7 +358,7 @@ class SimilarityCalculator:
                 score=overall_score,
                 method="multi_factor",
                 components=components,
-                metadata={"weights": weights},
+                metadata=metadata,
             )
 
         except Exception as e:
@@ -282,20 +367,12 @@ class SimilarityCalculator:
                     tracking_id, status="failed", message=str(e)
                 )
             raise
-
+    
     def calculate_string_similarity(
         self, str1: str, str2: str, method: str = "jaro_winkler"
     ) -> float:
         """
         Calculate string similarity between two strings.
-
-        Args:
-            str1: First string
-            str2: Second string
-            method: Similarity method ("levenshtein", "jaro_winkler", "cosine")
-
-        Returns:
-            Similarity score (0-1)
         """
         if not str1 or not str2:
             return 0.0
