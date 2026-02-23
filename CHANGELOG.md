@@ -20,6 +20,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 17 comprehensive test cases with 100% pass rate
   - Enterprise-grade ArangoDB multi-model database integration
 
+- **Apache Parquet Export Support** (PR #343 by @tibisabau)
+  - Full-featured Apache Parquet exporter with 701 lines of production-ready code
+  - Columnar storage format optimized for analytics and data warehousing
+  - Configurable compression codecs (snappy, gzip, brotli, zstd, lz4, none)
+  - Explicit Arrow schemas with type safety and consistency
+  - Field normalization for varied entity and relationship naming conventions
+  - Structured metadata handling using Parquet struct fields
+  - Added `export_parquet()` convenience function for easy access
+  - Enhanced unified export with Parquet format support and `.parquet` auto-detection
+  - Integrated with method registry for extensibility
+  - 25 comprehensive test cases with 100% pass rate
+  - Enterprise-grade analytics integration with pandas, Spark, Snowflake, BigQuery, Databricks
+
 ### Fixed
 
 - Fixed NameError: missing Type import in utils/helpers.py

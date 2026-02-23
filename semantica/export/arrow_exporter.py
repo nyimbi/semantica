@@ -31,6 +31,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 if TYPE_CHECKING:
+    import pyarrow as pa  # noqa: F401
+
+
+if TYPE_CHECKING:
     import pyarrow as pa
 
 try:
@@ -38,8 +42,52 @@ try:
     import pyarrow.ipc as ipc
 
     ARROW_AVAILABLE = True
+
+    # Explicit Arrow Schemas (no inference)
+    ENTITY_SCHEMA = pa.schema(
+        [
+            pa.field("id", pa.string(), nullable=False),
+            pa.field("text", pa.string(), nullable=True),
+            pa.field("type", pa.string(), nullable=True),
+            pa.field("confidence", pa.float64(), nullable=True),
+            pa.field("start", pa.int64(), nullable=True),
+            pa.field("end", pa.int64(), nullable=True),
+            pa.field(
+                "metadata",
+                pa.struct(
+                    [
+                        pa.field("keys", pa.list_(pa.string())),
+                        pa.field("values", pa.list_(pa.string())),
+                    ]
+                ),
+                nullable=True,
+            ),
+        ]
+    )
+
+    RELATIONSHIP_SCHEMA = pa.schema(
+        [
+            pa.field("id", pa.string(), nullable=False),
+            pa.field("source_id", pa.string(), nullable=False),
+            pa.field("target_id", pa.string(), nullable=False),
+            pa.field("type", pa.string(), nullable=True),
+            pa.field("confidence", pa.float64(), nullable=True),
+            pa.field(
+                "metadata",
+                pa.struct(
+                    [
+                        pa.field("keys", pa.list_(pa.string())),
+                        pa.field("values", pa.list_(pa.string())),
+                    ]
+                ),
+                nullable=True,
+            ),
+        ]
+    )
 except ImportError:
     ARROW_AVAILABLE = False
+    ENTITY_SCHEMA = None
+    RELATIONSHIP_SCHEMA = None
     pa = None  # Set pa to None when not available
 
 from ..utils.exceptions import ProcessingError, ValidationError
@@ -163,7 +211,7 @@ class ArrowExporter:
         self,
         data: Union[List[Dict[str, Any]], Dict[str, Any]],
         file_path: Union[str, Path],
-        schema: Optional[pa.Schema] = None,
+        schema: Optional["pa.Schema"] = None,
         **options,
     ) -> None:
         """
@@ -570,7 +618,7 @@ class ArrowExporter:
         self,
         data: List[Dict[str, Any]],
         file_path: Path,
-        schema: Optional[pa.Schema] = None,
+        schema: Optional["pa.Schema"] = None,
         **options,
     ) -> None:
         """

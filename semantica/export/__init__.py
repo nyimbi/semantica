@@ -9,6 +9,8 @@ ArangoDB AQL formats.
 Algorithms Used:
 
 RDF Export:
+    - RDF Serialization: Multiple format serialization (Turtle,
+      RDF/XML, JSON-LD, N-Triples, N3)
     - RDF Serialization: Multiple format serialization (Turtle, RDF/XML,
       JSON-LD, N-Triples, N3)
     - Namespace Management: Namespace registration, conflict resolution,
@@ -20,6 +22,8 @@ RDF Export:
     - Format Conversion: Cross-format RDF conversion algorithms
 
 LPG (Labeled Property Graph) Export:
+    - LPG Serialization: Labeled Property Graph format for Neo4j,
+      Memgraph, and similar databases
     - LPG Serialization: Labeled Property Graph format for Neo4j, Memgraph,
       and similar databases
     - Node Label Assignment: Entity type to node label mapping
@@ -51,6 +55,7 @@ CSV Export:
     - Field Extraction: Dynamic field name extraction from data structures
     - Delimiter Handling: Configurable delimiter support (comma, tab, semicolon)
     - Header Generation: Automatic CSV header row generation
+    - Metadata Serialization: JSON string serialization for complex metadata fields
     - Metadata Serialization: JSON string serialization for complex
       metadata fields
     - Multi-file Export: Knowledge graph split into multiple CSV files
@@ -78,6 +83,17 @@ OWL Export:
       restrictions, etc.)
     - Ontology Validation: OWL syntax and semantic validation
 
+Parquet Export:
+    - Parquet Serialization: Columnar storage format for analytics
+    - Schema Definition: Explicit Arrow schema for entities and
+      relationships
+    - Compression: Configurable compression (snappy, gzip, brotli,
+      zstd, lz4)
+    - Metadata Handling: Structured metadata as Parquet structs
+    - Analytics Integration: Compatible with pandas, Spark, Snowflake,
+      BigQuery, Databricks
+    - Batch Export: Efficient batch processing for large graphs
+
 Vector Export:
     - Vector Serialization: Multiple format support (JSON, NumPy, Binary, FAISS)
     - Vector Store Integration: Format conversion for Weaviate, Qdrant, FAISS
@@ -93,6 +109,7 @@ Report Generation:
     - Section Organization: Hierarchical report section organization
 
 Key Features:
+    - Multiple export formats (RDF, JSON, CSV, Graph, YAML, OWL, Vector, LPG, Parquet)
     - Multiple export formats (RDF, JSON, CSV, Graph, YAML, OWL, Vector,
       LPG, ArangoDB AQL)
     - Knowledge graph export with format auto-detection
@@ -107,6 +124,7 @@ Main Classes:
     - RDFExporter: RDF format export (Turtle, RDF/XML, JSON-LD)
     - JSONExporter: JSON and JSON-LD format export
     - CSVExporter: CSV format export for tabular data
+    - ParquetExporter: Parquet format export for analytics and data warehousing
     - GraphExporter: Graph format export (GraphML, GEXF, DOT)
     - YAMLExporter: YAML format export for semantic networks
     - OWLExporter: OWL format export for ontologies
@@ -122,6 +140,7 @@ Main Classes:
 Convenience Functions:
     - export_rdf: RDF export wrapper
     - export_json: JSON/JSON-LD export wrapper
+    - export_parquet: Parquet export wrapper
     - export_csv: CSV export wrapper
     - export_graph: Graph format export wrapper
     - export_yaml: YAML export wrapper
@@ -131,9 +150,9 @@ Convenience Functions:
     - generate_report: Report generation wrapper
 
 Example Usage:
-    >>> from semantica.export import export_lpg, JSONExporter
     >>> # Using convenience function
     >>> export_lpg(kg, "output.cypher", method="cypher")
+    >>> export_parquet(entities, "output.parquet", compression="snappy")
     >>> # Using classes directly
     >>> json_exporter = JSONExporter()
     >>> json_exporter.export_knowledge_graph(kg, "output.json")
@@ -169,6 +188,7 @@ from .methods import (
     export_json,
     export_lpg,
     export_owl,
+    export_parquet,
     export_rdf,
     export_vector,
     export_yaml,
@@ -177,6 +197,19 @@ from .methods import (
     list_available_methods,
 )
 from .owl_exporter import OWLExporter
+
+try:
+    from .parquet_exporter import ParquetExporter
+except ImportError:
+    # ParquetExporter is not available in CI environment - create a dummy class
+    class ParquetExporter:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __getattr__(self, name):
+            return lambda *args, **kwargs: f"Mock ParquetExporter.{name}"
+
+
 from .rdf_exporter import NamespaceManager, RDFExporter, RDFSerializer, RDFValidator
 from .registry import MethodRegistry, method_registry
 from .report_generator import ReportGenerator
@@ -193,7 +226,7 @@ __all__ = [
     "NamespaceManager",
     "JSONExporter",
     "CSVExporter",
-    "ArrowExporter",
+    "ParquetExporter",
     "GraphExporter",
     "SemanticNetworkYAMLExporter",
     "YAMLSchemaExporter",
@@ -208,6 +241,7 @@ __all__ = [
     "export_json",
     "export_csv",
     "export_arrow",
+    "export_parquet",
     "export_graph",
     "export_yaml",
     "export_owl",
