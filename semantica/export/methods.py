@@ -155,6 +155,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 from ..utils.exceptions import ConfigurationError, ProcessingError
 from ..utils.logging import get_logger
+from .arango_aql_exporter import ArangoAQLExporter
 from .arrow_exporter import ArrowExporter
 from .config import export_config
 from .csv_exporter import CSVExporter
@@ -619,6 +620,56 @@ def export_lpg(
         raise
 
 
+def export_arango(
+    knowledge_graph: Dict[str, Any],
+    file_path: Union[str, Path],
+    method: str = "default",
+    **kwargs,
+) -> None:
+    """
+    Export knowledge graph to ArangoDB AQL format (convenience function).
+
+    This is a user-friendly wrapper that exports knowledge graphs to ArangoDB
+    multi-model databases via AQL INSERT statements.
+
+    Args:
+        knowledge_graph: Knowledge graph dictionary with entities and relationships
+        file_path: Output AQL file path
+        method: Export method (default: "default")
+        **kwargs: Additional options passed to ArangoAQLExporter:
+            - vertex_collection: Override default vertex collection name
+            - edge_collection: Override default edge collection name
+            - batch_size: Batch size for INSERT operations
+            - include_collection_creation: Whether to include collection creation statements
+
+    Examples:
+        >>> from semantica.export.methods import export_arango
+        >>> export_arango(kg, "output.aql")
+        >>> export_arango(kg, "graph.aql", vertex_collection="nodes", edge_collection="links")
+    """
+    # Check for custom method in registry
+    custom_method = method_registry.get("arango", method)
+    if custom_method and custom_method is not export_arango:
+        try:
+            return custom_method(knowledge_graph, file_path, **kwargs)
+        except Exception as e:
+            logger.warning(
+                f"Custom method {method} failed: {e}, falling back to default"
+            )
+
+    try:
+        # Get config
+        config = export_config.get_method_config("arango")
+        config.update(kwargs)
+
+        exporter = ArangoAQLExporter(**config)
+        exporter.export_knowledge_graph(knowledge_graph, file_path, **kwargs)
+
+    except Exception as e:
+        logger.error(f"Failed to export ArangoDB AQL: {e}")
+        raise
+
+
 def generate_report(
     data: Dict[str, Any],
     file_path: Union[str, Path],
@@ -698,6 +749,7 @@ def export_knowledge_graph(
             - "yaml", "yml": YAML exporters
             - "owl": OWLExporter
             - "cypher": LPGExporter
+            - "aql": ArangoAQLExporter
         method: Optional specific export method
         **kwargs: Additional options passed to exporter
 
@@ -724,6 +776,7 @@ def export_knowledge_graph(
             ".yml": "yaml",
             ".owl": "owl-xml",
             ".cypher": "cypher",
+            ".aql": "aql",
         }
         format = format_map.get(ext, "json")
 
@@ -742,6 +795,8 @@ def export_knowledge_graph(
         export_owl(knowledge_graph, file_path, format=format, method=method, **kwargs)
     elif format == "cypher":
         export_lpg(knowledge_graph, file_path, method=method, **kwargs)
+    elif format == "aql":
+        export_arango(knowledge_graph, file_path, method=method, **kwargs)
     else:
         raise ProcessingError(f"Unknown export format: {format}")
 
@@ -809,6 +864,8 @@ method_registry.register("vector", "json", export_vector)
 method_registry.register("vector", "numpy", export_vector)
 method_registry.register("lpg", "default", export_lpg)
 method_registry.register("lpg", "cypher", export_lpg)
+method_registry.register("arango", "default", export_arango)
+method_registry.register("arango", "aql", export_arango)
 method_registry.register("report", "default", generate_report)
 method_registry.register("report", "html", generate_report)
 method_registry.register("report", "markdown", generate_report)

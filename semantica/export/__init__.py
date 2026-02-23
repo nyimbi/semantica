@@ -3,20 +3,25 @@ Export and Reporting Module
 
 This module provides comprehensive export and reporting capabilities for the
 Semantica framework, supporting multiple formats and use cases including RDF,
-JSON, CSV, Graph, YAML, OWL, Vector, and LPG (Labeled Property Graph) formats.
+JSON, CSV, Graph, YAML, OWL, Vector, LPG (Labeled Property Graph), and
+ArangoDB AQL formats.
 
 Algorithms Used:
 
 RDF Export:
-    - RDF Serialization: Multiple format serialization (Turtle, RDF/XML, JSON-LD, N-Triples, N3)
-    - Namespace Management: Namespace registration, conflict resolution, declaration generation
-    - RDF Validation: RDF syntax validation, triplet validation, namespace validation
+    - RDF Serialization: Multiple format serialization (Turtle, RDF/XML,
+      JSON-LD, N-Triples, N3)
+    - Namespace Management: Namespace registration, conflict resolution,
+      declaration generation
+    - RDF Validation: RDF syntax validation, triplet validation,
+      namespace validation
     - URI Generation: Hash-based and text-based URI assignment for RDF resources
     - Triplet Extraction: Entity and relationship to RDF triplet conversion
     - Format Conversion: Cross-format RDF conversion algorithms
 
 LPG (Labeled Property Graph) Export:
-    - LPG Serialization: Labeled Property Graph format for Neo4j, Memgraph, and similar databases
+    - LPG Serialization: Labeled Property Graph format for Neo4j, Memgraph,
+      and similar databases
     - Node Label Assignment: Entity type to node label mapping
     - Relationship Type Mapping: Relationship type to edge label conversion
     - Property Serialization: Entity and relationship properties to LPG property format
@@ -24,11 +29,21 @@ LPG (Labeled Property Graph) Export:
     - Batch Node/Relationship Export: Efficient batch processing for large graphs
     - Index Generation: Index and constraint generation for graph databases
 
+ArangoDB AQL Export:
+    - AQL Serialization: AQL INSERT statements for ArangoDB multi-model databases
+    - Vertex Collection Export: Entity to vertex collection conversion
+    - Edge Collection Export: Relationship to edge collection conversion
+    - Key Sanitization: Automatic sanitization of keys for ArangoDB compliance
+    - Batch Insert Generation: Efficient batch INSERT operations for large graphs
+    - Configurable Collections: Support for custom vertex and edge collection names
+    - Property Preservation: Full preservation of entity and relationship properties
+
 JSON/JSON-LD Export:
     - JSON Serialization: Standard JSON serialization with configurable indentation
     - JSON-LD Context Management: @context generation and management
     - Knowledge Graph Serialization: Graph structure to JSON/JSON-LD conversion
-    - Metadata Embedding: Provenance and metadata serialization in JSON structure
+    - Metadata Embedding: Provenance and metadata serialization in JSON
+      structure
     - Pretty Printing: Formatted JSON output with indentation
 
 CSV Export:
@@ -36,8 +51,10 @@ CSV Export:
     - Field Extraction: Dynamic field name extraction from data structures
     - Delimiter Handling: Configurable delimiter support (comma, tab, semicolon)
     - Header Generation: Automatic CSV header row generation
-    - Metadata Serialization: JSON string serialization for complex metadata fields
-    - Multi-file Export: Knowledge graph split into multiple CSV files (entities, relationships)
+    - Metadata Serialization: JSON string serialization for complex
+      metadata fields
+    - Multi-file Export: Knowledge graph split into multiple CSV files
+      (entities, relationships)
 
 Graph Export:
     - GraphML Serialization: GraphML format generation for graph visualization tools
@@ -57,7 +74,8 @@ OWL Export:
     - Turtle Serialization: OWL in Turtle format
     - Class Hierarchy Export: Class definition and hierarchy serialization
     - Property Export: Object and data property definition export
-    - OWL 2.0 Feature Support: Advanced OWL features (cardinality, restrictions, etc.)
+    - OWL 2.0 Feature Support: Advanced OWL features (cardinality,
+      restrictions, etc.)
     - Ontology Validation: OWL syntax and semantic validation
 
 Vector Export:
@@ -75,7 +93,8 @@ Report Generation:
     - Section Organization: Hierarchical report section organization
 
 Key Features:
-    - Multiple export formats (RDF, JSON, CSV, Graph, YAML, OWL, Vector, LPG)
+    - Multiple export formats (RDF, JSON, CSV, Graph, YAML, OWL, Vector,
+      LPG, ArangoDB AQL)
     - Knowledge graph export with format auto-detection
     - Report generation (HTML, Markdown, JSON, Text)
     - Vector store integration
@@ -92,7 +111,10 @@ Main Classes:
     - YAMLExporter: YAML format export for semantic networks
     - OWLExporter: OWL format export for ontologies
     - VectorExporter: Vector embedding export for vector stores
-    - LPGExporter: LPG format export for Neo4j, Memgraph, and similar databases
+    - LPGExporter: LPG format export for Neo4j, Memgraph, and similar
+      databases
+    - ArangoAQLExporter: ArangoDB AQL format export for multi-model
+      databases
     - ReportGenerator: Report generation (HTML, Markdown, JSON, Text)
     - MethodRegistry: Registry for custom export methods
     - ExportConfig: Configuration manager for export module
@@ -120,22 +142,27 @@ Author: Semantica Contributors
 License: MIT
 """
 
-from .arrow_exporter import ArrowExporter
+from .arango_aql_exporter import ArangoAQLExporter
 from .config import ExportConfig, export_config
+
 try:
     from .arrow_exporter import ArrowExporter
 except ImportError:
-    # ArrowExporter is not available in CI environment - create a dummy class
+    # ArrowExporter is not available in CI environment - dummy class
     class ArrowExporter:
         def __init__(self, *args, **kwargs):
             pass
+
         def __getattr__(self, name):
             return lambda *args, **kwargs: f"Mock ArrowExporter.{name}"
+
+
 from .csv_exporter import CSVExporter
 from .graph_exporter import GraphExporter
 from .json_exporter import JSONExporter
 from .lpg_exporter import LPGExporter
 from .methods import (
+    export_arango,
     export_arrow,
     export_csv,
     export_graph,
@@ -159,6 +186,7 @@ from .yaml_exporter import SemanticNetworkYAMLExporter, YAMLSchemaExporter
 __all__ = [
     # Core Exporters
     "ArrowExporter",
+    "ArangoAQLExporter",
     "RDFExporter",
     "RDFSerializer",
     "RDFValidator",
@@ -185,6 +213,7 @@ __all__ = [
     "export_owl",
     "export_vector",
     "export_lpg",
+    "export_arango",
     "generate_report",
     "get_export_method",
     "list_available_methods",
