@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **ArangoDB AQL Export Support** (PR #342 by @tibisabau)
+  - Full-featured ArangoDB AQL exporter with 642 lines of production-ready code
+  - Comprehensive AQL INSERT statement generation for vertices and edges
+  - Configurable collection names with validation and sanitization
+  - Batch processing support for large knowledge graphs (default: 1000)
+  - Added `export_arango()` convenience function for easy access
+  - Enhanced unified export with AQL format support and `.aql` auto-detection
+  - Integrated with method registry for extensibility
+  - 17 comprehensive test cases with 100% pass rate
+  - Enterprise-grade ArangoDB multi-model database integration
+
 ## [0.3.0-alpha] - 2026-02-19
 
 ### Added / Changed
