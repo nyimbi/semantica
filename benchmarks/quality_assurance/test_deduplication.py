@@ -187,12 +187,19 @@ def test_full_similarity_calculation(benchmark):
 def test_duplicate_detection_scaling_opt(benchmark, dataset_size):
     """
     Tests duplication on a 'Distributed' dataset (Best Case)
+    Now utilizing V2 Candidate Generation to ensure no regressions.
     """
-
     data = generate_dataset(
         num_clusters=dataset_size // 10, items_per_cluster=10, worst_case_blocking=False
     )
-    detector = DuplicateDetector(similarity_threshold=0.8)
+    
+    detector = DuplicateDetector(
+        similarity_threshold=0.8,
+        similarity={
+            "candidate_strategy": "blocking_v2", 
+            "max_candidates_per_entity": 50
+        }
+    )
 
     benchmark.pedantic(lambda: detector.detect_duplicates(data), iterations=1, rounds=5)
 
@@ -201,12 +208,19 @@ def test_duplicate_detection_scaling_opt(benchmark, dataset_size):
 def test_duplicate_detection_worst_Case(benchmark, dataset_size):
     """
     Tests detection on a 'Clustered' dataset (Worst Case).
+    Now utilizing V2 Candidate Generation to cut the pair explosion.
     """
-
     data = generate_dataset(
         num_clusters=dataset_size // 10, items_per_cluster=10, worst_case_blocking=True
     )
-    detector = DuplicateDetector(similarity_threshold=0.8)
+    
+    detector = DuplicateDetector(
+        similarity_threshold=0.8,
+        similarity={
+            "candidate_strategy": "blocking_v2", 
+            "max_candidates_per_entity": 50
+        }
+    )
 
     benchmark.pedantic(lambda: detector.detect_duplicates(data), iterations=1, rounds=5)
 

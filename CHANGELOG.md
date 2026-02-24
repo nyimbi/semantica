@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Candidate Generation v2 with Multi-Key Blocking** (PR #338 by @ZohaibHassan16):
+  - Implemented opt-in candidate generation strategies (`legacy`, `blocking_v2`, `hybrid_v2`) to address O(N²) pair explosion during deduplication
+  - Multi-key blocking with normalized token prefixes, type-aware keys, and optional phonetic (Soundex) blocking
+  - Deterministic candidate budgeting with `max_candidates_per_entity` limit using stable sorting
+  - Efficient pair generation with set-based deduplication across overlapping blocks
+  - Performance improvements: 63.6% faster in worst-case scenarios (0.259s → 0.094s for 100 entities)
+  - Complete backward compatibility with default `candidate_strategy="legacy"`
+  - Added configuration options: `blocking_keys`, `enable_phonetic_blocking`, `max_candidates_per_entity`
 ### Added
 
 - **ArangoDB AQL Export Support** (PR #342 by @tibisabau)

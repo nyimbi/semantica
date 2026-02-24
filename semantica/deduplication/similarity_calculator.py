@@ -51,7 +51,7 @@ License: MIT
 
 import math
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Set
 
 from ..utils.exceptions import ProcessingError
 from ..utils.logging import get_logger
@@ -554,24 +554,118 @@ class SimilarityCalculator:
         union = bigrams1 | bigrams2
 
         return len(intersection) / len(union) if union else 0.0
+    
+    def _soundex(self, word: str) -> str:
+        """Soundex algorithm for phonetic blocking."""
+        if not word: return ""
+        word = word.upper()
+        soundex_mapping = {"BFPV": "1", "CGJKQSXZ": "2", "DT": "3", "L": "4", "MN": "5", "R": "6"}
+        result = [word[0]]
+        for char in word[1:]:
+            for key, val in soundex_mapping.items():
+                if char in key:
+                    if val != result[-1]: 
+                        result.append(val)
+                    break
+                
+        result = [result[0]] + [c for c in result[1:] if c.isdigit()]
+        return ("".join(result) + "000")[:4]
+    
+    def _build_block_indexes(
+        self, processed_entities: List[Dict[str, Any]], options: Dict[str, Any]
+    ) -> Dict[str, List[int]]:
+        """ Builds blocks of candidate indices based on the configured strategy."""
+        blocks: Dict[str, List[int]] = {}
+        strategy = options.get("candidate_strategy", "legacy")
+        
+        for idx, entity in enumerate(processed_entities):
+            name = entity.get("_lower_name", "")
+            
+            if not name:
+                blocks.setdefault("___empty___", []).append(idx)
+                continue
+            
+            if strategy == "legacy":
+                blocks.setdefault(name[0], []).append(idx)
+            
+            elif strategy in ("blocking_v2", "hybrid_v2"):
+                
+                keys_to_add = set()
+                tokens = [t for t in name.replace("_", " ").replace("-", " ").split() if len(t) > 2]
+                
+                if not tokens:
+                    tokens = [name]
+                
+                for t in tokens:
+                    keys_to_add.add(f"tok:{t[:4]}")
+                
+                blocking_keys = options.get("blocking_keys", ["prefix", "token"])
+                if "type" in blocking_keys:
+                    e_type = str(entity.get("type", "unknown")).lower()
+                    if tokens:
+                        keys_to_add.add(f"type:{e_type}:{tokens[0][:4]}")
+                
+                if options.get("enable_phonetic_blocking", False):
+                    for t in tokens:
+                        keys_to_add.add(f"pho:{self._soundex(t)}")
+                        
+                for k in keys_to_add:
+                    blocks.setdefault(k, []).append(idx)
+        
+        return blocks
+    
+    def _generate_candidate_pairs(
+        self, blocks: Dict[str, List[int]]
+    ) -> Set[Tuple[int, int]]:
+        """ Generates a deduplicated set of candidate pair IDs from all blocks."""
+        candidate_pairs = set()
+        
+        for indices in blocks.values():
+            n = len(indices)
+            
+            for i_idx in range(n):
+                for j_idx in range(i_idx+1, n):
+                    i = indices[i_idx]
+                    j = indices[j_idx]
+                    
+                    candidate_pairs.add((min(i, j), max(i, j)))
+        
+        return candidate_pairs
+        
+    
+    def _cap_candidate_pairs(
+        self, candidate_pairs: Set[Tuple[int, int]], max_candidates: int
+    ) -> Set[Tuple[int, int]]:
+        """ Enforces a deterministic truncation policy per entity."""
+        
+        if not max_candidates or max_candidates <=0:
+            return candidate_pairs
+        
+        connections: Dict[int, List[int]] = {}
+        
+        for i, j in candidate_pairs:
+            connections.setdefault(i, []).append(j)
+            connections.setdefault(j, []).append(i)
+            
+        capped_pairs = set()
+        for entity_idx, neighbors in connections.items():
+            kept_neighbors = sorted(neighbors)[:max_candidates]
+            
+            for n in kept_neighbors:
+                capped_pairs.add((min(entity_idx, n), max(entity_idx, n)))
+        
+        return capped_pairs
+            
+        
+                    
+        
 
     def batch_calculate_similarity(
-        self, entities: List[Dict[str, Any]], threshold: Optional[float] = None
+        self, entities: List[Dict[str, Any]], threshold: Optional[float] = None, **kwargs
     ) -> List[Tuple[Dict[str, Any], Dict[str, Any], float]]:
         """
-        Calculate similarity for all entity pairs in a batch.
-
-        This method optimizes calculation by comparing only pairs that are likely
-        to be similar using a blocking/indexing strategy.
-
-        Args:
-            entities: List of entity dictionaries
-            threshold: Similarity threshold for filtering (default: self.similarity_threshold)
-
-        Returns:
-            List of (entity1, entity2, similarity) tuples
+        Calculate similarity for all entity pairs in a batch using configurable candidate generation.
         """
-        # Track batch similarity calculation
         tracking_id = self.progress_tracker.start_tracking(
             file=None,
             module="deduplication",
@@ -583,13 +677,11 @@ class SimilarityCalculator:
             threshold = threshold or self.similarity_threshold
             results = []
 
-            # Pre-process entities for faster comparison
-            # 1. Pre-calculate hashable relationships
-            # 2. Pre-calculate lowercase names
-            # 3. Pre-calculate property sets
+            options = {**self.config, **kwargs}
+
+            # Legacy logic
             processed_entities = []
             for entity in entities:
-                # Handle both dicts and Entity objects
                 if hasattr(entity, "__dict__"):
                     processed_entity = vars(entity).copy()
                 elif isinstance(entity, dict):
@@ -597,84 +689,61 @@ class SimilarityCalculator:
                 else:
                     processed_entity = {"_original": entity}
                 
-                # Pre-calculate hashable relationships for Jaccard similarity
-                # Handle both 'relationships' and 'metadata.relationships'
                 rels = processed_entity.get("relationships")
                 if rels is None and "metadata" in processed_entity:
-                    rels = processed_entity["metadata"].get("relationships")
+                    rels = processed_entity.get("metadata", {}).get("relationships")
                 
                 if rels:
                     processed_entity["_hashable_rels"] = set(self._make_hashable(r) for r in rels)
                 else:
                     processed_entity["_hashable_rels"] = set()
                 
-                # Pre-calculate lowercase name
-                # Handle both 'name' and 'text' (used in Entity class)
                 name = processed_entity.get("name") or processed_entity.get("text") or ""
                 processed_entity["_lower_name"] = name.lower().strip()
-                
                 processed_entities.append(processed_entity)
 
-            # Blocking strategy: Group entities by first character of name
-            # This significantly reduces the number of pairs to compare while
-            # still catching most duplicates.
-            blocks: Dict[str, List[int]] = {}
-            for idx, entity in enumerate(processed_entities):
-                name = entity["_lower_name"]
-                if not name:
-                    block_key = "___empty___"
-                else:
-                    # Use the first character as the block key
-                    block_key = name[0]
-                
-                if block_key not in blocks:
-                    blocks[block_key] = []
-                blocks[block_key].append(idx)
+            # v2 pipeline
+            
+            blocks = self._build_block_indexes(processed_entities, options)
+            
+            candidate_pairs = self._generate_candidate_pairs(blocks)
+            
+            max_candidates = options.get("max_candidates_per_entity")
+            if max_candidates is not None:
+                candidate_pairs = self._cap_candidate_pairs(candidate_pairs, max_candidates)
 
-            # Calculate total potential pairs within blocks for progress tracking
-            total_pairs = 0
-            for block_indices in blocks.values():
-                n = len(block_indices)
-                total_pairs += n * (n - 1) // 2
-
+            total_pairs = len(candidate_pairs)
             processed = 0
-            # Update more frequently: every 1% or at least every 10 items
-            if total_pairs <= 10:
-                update_interval = 1
-            else:
-                update_interval = max(1, min(100, total_pairs // 100))
+            update_interval = 1 if total_pairs <= 10 else max(1, min(100, total_pairs // 100))
             
             self.progress_tracker.update_tracking(
                 tracking_id,
                 status="running",
-                message=f"Comparing {total_pairs} pairs across {len(blocks)} blocks..."
+                message=f"Comparing {total_pairs} generated pairs..."
             )
             
-            # Compare entities within each block
-            for block_key, indices in blocks.items():
-                for i_idx in range(len(indices)):
-                    for j_idx in range(i_idx + 1, len(indices)):
-                        i = indices[i_idx]
-                        j = indices[j_idx]
-                        
-                        similarity = self.calculate_similarity(processed_entities[i], processed_entities[j], track=False)
+    
+            for i, j in sorted(list(candidate_pairs)):
+                similarity = self.calculate_similarity(
+                    processed_entities[i], processed_entities[j], track=False, threshold=threshold
+                )
 
-                        if similarity.score >= threshold:
-                            results.append((entities[i], entities[j], similarity.score))
-                        
-                        processed += 1
-                        if processed % update_interval == 0 or processed == total_pairs:
-                            self.progress_tracker.update_progress(
-                                tracking_id,
-                                processed=processed,
-                                total=total_pairs,
-                                message=f"Comparing pairs in block '{block_key}'... {processed}/{total_pairs}"
-                            )
+                if similarity.score >= threshold:
+                    results.append((entities[i], entities[j], similarity.score))
+                
+                processed += 1
+                if processed % update_interval == 0 or processed == total_pairs:
+                    self.progress_tracker.update_progress(
+                        tracking_id,
+                        processed=processed,
+                        total=total_pairs,
+                        message=f"Comparing candidates... {processed}/{total_pairs}"
+                    )
 
             self.progress_tracker.stop_tracking(
                 tracking_id,
                 status="completed",
-                message=f"Found {len(results)} similar pairs across {len(blocks)} blocks",
+                message=f"Found {len(results)} similar pairs out of {total_pairs} candidates",
             )
             return results
 
