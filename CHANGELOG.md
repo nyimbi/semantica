@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Incremental/Delta Processing Feature** (PR #349 by @ZohaibHassan16, reviewed and fixed by @KaifAhmad1):
+  - Native delta computation between graph snapshots using SPARQL queries
+  - Delta-aware pipeline execution with `delta_mode` configuration for processing only changed data
+  - Version snapshot management with graph URI tracking and metadata storage
+  - Snapshot retention policies with automatic cleanup via `prune_versions()` method
+  - Integration with pipeline execution engine for incremental workflows
+  - Significant performance improvements: processes only changes instead of full datasets
+  - Cost optimization: dramatically reduces compute and storage requirements for large-scale operations
+  - Production-ready for near real-time pipelines and frequent deployment scenarios
+  - Bug fixes: corrected SPARQL variable order, fixed class references, resolved duplicate dictionary keys
+  - Comprehensive test coverage including delta mode integration tests
+  - Complete documentation with usage examples and API references
+  - Essential for enterprise-grade, large-scale semantic infrastructure
+
 - Fixed: Context Graphs decision tracking bugs and added comprehensive test coverage (PR #315 by @KaifAhmad1)
   - Fixed empty/None decision ID handling in ContextGraph.add_decision()
   - Fixed None metadata handling to prevent TypeError
