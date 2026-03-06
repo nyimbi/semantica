@@ -2365,7 +2365,7 @@ def extract_triplets_llm(
         "relations_hash": hash(tuple(sorted([str(r) for r in relations]))) if relations else 0
     }
     cached_result = _result_cache.get("triplets", text, **cache_params)
-    if cached_result:
+    if cached_result is not None:
         logger.debug(f"Cache hit for triplet extraction ({len(cached_result)} triplets)")
         return cached_result
     
